@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import HeroSection from '@/components/landingpage/HeroSection'
 import FoodsSlideMenu from '@/components/landingpage/FoodsSlideMenu'
+import RestaurantMenu from '@/components/landingpage/RestaurantMenu'
 
 export default function HomePage() {
   const handleSearch = (query: string) => {
@@ -26,8 +27,13 @@ export default function HomePage() {
         title="Popular Foods"
         onOrderFood={handleOrderFood}
         foods={[]}
-        className='mt-8 mr-4 ml-4'
+        className='my-8 mr-4 ml-4'
         // You can pass foods data and onOrderFood handler as props
+      />
+
+      <RestaurantMenu
+        className='my-8 mr-4 ml-4'
+        // You can pass restaurants 
       />
 
       {/* Features Section */}

@@ -16,7 +16,6 @@ interface Food {
   description: string;
   imageUrl: string;
   menu: Menu;
-  rating?: number;
 }
 
 interface FoodsSlideMenuProps {
@@ -39,7 +38,6 @@ const sampleFoods: Food[] = [
       menuId: 'menu-1',
       category: 'Main Dish'
     },
-    rating: 4
   },
   {
     foodId: 'food-2',
@@ -52,7 +50,6 @@ const sampleFoods: Food[] = [
       menuId: 'menu-2',
       category: 'Dessert'
     },
-    rating: 5
   },
   {
     foodId: 'food-3',
@@ -65,7 +62,6 @@ const sampleFoods: Food[] = [
       menuId: 'menu-3',
       category: 'Breakfast'
     },
-    rating: 4
   },
   {
     foodId: 'food-4',
@@ -78,7 +74,6 @@ const sampleFoods: Food[] = [
       menuId: 'menu-4',
       category: 'Sandwich'
     },
-    rating: 4
   },
   {
     foodId: 'food-5',
@@ -91,7 +86,6 @@ const sampleFoods: Food[] = [
       menuId: 'menu-5',
       category: 'Soup'
     },
-    rating: 5
   },
   {
     foodId: 'food-6',
@@ -104,7 +98,6 @@ const sampleFoods: Food[] = [
       menuId: 'menu-1',
       category: 'Main Dish'
     },
-    rating: 5
   },
   {
     foodId: 'food-7',
@@ -117,7 +110,6 @@ const sampleFoods: Food[] = [
       menuId: 'menu-1',
       category: 'Main Dish'
     },
-    rating: 4
   },
   {
     foodId: 'food-8',
@@ -130,7 +122,6 @@ const sampleFoods: Food[] = [
       menuId: 'menu-1',
       category: 'Main Dish'
     },
-    rating: 4
   },
   {
     foodId: 'food-9',
@@ -143,7 +134,6 @@ const sampleFoods: Food[] = [
       menuId: 'menu-1',
       category: 'Main Dish'
     },
-    rating: 5
   },
   {
     foodId: 'food-10',
@@ -156,7 +146,6 @@ const sampleFoods: Food[] = [
       menuId: 'menu-2',
       category: 'Dessert'
     },
-    rating: 5
   }
 ];
 
@@ -191,7 +180,7 @@ const FoodsSlideMenu: React.FC<FoodsSlideMenuProps> = ({
   return (
     <div className={`relative ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-1 items-center justify-between mb-6">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-800">
           {title}
         </h2>
@@ -200,14 +189,14 @@ const FoodsSlideMenu: React.FC<FoodsSlideMenuProps> = ({
         <div className="flex gap-2">
           <button 
             onClick={() => scroll('left')}
-            className="p-2 rounded-full bg-white shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-200"
+            className="p-2 rounded-full bg-white shadow-md hover:shadow-lg hover:scale-[1.2] transition-all duration-200 border border-gray-200"
             aria-label="Scroll left"
           >
             <ChevronLeft className="w-5 h-5 text-gray-600" />
           </button>
           <button 
             onClick={() => scroll('right')}
-            className="p-2 rounded-full bg-white shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-200"
+            className="p-2 rounded-full bg-white shadow-md hover:shadow-lg hover:scale-[1.2] transition-all duration-200 border border-gray-200"
             aria-label="Scroll right"
           >
             <ChevronRight className="w-5 h-5 text-gray-600" />

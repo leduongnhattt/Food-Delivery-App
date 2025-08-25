@@ -16,7 +16,6 @@ interface Food {
   description: string;
   imageUrl: string;
   menu: Menu;
-  rating?: number;
 }
 
 interface FoodCardProps {
@@ -27,15 +26,6 @@ interface FoodCardProps {
 const FoodCard: React.FC<FoodCardProps> = ({ food, onOrderNow }) => {
   const handleOrderClick = (): void => {
     onOrderNow(food.foodId);
-  };
-
-  const renderStars = (rating: number): React.JSX.Element[] => {
-    return Array.from({ length: 5 }, (_, index) => (
-      <Star 
-        key={index} 
-        className={`w-4 h-4 ${index < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
-      />
-    ));
   };
 
   return (
@@ -72,13 +62,6 @@ const FoodCard: React.FC<FoodCardProps> = ({ food, onOrderNow }) => {
           <span className="text-sm font-medium">
             {food.menu.category}
           </span>
-          {food.rating && (
-            <div className="flex items-center gap-1">
-              <div className="flex">
-                {renderStars(food.rating)}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Description */}
