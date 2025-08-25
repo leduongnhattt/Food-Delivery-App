@@ -1,3 +1,4 @@
+'use client'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { MenuItemCard } from '@/components/menu/menu-item-card'
@@ -83,9 +84,9 @@ export default function RestaurantPage({ params }: RestaurantPageProps) {
   const { addToCart } = useCart()
 
   // In a real app, fetch restaurant data based on params.id
-  if (params.id !== '1') {
-    notFound()
-  }
+  // if (params.id !== '2') {
+  //   notFound()
+  // }
 
   const handleAddToCart = (menuItem: MenuItem) => {
     addToCart(menuItem, 1)
