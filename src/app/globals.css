@@ -1,8 +1,15 @@
 @import "tailwindcss";
 
+<<<<<<< HEAD
 @tailwind utilities;
 
 
+=======
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+>>>>>>> 60447a0 (feat: FoodsSlideMenu and FoodCard components, modify global.css)
 /* Reset mặc định */
 @layer base {
   :root {

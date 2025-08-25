@@ -16,6 +16,10 @@ interface Food {
   description: string;
   imageUrl: string;
   menu: Menu;
+<<<<<<< HEAD
+=======
+  rating?: number;
+>>>>>>> 60447a0 (feat: FoodsSlideMenu and FoodCard components, modify global.css)
 }
 
 interface FoodsSlideMenuProps {
@@ -38,6 +42,10 @@ const sampleFoods: Food[] = [
       menuId: 'menu-1',
       category: 'Main Dish'
     },
+<<<<<<< HEAD
+=======
+    rating: 4
+>>>>>>> 60447a0 (feat: FoodsSlideMenu and FoodCard components, modify global.css)
   },
   {
     foodId: 'food-2',
@@ -50,6 +58,10 @@ const sampleFoods: Food[] = [
       menuId: 'menu-2',
       category: 'Dessert'
     },
+<<<<<<< HEAD
+=======
+    rating: 5
+>>>>>>> 60447a0 (feat: FoodsSlideMenu and FoodCard components, modify global.css)
   },
   {
     foodId: 'food-3',
@@ -62,6 +74,10 @@ const sampleFoods: Food[] = [
       menuId: 'menu-3',
       category: 'Breakfast'
     },
+<<<<<<< HEAD
+=======
+    rating: 4
+>>>>>>> 60447a0 (feat: FoodsSlideMenu and FoodCard components, modify global.css)
   },
   {
     foodId: 'food-4',
@@ -69,11 +85,19 @@ const sampleFoods: Food[] = [
     price: 3.00,
     stock: 6,
     description: 'Grilled sandwich with crispy bacon and melted cheese',
+<<<<<<< HEAD
     imageUrl: '',
+=======
+    imageUrl: 'https://images.unsplash.com/photo-1553979459-d2229ba7433a?w=300&h=200&fit=crop',
+>>>>>>> 60447a0 (feat: FoodsSlideMenu and FoodCard components, modify global.css)
     menu: {
       menuId: 'menu-4',
       category: 'Sandwich'
     },
+<<<<<<< HEAD
+=======
+    rating: 4
+>>>>>>> 60447a0 (feat: FoodsSlideMenu and FoodCard components, modify global.css)
   },
   {
     foodId: 'food-5',
@@ -86,6 +110,10 @@ const sampleFoods: Food[] = [
       menuId: 'menu-5',
       category: 'Soup'
     },
+<<<<<<< HEAD
+=======
+    rating: 5
+>>>>>>> 60447a0 (feat: FoodsSlideMenu and FoodCard components, modify global.css)
   },
   {
     foodId: 'food-6',
@@ -93,11 +121,19 @@ const sampleFoods: Food[] = [
     price: 8.50,
     stock: 0,
     description: 'Classic Italian pasta with eggs, cheese, and pancetta',
+<<<<<<< HEAD
     imageUrl: '',
+=======
+    imageUrl: 'https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5?w=300&h=200&fit=crop',
+>>>>>>> 60447a0 (feat: FoodsSlideMenu and FoodCard components, modify global.css)
     menu: {
       menuId: 'menu-1',
       category: 'Main Dish'
     },
+<<<<<<< HEAD
+=======
+    rating: 5
+>>>>>>> 60447a0 (feat: FoodsSlideMenu and FoodCard components, modify global.css)
   },
   {
     foodId: 'food-7',
@@ -110,6 +146,10 @@ const sampleFoods: Food[] = [
       menuId: 'menu-1',
       category: 'Main Dish'
     },
+<<<<<<< HEAD
+=======
+    rating: 4
+>>>>>>> 60447a0 (feat: FoodsSlideMenu and FoodCard components, modify global.css)
   },
   {
     foodId: 'food-8',
@@ -122,6 +162,10 @@ const sampleFoods: Food[] = [
       menuId: 'menu-1',
       category: 'Main Dish'
     },
+<<<<<<< HEAD
+=======
+    rating: 4
+>>>>>>> 60447a0 (feat: FoodsSlideMenu and FoodCard components, modify global.css)
   },
   {
     foodId: 'food-9',
@@ -134,6 +178,10 @@ const sampleFoods: Food[] = [
       menuId: 'menu-1',
       category: 'Main Dish'
     },
+<<<<<<< HEAD
+=======
+    rating: 5
+>>>>>>> 60447a0 (feat: FoodsSlideMenu and FoodCard components, modify global.css)
   },
   {
     foodId: 'food-10',
@@ -146,6 +194,10 @@ const sampleFoods: Food[] = [
       menuId: 'menu-2',
       category: 'Dessert'
     },
+<<<<<<< HEAD
+=======
+    rating: 5
+>>>>>>> 60447a0 (feat: FoodsSlideMenu and FoodCard components, modify global.css)
   }
 ];
 
@@ -180,7 +232,11 @@ const FoodsSlideMenu: React.FC<FoodsSlideMenuProps> = ({
   return (
     <div className={`relative ${className}`}>
       {/* Header */}
+<<<<<<< HEAD
       <div className="flex flex-1 items-center justify-between mb-6">
+=======
+      <div className="flex items-center justify-between mb-6">
+>>>>>>> 60447a0 (feat: FoodsSlideMenu and FoodCard components, modify global.css)
         <h2 className="text-2xl md:text-3xl font-bold text-gray-800">
           {title}
         </h2>
@@ -189,14 +245,22 @@ const FoodsSlideMenu: React.FC<FoodsSlideMenuProps> = ({
         <div className="flex gap-2">
           <button 
             onClick={() => scroll('left')}
+<<<<<<< HEAD
             className="p-2 rounded-full bg-white shadow-md hover:shadow-lg hover:scale-[1.2] transition-all duration-200 border border-gray-200"
+=======
+            className="p-2 rounded-full bg-white shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-200"
+>>>>>>> 60447a0 (feat: FoodsSlideMenu and FoodCard components, modify global.css)
             aria-label="Scroll left"
           >
             <ChevronLeft className="w-5 h-5 text-gray-600" />
           </button>
           <button 
             onClick={() => scroll('right')}
+<<<<<<< HEAD
             className="p-2 rounded-full bg-white shadow-md hover:shadow-lg hover:scale-[1.2] transition-all duration-200 border border-gray-200"
+=======
+            className="p-2 rounded-full bg-white shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-200"
+>>>>>>> 60447a0 (feat: FoodsSlideMenu and FoodCard components, modify global.css)
             aria-label="Scroll right"
           >
             <ChevronRight className="w-5 h-5 text-gray-600" />
