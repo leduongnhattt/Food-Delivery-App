@@ -3,10 +3,19 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { useCart } from '@/hooks/use-cart'
 import { CartSidebar } from '@/components/cart/cart-sidebar'
+import { useRouter } from 'next/navigation';
+
 
 export function Header() {
+  const router = useRouter();
   const { getTotalItems, openCart, closeCart, isOpen, cartItems, updateQuantity, removeFromCart } = useCart()
 
+  const handleSignInSite = () => {
+    router.push("/signin")
+  }
+  const handleSignUpSite = () => {
+    router.push("/signup")
+  }
   return (
     <>
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -43,10 +52,14 @@ export function Header() {
                 </span>
               )}
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm"
+              onClick={handleSignInSite}
+            >
               Sign In
             </Button>
-            <Button size="sm">
+            <Button variant="outline" size="sm"
+              onClick={handleSignUpSite}
+            >
               Sign Up
             </Button>
           </div>
