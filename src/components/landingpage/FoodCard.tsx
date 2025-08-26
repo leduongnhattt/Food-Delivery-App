@@ -32,12 +32,18 @@ const FoodCard: React.FC<FoodCardProps> = ({ food, onOrderNow }) => {
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden min-w-[280px] max-w-[300px] flex-shrink-0 hover:shadow-xl transition-shadow duration-300">
       {/* Food Image */}
       <div className="relative h-48 overflow-hidden">
-        <Image 
-          src={food.imageUrl}
-          alt={food.dishName}
-          fill
-          className="object-cover hover:scale-105 transition-transform duration-300"
-        />
+        {food.imageUrl ? (
+          <Image 
+            src={food.imageUrl}
+            alt={food.dishName}
+            fill
+            className="object-cover hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-200 rounded-lg flex items-center justify-center text-gray-500 text-xs" style={{ aspectRatio: "1 / 1" }}>
+            No Image
+          </div>
+        )}
         {food.stock <= 5 && food.stock > 0 && (
           <div className="absolute top-2 right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full">
         Only {food.stock} left

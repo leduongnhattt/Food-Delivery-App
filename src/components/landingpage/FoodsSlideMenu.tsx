@@ -69,7 +69,7 @@ const sampleFoods: Food[] = [
     price: 3.00,
     stock: 6,
     description: 'Grilled sandwich with crispy bacon and melted cheese',
-    imageUrl: 'https://images.unsplash.com/photo-1553979459-d2229ba7433a?w=300&h=200&fit=crop',
+    imageUrl: '',
     menu: {
       menuId: 'menu-4',
       category: 'Sandwich'
@@ -93,7 +93,7 @@ const sampleFoods: Food[] = [
     price: 8.50,
     stock: 0,
     description: 'Classic Italian pasta with eggs, cheese, and pancetta',
-    imageUrl: 'https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5?w=300&h=200&fit=crop',
+    imageUrl: '',
     menu: {
       menuId: 'menu-1',
       category: 'Main Dish'
