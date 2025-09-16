@@ -7,7 +7,7 @@ export async function GET() {
   }
 
   const googleClientId = process.env.GOOGLE_CLIENT_ID;
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
   const redirectUri = `${baseUrl}/api/auth/google/callback`;
 
   const googleOAuthURL = new URL('https://accounts.google.com/o/oauth2/v2/auth');

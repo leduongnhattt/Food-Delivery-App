@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Construct redirect URI with proper protocol
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
     const redirectUri = `${baseUrl}/api/auth/google/callback`;
 
     console.log('OAuth redirect URI:', redirectUri);
