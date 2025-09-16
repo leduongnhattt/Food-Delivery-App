@@ -85,7 +85,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { foodItems, totalAmount, deliveryAddress, deliveryNote } = body
+    type OrderItemInput = { foodId: string; quantity: number; subTotal: number }
+    const { foodItems, totalAmount, deliveryAddress, deliveryNote } = body as {
+      foodItems: OrderItemInput[];
+      totalAmount: number;
+      deliveryAddress: string;
+      deliveryNote?: string;
+    }
 
     const order = await prisma.order.create({
       data: {
@@ -95,7 +101,7 @@ export async function POST(request: NextRequest) {
         DeliveryNote: deliveryNote,
         Status: 'Pending',
         orderDetails: {
-          create: foodItems.map((item: any) => ({
+          create: foodItems.map((item: OrderItemInput) => ({
             FoodID: item.foodId,
             Quantity: item.quantity,
             SubTotal: item.subTotal,

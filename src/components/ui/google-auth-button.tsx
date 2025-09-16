@@ -46,16 +46,6 @@ export default function GoogleAuthButton({
         return;
       }
 
-      // Cleanup function
-      let checkClosed: NodeJS.Timeout;
-      let timeout: NodeJS.Timeout;
-      
-      const cleanup = () => {
-        if (checkClosed) clearInterval(checkClosed);
-        if (timeout) clearTimeout(timeout);
-        window.removeEventListener('message', messageHandler);
-      };
-      
       // Listen for messages from the popup
       const messageHandler = async (event: MessageEvent) => {
         // Make sure message is from our domain
@@ -98,15 +88,21 @@ export default function GoogleAuthButton({
         }
       };
       
+      function cleanup() {
+        window.removeEventListener('message', messageHandler);
+        clearInterval(checkClosed);
+        clearTimeout(timeout);
+      }
+
       // Check if popup is closed manually by user
-      checkClosed = setInterval(() => {
+      const checkClosed = window.setInterval(() => {
         if (popup.closed) {
           cleanup();
           setIsLoading(false);
         }
       }, 1000);
       
-      timeout = setTimeout(() => {
+      const timeout = window.setTimeout(() => {
         cleanup();
         setIsLoading(false);
         if (!popup.closed) {

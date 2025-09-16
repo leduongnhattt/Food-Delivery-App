@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { Prisma } from '@/generated/prisma'
 
 export async function GET(request: NextRequest) {
     try {
@@ -10,18 +11,18 @@ export async function GET(request: NextRequest) {
         const minRating = searchParams.get('minRating')
         const maxPrice = searchParams.get('maxPrice')
 
-        const where: any = {}
+        const where: Prisma.EnterpriseWhereInput = {}
 
         // Search by restaurant name or description
         if (query) {
             where.OR = [
-                { EnterpriseName: { contains: query, mode: 'insensitive' } },
-                { Description: { contains: query, mode: 'insensitive' } },
+                { EnterpriseName: { contains: query } },
+                { Description: { contains: query } },
             ]
         }
 
         // Build menu filters
-        const menuFilters: any = {};
+        const menuFilters: Prisma.MenuWhereInput = {};
 
         // Filter by category
         if (category) {

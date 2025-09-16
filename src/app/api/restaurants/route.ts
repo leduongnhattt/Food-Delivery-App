@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireEnterprise } from '@/lib/auth-helpers'
+import { Prisma } from '@/generated/prisma'
 
 export async function GET(request: NextRequest) {
     try {
@@ -12,12 +13,12 @@ export async function GET(request: NextRequest) {
         const isOpen = searchParams.get('isOpen')
         const minRating = searchParams.get('minRating')
 
-        const where: any = {}
+        const where: Prisma.EnterpriseWhereInput = {}
 
         if (search) {
             where.OR = [
-                { EnterpriseName: { contains: search, mode: 'insensitive' } },
-                { Description: { contains: search, mode: 'insensitive' } },
+                { EnterpriseName: { contains: search } },
+                { Description: { contains: search } },
             ]
         }
 

@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyToken } from '@/lib/auth'
 
+const ORDER_STATUS = {
+    Pending: 'Pending',
+    Completed: 'Completed',
+    Canceled: 'Canceled',
+} as const
+
 export async function GET(request: NextRequest) {
     try {
         const token = request.headers.get('authorization')?.replace('Bearer ', '')
@@ -33,23 +39,15 @@ export async function GET(request: NextRequest) {
 
         const order = await prisma.order.findFirst({
             where: {
-                id: orderId,
-                userId: decoded.userId
+                OrderID: orderId,
+                customer: { AccountID: decoded.userId || decoded.accountId }
             },
             include: {
-                items: {
+                orderDetails: {
                     include: {
-                        menuItem: true,
+                        food: true,
                     },
                 },
-                restaurant: {
-                    select: {
-                        id: true,
-                        name: true,
-                        address: true,
-                        phone: true,
-                    }
-                }
             }
         })
 
@@ -62,23 +60,17 @@ export async function GET(request: NextRequest) {
 
         // Calculate estimated delivery time based on order status
         let estimatedDeliveryTime = null
-        const orderTime = new Date(order.createdAt)
+        const orderTime = new Date(order.OrderDate)
 
-        switch (order.status) {
-            case 'pending':
+        switch (order.Status) {
+            case ORDER_STATUS.Pending:
                 estimatedDeliveryTime = new Date(orderTime.getTime() + 45 * 60000) // +45 minutes
                 break
-            case 'confirmed':
-                estimatedDeliveryTime = new Date(orderTime.getTime() + 40 * 60000) // +40 minutes
+            case ORDER_STATUS.Completed:
+                estimatedDeliveryTime = order.EstimatedDeliveryTime
                 break
-            case 'preparing':
-                estimatedDeliveryTime = new Date(orderTime.getTime() + 30 * 60000) // +30 minutes
-                break
-            case 'out_for_delivery':
-                estimatedDeliveryTime = new Date(orderTime.getTime() + 15 * 60000) // +15 minutes
-                break
-            case 'delivered':
-                estimatedDeliveryTime = order.updatedAt
+            case ORDER_STATUS.Canceled:
+                estimatedDeliveryTime = null
                 break
             default:
                 estimatedDeliveryTime = null
@@ -87,9 +79,9 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             order,
             estimatedDeliveryTime,
-            currentStatus: order.status,
-            orderTime: order.createdAt,
-            lastUpdated: order.updatedAt
+            currentStatus: order.Status,
+            orderTime: order.OrderDate,
+            lastUpdated: order.EstimatedDeliveryTime
         })
     } catch (error) {
         console.error('Order tracking error:', error)

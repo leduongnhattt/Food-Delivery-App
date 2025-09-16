@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { requireCustomer, createUnauthorizedResponse } from '@/lib/auth-helpers'
+import { verifyToken } from '@/lib/auth'
+import { requireCustomer } from '@/lib/auth-helpers'
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse> {
     try {
         // Require customer role
         const authResult = requireCustomer(request)
         if (!authResult.success) {
-            return createUnauthorizedResponse(authResult.error || 'Unauthorized')
+            return NextResponse.json(
+                { error: authResult.error || 'Unauthorized' },
+                { status: 401 }
+            )
         }
 
         const user = authResult.user!
@@ -74,7 +78,7 @@ export async function GET(request: NextRequest) {
     }
 }
 
-export async function PUT(request: NextRequest) {
+export async function PUT(request: NextRequest): Promise<NextResponse> {
     try {
         const token = request.headers.get('authorization')?.replace('Bearer ', '')
 
@@ -96,25 +100,27 @@ export async function PUT(request: NextRequest) {
         const body = await request.json()
         const { name, phone, address } = body
 
-        const user = await prisma.user.update({
-            where: { id: decoded.userId },
+        const accountId = decoded.userId || decoded.accountId
+
+        // Update customer profile by linked AccountID
+        const updated = await prisma.customer.update({
+            where: { AccountID: accountId! },
             data: {
-                name,
-                phone,
-                address,
+                FullName: name ?? undefined,
+                PhoneNumber: phone ?? undefined,
+                Address: address ?? undefined,
             },
             select: {
-                id: true,
-                email: true,
-                name: true,
-                phone: true,
-                address: true,
-                createdAt: true,
-                updatedAt: true,
+                CustomerID: true,
+                FullName: true,
+                PhoneNumber: true,
+                Address: true,
             }
         })
 
-        return NextResponse.json(user)
+        return NextResponse.json({
+            customer: updated
+        })
     } catch (error) {
         console.error('Update profile error:', error)
         return NextResponse.json(

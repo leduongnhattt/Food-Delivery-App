@@ -3,10 +3,10 @@ import { prisma } from '@/lib/db'
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = params
+        const { id } = await context.params
 
         const restaurant = await prisma.enterprise.findUnique({
             where: { EnterpriseID: id },
@@ -57,10 +57,10 @@ export async function GET(
 
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = params
+        const { id } = await context.params
         const body = await request.json()
         const {
             name,
@@ -97,10 +97,10 @@ export async function PUT(
 
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = params
+        const { id } = await context.params
 
         await prisma.enterprise.delete({
             where: { EnterpriseID: id }

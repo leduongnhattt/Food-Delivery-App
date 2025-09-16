@@ -75,7 +75,13 @@ export async function GET(request: NextRequest) {
 }
 
 // Helper function to generate HTML response that posts a message to the opener window
-function getHtmlResponse(messageData: any): NextResponse {
+type GoogleMessageData = {
+  type: 'GOOGLE_AUTH_SUCCESS' | 'GOOGLE_AUTH_ERROR' | string;
+  credential?: string;
+  error?: string;
+}
+
+function getHtmlResponse(messageData: GoogleMessageData): NextResponse {
   const html = `
     <!DOCTYPE html>
     <html>
