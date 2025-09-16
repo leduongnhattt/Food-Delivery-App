@@ -1,27 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
-import bcrypt from 'bcryptjs'
-import jwt from 'jsonwebtoken'
+import { loginSchema } from '@/schemas/auth'
+import { findAccountByUsername, verifyPassword, issueTokens } from '@/services/auth.service'
+
+function setRefreshCookie(res: NextResponse, token: string, expires: Date) {
+    res.cookies.set('refresh_token', token, {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        expires
+    })
+}
 
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json()
-        const { email, password } = body
+        const { username, password } = body
 
         // Validate required fields
-        if (!email || !password) {
+        if (!username || !password) {
             return NextResponse.json(
-                { error: 'Email and password are required' },
+                { error: 'Username and password are required' },
                 { status: 400 }
             )
         }
 
-        // Find user by email
-        const user = await prisma.user.findUnique({
-            where: { email }
-        })
+        // Find account by username
+        const account = await findAccountByUsername(username)
 
-        if (!user) {
+        if (!account) {
             return NextResponse.json(
                 { error: 'Invalid credentials' },
                 { status: 401 }
@@ -29,7 +35,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Check password
-        const isPasswordValid = await bcrypt.compare(password, user.password)
+        const isPasswordValid = await verifyPassword(password, account.PasswordHash)
 
         if (!isPasswordValid) {
             return NextResponse.json(
@@ -38,19 +44,29 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Generate JWT token
-        const token = jwt.sign(
-            { userId: user.id, email: user.email },
-            process.env.JWT_SECRET || 'your-secret-key',
-            { expiresIn: '7d' }
+        // Issue tokens
+        const { accessToken, refreshToken, expiredAt } = await issueTokens(
+            account.AccountID,
+            account.role?.RoleName || 'customer'
         )
 
-        // Return user data (without password)
-        const { password: _, ...userWithoutPassword } = user
-        return NextResponse.json({
-            user: userWithoutPassword,
-            token
+        // Create response
+        const response = NextResponse.json({
+            success: true,
+            user: {
+                id: account.AccountID,
+                username: account.Username,
+                email: account.Email,
+                role: account.role?.RoleName || 'customer',
+                status: account.Status
+            },
+            accessToken
         })
+
+        // Set refresh token cookie
+        setRefreshCookie(response, refreshToken, expiredAt)
+
+        return response
     } catch (error) {
         console.error('Login error:', error)
         return NextResponse.json(

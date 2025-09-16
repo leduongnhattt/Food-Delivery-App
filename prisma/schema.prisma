@@ -23,17 +23,22 @@ model Role {
 }
 
 model Account {
-  AccountID     String        @id @default(uuid()) @db.VarChar(36)
-  Email         String        @unique @db.VarChar(100)
-  Username      String        @unique @db.VarChar(255)
-  PasswordHash  String        @db.VarChar(255)
-  Avatar        String?       @db.VarChar(255)
-  RoleID        String        @db.VarChar(36)
-  Locale        String?       @db.VarChar(10)
-  Status        AccountStatus @default(Active)
-  CreatedAt     DateTime      @default(now())
-  UpdatedAt     DateTime?     @updatedAt
-  LastLogin     DateTime?
+  AccountID         String        @id @default(uuid()) @db.VarChar(36)
+  Email             String        @unique @db.VarChar(100)
+  Username          String        @unique @db.VarChar(255)
+  PasswordHash      String?       @db.VarChar(255)
+  Avatar            String?       @db.VarChar(255)
+  RoleID            String        @db.VarChar(36)
+  Locale            String?       @db.VarChar(10)
+  Status            AccountStatus @default(Active)
+  CreatedAt         DateTime      @default(now())
+  UpdatedAt         DateTime?     @updatedAt
+  LastLogin         DateTime?
+  
+  // OAuth fields
+  Provider          String?       @db.VarChar(50)  // 'email' or 'google'
+  ProviderAccountId String?       @db.VarChar(255) // Google user ID
+  EmailVerified     Boolean       @default(false)
 
   role        Role        @relation(fields: [RoleID], references: [RoleID], onDelete: Restrict)
   customer    Customer?
@@ -47,6 +52,9 @@ model Account {
   @@index([Locale])
   @@index([Status])
   @@index([CreatedAt])
+  @@index([Provider])
+  @@index([ProviderAccountId])
+  @@index([EmailVerified])
   @@map("ACCOUNT")
 }
 

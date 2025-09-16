@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { requireEnterprise } from '@/lib/auth-helpers'
 
 export async function GET(request: NextRequest) {
     try {
@@ -15,57 +16,85 @@ export async function GET(request: NextRequest) {
 
         if (search) {
             where.OR = [
-                { name: { contains: search, mode: 'insensitive' } },
-                { description: { contains: search, mode: 'insensitive' } },
+                { EnterpriseName: { contains: search, mode: 'insensitive' } },
+                { Description: { contains: search, mode: 'insensitive' } },
             ]
         }
 
         if (category) {
-            where.menuItems = {
+            where.menus = {
                 some: {
-                    category: category
+                    menuFoods: {
+                        some: {
+                            food: {
+                                foodCategory: {
+                                    CategoryName: category
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
 
         if (isOpen !== null) {
-            where.isOpen = isOpen === 'true'
+            where.IsActive = isOpen === 'true'
         }
 
         if (minRating) {
-            where.rating = {
-                gte: parseFloat(minRating)
+            where.reviews = {
+                some: {
+                    Rating: {
+                        gte: parseInt(minRating)
+                    }
+                }
             }
         }
 
         const skip = (page - 1) * limit
 
         const [restaurants, total] = await Promise.all([
-            prisma.restaurant.findMany({
+            prisma.enterprise.findMany({
                 where,
                 include: {
-                    menuItems: {
-                        where: { isAvailable: true },
-                        select: {
-                            id: true,
-                            name: true,
-                            price: true,
-                            category: true,
+                    menus: {
+                        include: {
+                            menuFoods: {
+                                where: {
+                                    food: {
+                                        IsAvailable: true
+                                    }
+                                },
+                                include: {
+                                    food: {
+                                        select: {
+                                            FoodID: true,
+                                            DishName: true,
+                                            Price: true,
+                                            foodCategory: {
+                                                select: {
+                                                    CategoryName: true
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     },
                     _count: {
                         select: {
-                            menuItems: true,
+                            menus: true,
                         }
                     }
                 },
                 orderBy: {
-                    rating: 'desc'
+                    CreatedAt: 'desc'
                 },
                 skip,
                 take: limit,
             }),
-            prisma.restaurant.count({ where })
+            prisma.enterprise.count({ where })
         ])
 
         return NextResponse.json({
@@ -88,17 +117,25 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
+        // Require enterprise authentication
+        const authResult = requireEnterprise(request)
+        if (!authResult.success) {
+            return NextResponse.json(
+                { error: authResult.error },
+                { status: 401 }
+            )
+        }
+
+        const user = authResult.user!
         const body = await request.json()
         const {
             name,
             description,
             address,
             phone,
-            image,
-            rating,
-            deliveryTime,
-            minimumOrder,
-            isOpen = true
+            openHours,
+            closeHours,
+            isActive = true
         } = body
 
         if (!name || !description || !address || !phone) {
@@ -108,17 +145,16 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        const restaurant = await prisma.restaurant.create({
+        const restaurant = await prisma.enterprise.create({
             data: {
-                name,
-                description,
-                address,
-                phone,
-                image: image || '',
-                rating: rating || 0,
-                deliveryTime: deliveryTime || '30-45 min',
-                minimumOrder: minimumOrder || 0,
-                isOpen,
+                EnterpriseName: name,
+                Description: description,
+                Address: address,
+                PhoneNumber: phone,
+                OpenHours: openHours || '08:00',
+                CloseHours: closeHours || '22:00',
+                IsActive: isActive,
+                AccountID: user.id,
             }
         })
 

@@ -1,0 +1,52 @@
+{
+  "common": {
+    "username": "Tên đăng nhập",
+    "usernamePlaceholder": "Nhập tên đăng nhập của bạn",
+    "password": "Mật khẩu",
+    "passwordPlaceholder": "Nhập mật khẩu của bạn",
+    "signIn": "Đăng nhập!",
+    "signUp": "Đăng ký!",
+    "continueWithGoogle": "Tiếp tục với Google",
+    "errors": {
+      "unexpectedError": "Đã xảy ra lỗi không mong muốn"
+    }
+  },
+  "signup": {
+    "title": "ĐĂNG KÝ",
+    "email": "Email",
+    "emailPlaceholder": "Nhập email của bạn",
+    "confirmPassword": "Xác nhận mật khẩu",
+    "confirmPasswordPlaceholder": "Nhập lại mật khẩu của bạn",
+    "signUpButton": "ĐĂNG KÝ",
+    "signingUp": "Đang đăng ký...",
+    "alreadyHaveAccount": "Đã có tài khoản?",
+    "errors": {
+      "registrationFailed": "Đăng ký thất bại",
+      "passwordMismatch": "Mật khẩu không khớp. Vui lòng thử lại.",
+      "passwordTooShort": "Mật khẩu phải có ít nhất 8 ký tự."
+    },
+    "success": {
+      "title": "Đăng ký thành công!",
+      "registrationComplete": "Tài khoản của bạn đã được tạo thành công. Bây giờ bạn có thể đăng nhập với thông tin của mình.",
+      "continue": "Tiếp tục đăng nhập"
+    }
+  },
+  "signin": {
+    "title": "CHÀO MỪNG TRỞ LẠI",
+    "forgotPassword": "Quên mật khẩu?",
+    "signInButton": "ĐĂNG NHẬP",
+    "signingIn": "Đang đăng nhập...",
+    "dontHaveAccount": "Chưa có tài khoản?",
+    "errors": {
+      "loginFailed": "Đăng nhập thất bại",
+      "googleAuthFailed": "Xác thực Google thất bại",
+      "accessDenied": "Truy cập bị từ chối. Đăng nhập này chỉ dành cho khách hàng.",
+      "popupBlocked": "Popup bị chặn. Vui lòng cho phép popup cho trang web này.",
+      "timeout": "Hết thời gian xác thực. Vui lòng thử lại.",
+      "usernameExists": "Tên đăng nhập đã tồn tại. Vui lòng liên hệ hỗ trợ."
+    },
+    "success": {
+      "registrationComplete": "Đăng ký thành công! Vui lòng đăng nhập với thông tin của bạn."
+    }
+  }
+}
