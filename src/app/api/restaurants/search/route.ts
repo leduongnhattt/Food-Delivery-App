@@ -15,65 +15,115 @@ export async function GET(request: NextRequest) {
         // Search by restaurant name or description
         if (query) {
             where.OR = [
-                { name: { contains: query, mode: 'insensitive' } },
-                { description: { contains: query, mode: 'insensitive' } },
+                { EnterpriseName: { contains: query, mode: 'insensitive' } },
+                { Description: { contains: query, mode: 'insensitive' } },
             ]
         }
 
+        // Build menu filters
+        const menuFilters: any = {};
+
         // Filter by category
         if (category) {
-            where.menuItems = {
+            menuFilters.menuFoods = {
                 some: {
-                    category: category
+                    food: {
+                        foodCategory: {
+                            CategoryName: category
+                        }
+                    }
                 }
-            }
-        }
-
-        // Filter by open status
-        if (isOpen !== null) {
-            where.isOpen = isOpen === 'true'
-        }
-
-        // Filter by minimum rating
-        if (minRating) {
-            where.rating = {
-                gte: parseFloat(minRating)
-            }
+            };
         }
 
         // Filter by maximum price
         if (maxPrice) {
-            where.menuItems = {
-                ...where.menuItems,
+            const priceFilter = {
+                food: {
+                    Price: {
+                        lte: parseFloat(maxPrice)
+                    }
+                }
+            };
+
+            if (menuFilters.menuFoods) {
+                // Combine with existing category filter
+                menuFilters.menuFoods.some = {
+                    ...menuFilters.menuFoods.some,
+                    ...priceFilter
+                };
+            } else {
+                menuFilters.menuFoods = {
+                    some: priceFilter
+                };
+            }
+        }
+
+        // Apply menu filters if any
+        if (Object.keys(menuFilters).length > 0) {
+            where.menus = {
+                some: menuFilters
+            };
+        }
+
+        // Filter by active status
+        if (isOpen !== null) {
+            where.IsActive = isOpen === 'true'
+        }
+
+        // Filter by minimum rating (through reviews)
+        if (minRating) {
+            where.reviews = {
                 some: {
-                    ...where.menuItems?.some,
-                    price: {
-                        lte: parseInt(maxPrice)
+                    Rating: {
+                        gte: parseInt(minRating)
                     }
                 }
             }
         }
 
-        const restaurants = await prisma.restaurant.findMany({
+        const restaurants = await prisma.enterprise.findMany({
             where,
             include: {
-                menuItems: {
-                    where: { isAvailable: true },
+                menus: {
+                    include: {
+                        menuFoods: {
+                            where: {
+                                food: {
+                                    IsAvailable: true
+                                }
+                            },
+                            include: {
+                                food: {
+                                    select: {
+                                        FoodID: true,
+                                        DishName: true,
+                                        Price: true,
+                                        foodCategory: {
+                                            select: {
+                                                CategoryName: true
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                reviews: {
                     select: {
-                        id: true,
-                        name: true,
-                        price: true,
-                        category: true,
+                        Rating: true
                     }
                 },
                 _count: {
                     select: {
-                        menuItems: true,
+                        menus: true,
+                        reviews: true
                     }
                 }
             },
             orderBy: {
-                rating: 'desc'
+                CreatedAt: 'desc'
             }
         })
 

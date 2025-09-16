@@ -1,0 +1,52 @@
+{
+  "common": {
+    "username": "Username",
+    "usernamePlaceholder": "Enter your username",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "signIn": "Sign In!",
+    "signUp": "Sign Up!",
+    "continueWithGoogle": "Continue with Google",
+    "errors": {
+      "unexpectedError": "An unexpected error occurred"
+    }
+  },
+  "signup": {
+    "title": "SIGN UP",
+    "email": "Email",
+    "emailPlaceholder": "Enter your email",
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordPlaceholder": "Enter your confirm password",
+    "signUpButton": "SIGN UP",
+    "signingUp": "Signing Up...",
+    "alreadyHaveAccount": "Already Have an account?",
+    "errors": {
+      "registrationFailed": "Registration failed",
+      "passwordMismatch": "Passwords do not match. Please try again.",
+      "passwordTooShort": "Password must be at least 8 characters long."
+    },
+    "success": {
+      "title": "Registration Successful!",
+      "registrationComplete": "Your account has been created successfully. You can now sign in with your credentials.",
+      "continue": "Continue to Sign In"
+    }
+  },
+  "signin": {
+    "title": "WELCOME BACK",
+    "forgotPassword": "Forgot password?",
+    "signInButton": "SIGN IN",
+    "signingIn": "Signing In...",
+    "dontHaveAccount": "Don't have an account?",
+    "errors": {
+      "loginFailed": "Login failed",
+      "googleAuthFailed": "Google authentication failed",
+      "accessDenied": "Access denied. This login is for customers only.",
+      "popupBlocked": "Popup was blocked. Please allow popups for this site.",
+      "timeout": "Authentication timeout. Please try again.",
+      "usernameExists": "Username already exists. Please contact support."
+    },
+    "success": {
+      "registrationComplete": "Registration successful! Please sign in with your credentials."
+    }
+  }
+}

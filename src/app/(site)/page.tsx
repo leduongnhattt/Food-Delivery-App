@@ -1,34 +1,40 @@
+'use client'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import HeroSection from '@/components/landingpage/HeroSection'
+import FoodsSlideMenu from '@/components/landingpage/FoodsSlideMenu'
+import RestaurantMenu from '@/components/landingpage/RestaurantMenu'
 
 export default function HomePage() {
+  const handleSearch = (query: string) => {
+    console.log('Searching for:', query);
+    // Implement search logic here
+  };
+  const handleOrderFood = (foodId: string) => {
+    console.log('Ordering:', foodId);
+    // Implement order logic
+  };
   return (
     <div>
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-orange-500 to-red-500 text-white py-20">
-        <div className="container mx-auto text-center">
-          <h1 className="text-5xl font-bold mb-6">
-            Delicious Food Delivered to Your Doorstep
-          </h1>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
-            Order from the best restaurants in Ho Chi Minh City. Fast delivery, 
-            great prices, and amazing food - all at your fingertips.
-          </p>
-          <div className="flex gap-4 justify-center">
-            <Link href="/restaurants">
-              <Button size="lg" variant="secondary">
-                Browse Restaurants
-              </Button>
-            </Link>
-            <Link href="/about">
-              <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-orange-500">
-                Learn More
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
+      <HeroSection 
+        onSearch={handleSearch}
+        placeholder="Enter your favorite food..."
+      />
+
+      <FoodsSlideMenu
+        title="Popular Foods"
+        onOrderFood={handleOrderFood}
+        foods={[]}
+        className='my-8 mr-4 ml-4'
+        // You can pass foods data and onOrderFood handler as props
+      />
+
+      <RestaurantMenu
+        className='my-8 mr-4 ml-4'
+        // You can pass restaurants 
+      />
 
       {/* Features Section */}
       <section className="py-16 bg-gray-50">
