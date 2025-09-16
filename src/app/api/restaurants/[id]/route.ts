@@ -8,17 +8,31 @@ export async function GET(
     try {
         const { id } = params
 
-        const restaurant = await prisma.restaurant.findUnique({
-            where: { id },
+        const restaurant = await prisma.enterprise.findUnique({
+            where: { EnterpriseID: id },
             include: {
-                menuItems: {
-                    where: { isAvailable: true },
-                    orderBy: { category: 'asc' }
+                menus: {
+                    include: {
+                        menuFoods: {
+                            where: {
+                                food: {
+                                    IsAvailable: true
+                                }
+                            },
+                            include: {
+                                food: {
+                                    include: {
+                                        foodCategory: true
+                                    }
+                                }
+                            }
+                        }
+                    }
                 },
                 _count: {
                     select: {
-                        menuItems: true,
-                        orders: true
+                        menus: true,
+                        reviews: true
                     }
                 }
             }
@@ -53,25 +67,21 @@ export async function PUT(
             description,
             address,
             phone,
-            image,
-            rating,
-            deliveryTime,
-            minimumOrder,
+            openHours,
+            closeHours,
             isOpen
         } = body
 
-        const restaurant = await prisma.restaurant.update({
-            where: { id },
+        const restaurant = await prisma.enterprise.update({
+            where: { EnterpriseID: id },
             data: {
-                name,
-                description,
-                address,
-                phone,
-                image,
-                rating,
-                deliveryTime,
-                minimumOrder,
-                isOpen,
+                EnterpriseName: name,
+                Description: description,
+                Address: address,
+                PhoneNumber: phone,
+                OpenHours: openHours,
+                CloseHours: closeHours,
+                IsActive: isOpen,
             }
         })
 
@@ -92,8 +102,8 @@ export async function DELETE(
     try {
         const { id } = params
 
-        await prisma.restaurant.delete({
-            where: { id }
+        await prisma.enterprise.delete({
+            where: { EnterpriseID: id }
         })
 
         return NextResponse.json(
