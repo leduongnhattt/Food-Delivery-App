@@ -47,6 +47,7 @@ model Account {
   support     Support[]
   authTokens  AuthToken[]
   driver      DeliveryDriver?
+  passwordResetTokens PasswordResetToken[]
 
   @@index([RoleID])
   @@index([Locale])
@@ -97,6 +98,7 @@ model Enterprise {
   menus     Menu[]
   reviews   Review[]
   carts     Cart[]
+  foods     Food[]
 
   @@index([AccountID])
   @@index([EnterpriseName])
@@ -145,21 +147,25 @@ model Food {
   Description    String? @db.VarChar(255)
   ImageURL       String? @db.VarChar(255)
   FoodCategoryID String  @db.VarChar(36)
+  EnterpriseID   String  @db.VarChar(36)
   IsAvailable    Boolean @default(true)
   CreatedAt      DateTime @default(now())
   UpdatedAt      DateTime? @updatedAt
 
   foodCategory FoodCategory @relation(fields: [FoodCategoryID], references: [CategoryID], onDelete: Restrict)
+  enterprise   Enterprise  @relation(fields: [EnterpriseID], references: [EnterpriseID], onDelete: Restrict)
   menuFoods    MenuFood[]
   orderDetails OrderDetail[]
   cartItems    CartItem[]
 
   @@index([FoodCategoryID])
+  @@index([EnterpriseID])
   @@index([Price])
   @@index([DishName])
   
   // Keep only the covering composite for common filters
   @@index([FoodCategoryID, IsAvailable, Price])
+  @@index([EnterpriseID, IsAvailable])
   @@fulltext([DishName, Description])
   @@map("FOOD")
 }
@@ -412,6 +418,23 @@ model AuthToken {
   @@map("AUTH_TOKEN")
 }
 
+model PasswordResetToken {
+  TokenID     String   @id @default(uuid()) @db.VarChar(36)
+  AccountID   String   @db.VarChar(36)
+  ResetCode   String   @db.VarChar(6)
+  ExpiresAt   DateTime
+  IsUsed      Boolean  @default(false)
+  CreatedAt   DateTime @default(now())
+
+  account Account @relation(fields: [AccountID], references: [AccountID], onDelete: Cascade)
+
+  @@index([AccountID])
+  @@index([ResetCode])
+  @@index([ExpiresAt])
+  @@index([IsUsed])
+  @@map("PASSWORD_RESET_TOKEN")
+}
+
 enum AccountStatus {
   Active
   Inactive
@@ -443,8 +466,14 @@ enum VoucherStatus {
 
 enum OrderStatus {
   Pending
+  Confirmed
+  Preparing
+  ReadyForPickup
+  OutForDelivery
+  Delivered
   Completed
-  Canceled
+  Cancelled
+  Refunded
 }
 
 enum PaymentStatus {

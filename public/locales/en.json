@@ -46,7 +46,66 @@
       "usernameExists": "Username already exists. Please contact support."
     },
     "success": {
-      "registrationComplete": "Registration successful! Please sign in with your credentials."
+      "registrationComplete": "Registration successful! Please sign in with your credentials.",
+      "passwordResetSuccess": "Password has been reset successfully. Please sign in with your new password."
+    }
+  },
+  "forgotPassword": {
+    "title": "Reset Your Password",
+    "subtitle": "Enter your email address and we'll send you a reset code",
+    "emailLabel": "Email Address",
+    "emailPlaceholder": "Enter your email address",
+    "sendCodeButton": "Send Reset Code",
+    "sendingCode": "Sending Reset Code...",
+    "rememberPassword": "Remember your password?",
+    "signInLink": "Sign In",
+    "errors": {
+      "invalidEmail": "Please enter a valid email address",
+      "sendCodeFailed": "Failed to send reset code",
+      "unexpectedError": "An unexpected error occurred. Please try again."
+    },
+    "success": {
+      "codeSent": "If an account with this email exists, a reset code has been sent."
+    }
+  },
+  "verifyCode": {
+    "title": "Verify Your Identity",
+    "subtitle": "We sent a 6-digit code to",
+    "codeLabel": "Reset Code",
+    "codePlaceholder": "000000",
+    "codeHint": "Enter the 6-digit code sent to your email",
+    "verifyButton": "Verify Code",
+    "verifying": "Verifying Code...",
+    "didntReceive": "Didn't receive the code?",
+    "resendCode": "Resend Code",
+    "rememberPassword": "Remember your password?",
+    "signInLink": "Sign In",
+    "errors": {
+      "invalidCode": "Please enter the 6-digit code",
+      "invalidOrExpired": "Invalid or expired reset code",
+      "unexpectedError": "An unexpected error occurred. Please try again."
+    }
+  },
+  "resetPassword": {
+    "title": "Create New Password",
+    "subtitle": "Create a new password for",
+    "newPasswordLabel": "New Password",
+    "newPasswordPlaceholder": "Enter new password",
+    "confirmPasswordLabel": "Confirm New Password",
+    "confirmPasswordPlaceholder": "Confirm new password",
+    "resetButton": "Reset Password",
+    "resetting": "Resetting Password...",
+    "rememberPassword": "Remember your password?",
+    "signInLink": "Sign In",
+    "errors": {
+      "passwordTooShort": "Password must be at least 6 characters long",
+      "passwordsMismatch": "Passwords do not match",
+      "resetFailed": "Failed to reset password",
+      "unexpectedError": "An unexpected error occurred. Please try again."
+    },
+    "success": {
+      "passwordReset": "Password has been reset successfully. Please log in with your new password.",
+      "redirecting": "Redirecting to sign in page..."
     }
   }
 }
