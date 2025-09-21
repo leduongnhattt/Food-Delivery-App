@@ -5,7 +5,7 @@ import { verifyToken } from '@/lib/auth'
 const ORDER_STATUS = {
     Pending: 'Pending',
     Completed: 'Completed',
-    Canceled: 'Canceled',
+    Cancelled: 'Cancelled',
 } as const
 
 export async function GET(request: NextRequest) {
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
             case ORDER_STATUS.Completed:
                 estimatedDeliveryTime = order.EstimatedDeliveryTime
                 break
-            case ORDER_STATUS.Canceled:
+            case ORDER_STATUS.Cancelled:
                 estimatedDeliveryTime = null
                 break
             default:
