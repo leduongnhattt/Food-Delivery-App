@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ErrorDisplay } from "@/components/ui/error-display";
@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "@/lib/i18n";
 
-export default function VerifyCodePage() {
+function VerifyCodeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t, isLoading: i18nLoading } = useTranslations();
@@ -337,5 +337,13 @@ export default function VerifyCodePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function VerifyCodePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <VerifyCodeContent />
+    </Suspense>
   );
 }

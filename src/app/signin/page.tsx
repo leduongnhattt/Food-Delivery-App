@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ErrorDisplay } from "@/components/ui/error-display";
@@ -12,7 +12,7 @@ import { usePasswordToggle } from "@/hooks/use-password-toggle";
 import { useTranslations } from "@/lib/i18n";
 import GoogleAuthButton from "@/components/ui/google-auth-button";
 
-export default function SigninPage() {
+function SigninContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t, isLoading: i18nLoading } = useTranslations();
@@ -248,5 +248,13 @@ export default function SigninPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SigninPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SigninContent />
+    </Suspense>
   );
 }

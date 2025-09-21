@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ErrorDisplay } from "@/components/ui/error-display";
@@ -9,7 +9,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { usePasswordToggle } from "@/hooks/use-password-toggle";
 import { useTranslations } from "@/lib/i18n";
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t, isLoading: i18nLoading } = useTranslations();
@@ -229,5 +229,13 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }
