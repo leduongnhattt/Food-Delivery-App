@@ -14,13 +14,14 @@
     "db:migrate:reset": "prisma migrate reset",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-     "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",
     "@prisma/client": "^6.14.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/nodemailer": "^6.4.19",
     "bcryptjs": "^3.0.2",
     "clsx": "^2.1.1",
     "google-auth-library": "^10.3.0",
@@ -29,6 +30,7 @@
     "mysql2": "^3.11.4",
     "next": "15.5.0",
     "next-auth": "^4.24.11",
+    "nodemailer": "^6.10.1",
     "prisma": "^6.14.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",

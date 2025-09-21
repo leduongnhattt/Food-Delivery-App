@@ -150,6 +150,7 @@ export async function POST(request: NextRequest) {
                 Price: parseFloat(price),
                 ImageURL: image || null,
                 FoodCategoryID: existingCategory.CategoryID,
+                EnterpriseID: restaurantId,
                 IsAvailable: Boolean(isAvailable),
             },
             include: {
