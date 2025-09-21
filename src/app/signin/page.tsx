@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ErrorDisplay } from "@/components/ui/error-display";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { loginUser } from "@/lib/client-auth";
 import { setAuthToken } from "@/lib/auth-helpers";
 import { usePasswordToggle } from "@/hooks/use-password-toggle";
@@ -14,14 +14,26 @@ import GoogleAuthButton from "@/components/ui/google-auth-button";
 
 export default function SigninPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { t, isLoading: i18nLoading } = useTranslations();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  // const [successMessage, setSuccessMessage] = useState(""); // REMOVED
   const [isLoading, setIsLoading] = useState(false);
   
   // Password toggle hook
   const passwordToggle = usePasswordToggle();
+
+  // Check for password reset success message - REMOVED
+  // useEffect(() => {
+  //   const message = searchParams.get('message');
+  //   if (message === 'password-reset-success') {
+  //     setSuccessMessage(t("signin.success.passwordResetSuccess"));
+  //     // Clear the success message after 5 seconds
+  //     setTimeout(() => setSuccessMessage(""), 5000);
+  //   }
+  // }, [searchParams, t]);
 
   // Clear error when user starts typing
   const handleFieldFocus = () => {
@@ -179,6 +191,13 @@ export default function SigninPage() {
                   onClose={() => setError("")}
                   className="mb-4"
                 />
+
+                {/* Success message - REMOVED */}
+                {/* {successMessage && (
+                  <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm mb-4">
+                    {successMessage}
+                  </div>
+                )} */}
                 
                 {/* Actions */}
                 <div className="space-y-2">

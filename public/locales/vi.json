@@ -46,7 +46,66 @@
       "usernameExists": "Tên đăng nhập đã tồn tại. Vui lòng liên hệ hỗ trợ."
     },
     "success": {
-      "registrationComplete": "Đăng ký thành công! Vui lòng đăng nhập với thông tin của bạn."
+      "registrationComplete": "Đăng ký thành công! Vui lòng đăng nhập với thông tin của bạn.",
+      "passwordResetSuccess": "Mật khẩu đã được đặt lại thành công. Vui lòng đăng nhập với mật khẩu mới."
+    }
+  },
+  "forgotPassword": {
+    "title": "Đặt lại mật khẩu",
+    "subtitle": "Nhập địa chỉ email của bạn và chúng tôi sẽ gửi mã đặt lại",
+    "emailLabel": "Địa chỉ Email",
+    "emailPlaceholder": "Nhập địa chỉ email của bạn",
+    "sendCodeButton": "Gửi mã đặt lại",
+    "sendingCode": "Đang gửi mã đặt lại...",
+    "rememberPassword": "Nhớ mật khẩu?",
+    "signInLink": "Đăng nhập",
+    "errors": {
+      "invalidEmail": "Vui lòng nhập địa chỉ email hợp lệ",
+      "sendCodeFailed": "Gửi mã đặt lại thất bại",
+      "unexpectedError": "Đã xảy ra lỗi không mong muốn. Vui lòng thử lại."
+    },
+    "success": {
+      "codeSent": "Nếu tài khoản với email này tồn tại, mã đặt lại đã được gửi."
+    }
+  },
+  "verifyCode": {
+    "title": "Xác thực danh tính",
+    "subtitle": "Chúng tôi đã gửi mã 6 chữ số đến",
+    "codeLabel": "Mã đặt lại",
+    "codePlaceholder": "000000",
+    "codeHint": "Nhập mã 6 chữ số được gửi đến email của bạn",
+    "verifyButton": "Xác thực mã",
+    "verifying": "Đang xác thực mã...",
+    "didntReceive": "Không nhận được mã?",
+    "resendCode": "Gửi lại mã",
+    "rememberPassword": "Nhớ mật khẩu?",
+    "signInLink": "Đăng nhập",
+    "errors": {
+      "invalidCode": "Vui lòng nhập mã 6 chữ số",
+      "invalidOrExpired": "Mã đặt lại không hợp lệ hoặc đã hết hạn",
+      "unexpectedError": "Đã xảy ra lỗi không mong muốn. Vui lòng thử lại."
+    }
+  },
+  "resetPassword": {
+    "title": "Tạo mật khẩu mới",
+    "subtitle": "Tạo mật khẩu mới cho",
+    "newPasswordLabel": "Mật khẩu mới",
+    "newPasswordPlaceholder": "Nhập mật khẩu mới",
+    "confirmPasswordLabel": "Xác nhận mật khẩu mới",
+    "confirmPasswordPlaceholder": "Xác nhận mật khẩu mới",
+    "resetButton": "Đặt lại mật khẩu",
+    "resetting": "Đang đặt lại mật khẩu...",
+    "rememberPassword": "Nhớ mật khẩu?",
+    "signInLink": "Đăng nhập",
+    "errors": {
+      "passwordTooShort": "Mật khẩu phải có ít nhất 6 ký tự",
+      "passwordsMismatch": "Mật khẩu không khớp",
+      "resetFailed": "Đặt lại mật khẩu thất bại",
+      "unexpectedError": "Đã xảy ra lỗi không mong muốn. Vui lòng thử lại."
+    },
+    "success": {
+      "passwordReset": "Mật khẩu đã được đặt lại thành công. Vui lòng đăng nhập với mật khẩu mới.",
+      "redirecting": "Đang chuyển hướng đến trang đăng nhập..."
     }
   }
 }
