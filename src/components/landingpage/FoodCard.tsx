@@ -16,10 +16,7 @@ interface Food {
   description: string;
   imageUrl: string;
   menu: Menu;
-<<<<<<< HEAD
-=======
   rating?: number;
->>>>>>> 60447a0 (feat: FoodsSlideMenu and FoodCard components, modify global.css)
 }
 
 interface FoodCardProps {
@@ -32,8 +29,6 @@ const FoodCard: React.FC<FoodCardProps> = ({ food, onOrderNow }) => {
     onOrderNow(food.foodId);
   };
 
-<<<<<<< HEAD
-=======
   const renderStars = (rating: number): React.JSX.Element[] => {
     return Array.from({ length: 5 }, (_, index) => (
       <Star 
@@ -43,32 +38,16 @@ const FoodCard: React.FC<FoodCardProps> = ({ food, onOrderNow }) => {
     ));
   };
 
->>>>>>> 60447a0 (feat: FoodsSlideMenu and FoodCard components, modify global.css)
   return (
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden min-w-[280px] max-w-[300px] flex-shrink-0 hover:shadow-xl transition-shadow duration-300">
       {/* Food Image */}
       <div className="relative h-48 overflow-hidden">
-<<<<<<< HEAD
-        {food.imageUrl ? (
-          <Image 
-            src={food.imageUrl}
-            alt={food.dishName}
-            fill
-            className="object-cover hover:scale-105 transition-transform duration-300"
-          />
-        ) : (
-          <div className="w-full h-full bg-gray-200 rounded-lg flex items-center justify-center text-gray-500 text-xs" style={{ aspectRatio: "1 / 1" }}>
-            No Image
-          </div>
-        )}
-=======
         <Image 
           src={food.imageUrl}
           alt={food.dishName}
           fill
           className="object-cover hover:scale-105 transition-transform duration-300"
         />
->>>>>>> 60447a0 (feat: FoodsSlideMenu and FoodCard components, modify global.css)
         {food.stock <= 5 && food.stock > 0 && (
           <div className="absolute top-2 right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full">
         Only {food.stock} left
@@ -93,8 +72,6 @@ const FoodCard: React.FC<FoodCardProps> = ({ food, onOrderNow }) => {
           <span className="text-sm font-medium">
             {food.menu.category}
           </span>
-<<<<<<< HEAD
-=======
           {food.rating && (
             <div className="flex items-center gap-1">
               <div className="flex">
@@ -102,7 +79,6 @@ const FoodCard: React.FC<FoodCardProps> = ({ food, onOrderNow }) => {
               </div>
             </div>
           )}
->>>>>>> 60447a0 (feat: FoodsSlideMenu and FoodCard components, modify global.css)
         </div>
 
         {/* Description */}
