@@ -68,111 +68,111 @@ function getRoutePermissions(pathname: string): string[] {
 }
 
 export function middleware(request: NextRequest) {
-    const { pathname } = request.nextUrl
+    // const { pathname } = request.nextUrl
 
-    // Skip middleware for static files and API routes that don't need auth
-    if (
-        pathname.startsWith('/_next') ||
-        pathname.startsWith('/favicon') ||
-        pathname.startsWith('/images') ||
-        pathname.startsWith('/public') ||
-        pathname.includes('.')
-    ) {
-        return NextResponse.next()
-    }
+    // // Skip middleware for static files and API routes that don't need auth
+    // if (
+    //     pathname.startsWith('/_next') ||
+    //     pathname.startsWith('/favicon') ||
+    //     pathname.startsWith('/images') ||
+    //     pathname.startsWith('/public') ||
+    //     pathname.includes('.')
+    // ) {
+    //     return NextResponse.next()
+    // }
 
-    // Check if user is trying to access auth pages while already authenticated
-    if (pathname === '/signin' || pathname === '/signup') {
-        // Only check refresh_token cookie, not localStorage token
-        const refreshToken = request.cookies.get('refresh_token')?.value
-        if (refreshToken) {
-            try {
-                const decoded = verifyToken(refreshToken)
-                if (decoded) {
-                    // User is already authenticated, redirect to home
-                    return NextResponse.redirect(new URL('/', request.url))
-                }
-            } catch (error) {
-                // Token is invalid, clear the cookie and allow access to auth pages
-                const response = NextResponse.next()
-                response.cookies.delete('refresh_token')
-                return response
-            }
-        }
-        return NextResponse.next()
-    }
+    // // Check if user is trying to access auth pages while already authenticated
+    // if (pathname === '/signin' || pathname === '/signup') {
+    //     // Only check refresh_token cookie, not localStorage token
+    //     const refreshToken = request.cookies.get('refresh_token')?.value
+    //     if (refreshToken) {
+    //         try {
+    //             const decoded = verifyToken(refreshToken)
+    //             if (decoded) {
+    //                 // User is already authenticated, redirect to home
+    //                 return NextResponse.redirect(new URL('/', request.url))
+    //             }
+    //         } catch (error) {
+    //             // Token is invalid, clear the cookie and allow access to auth pages
+    //             const response = NextResponse.next()
+    //             response.cookies.delete('refresh_token')
+    //             return response
+    //         }
+    //     }
+    //     return NextResponse.next()
+    // }
 
-    // Get required roles for this route
-    const requiredRoles = getRoutePermissions(pathname)
+    // // Get required roles for this route
+    // const requiredRoles = getRoutePermissions(pathname)
 
-    // If no roles required, allow access
-    if (requiredRoles.length === 0) {
-        return NextResponse.next()
-    }
+    // // If no roles required, allow access
+    // if (requiredRoles.length === 0) {
+    //     return NextResponse.next()
+    // }
 
-    // Get token from Authorization header or refresh_token cookie
-    const authHeader = request.headers.get('authorization')
-    const token = authHeader?.replace('Bearer ', '') || request.cookies.get('refresh_token')?.value
+    // // Get token from Authorization header or refresh_token cookie
+    // const authHeader = request.headers.get('authorization')
+    // const token = authHeader?.replace('Bearer ', '') || request.cookies.get('refresh_token')?.value
 
-    if (!token) {
-        // For API routes, return 401
-        if (pathname.startsWith('/api/')) {
-            return NextResponse.json(
-                { error: 'Authentication required' },
-                { status: 401 }
-            )
-        }
+    // if (!token) {
+    //     // For API routes, return 401
+    //     if (pathname.startsWith('/api/')) {
+    //         return NextResponse.json(
+    //             { error: 'Authentication required' },
+    //             { status: 401 }
+    //         )
+    //     }
 
-        // For page routes, redirect to appropriate login page
-        if (pathname.startsWith('/admin')) {
-            return NextResponse.redirect(new URL('/admin/login', request.url))
-        } else if (pathname.startsWith('/enterprise')) {
-            return NextResponse.redirect(new URL('/enterprise/login', request.url))
-        } else {
-            return NextResponse.redirect(new URL('/signin', request.url))
-        }
-    }
+    //     // For page routes, redirect to appropriate login page
+    //     if (pathname.startsWith('/admin')) {
+    //         return NextResponse.redirect(new URL('/admin/login', request.url))
+    //     } else if (pathname.startsWith('/enterprise')) {
+    //         return NextResponse.redirect(new URL('/enterprise/login', request.url))
+    //     } else {
+    //         return NextResponse.redirect(new URL('/signin', request.url))
+    //     }
+    // }
 
-    // Verify token and get user role
-    const userRole = getUserRole(token)
+    // // Verify token and get user role
+    // const userRole = getUserRole(token)
 
-    if (!userRole) {
-        // Clear invalid token cookie
-        const response = pathname.startsWith('/api/')
-            ? NextResponse.json(
-                { error: 'Invalid or expired token' },
-                { status: 401 }
-            )
-            : pathname.startsWith('/admin')
-                ? NextResponse.redirect(new URL('/admin/login', request.url))
-                : pathname.startsWith('/enterprise')
-                    ? NextResponse.redirect(new URL('/enterprise/login', request.url))
-                    : NextResponse.redirect(new URL('/signin', request.url))
+    // if (!userRole) {
+    //     // Clear invalid token cookie
+    //     const response = pathname.startsWith('/api/')
+    //         ? NextResponse.json(
+    //             { error: 'Invalid or expired token' },
+    //             { status: 401 }
+    //         )
+    //         : pathname.startsWith('/admin')
+    //             ? NextResponse.redirect(new URL('/admin/login', request.url))
+    //             : pathname.startsWith('/enterprise')
+    //                 ? NextResponse.redirect(new URL('/enterprise/login', request.url))
+    //                 : NextResponse.redirect(new URL('/signin', request.url))
 
-        response.cookies.delete('refresh_token')
-        return response
-    }
+    //     response.cookies.delete('refresh_token')
+    //     return response
+    // }
 
-    // Check if user has required role
-    if (!hasRequiredRole(userRole, requiredRoles)) {
-        // User doesn't have required role
-        return NextResponse.json(
-            { error: 'Access denied. Insufficient permissions.' },
-            { status: 403 }
-        )
-    }
+    // // Check if user has required role
+    // if (!hasRequiredRole(userRole, requiredRoles)) {
+    //     // User doesn't have required role
+    //     return NextResponse.json(
+    //         { error: 'Access denied. Insufficient permissions.' },
+    //         { status: 403 }
+    //     )
+    // }
 
-    // Add user info to headers for API routes
-    const response = NextResponse.next()
-    response.headers.set('x-user-role', userRole)
+    // // Add user info to headers for API routes
+    // const response = NextResponse.next()
+    // response.headers.set('x-user-role', userRole)
 
-    // Get user ID from token
-    const decoded = verifyToken(token)
-    if (decoded) {
-        response.headers.set('x-user-id', decoded.accountId || decoded.userId || '')
-    }
+    // // Get user ID from token
+    // const decoded = verifyToken(token)
+    // if (decoded) {
+    //     response.headers.set('x-user-id', decoded.accountId || decoded.userId || '')
+    // }
 
-    return response
+    // return response
 }
 
 export const config = {

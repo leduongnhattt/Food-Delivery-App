@@ -4,8 +4,8 @@ import React from "react"
 import AdminLayoutClient from "./AdminLayoutClient"
 
 export const metadata: Metadata = {
-  title: "Trang quản trị",
-  description: "Khu vực quản trị hệ thống",
+  title: "Admin - HanalaFood",
+  description: "Admin Dashboard for HanalaFood",
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

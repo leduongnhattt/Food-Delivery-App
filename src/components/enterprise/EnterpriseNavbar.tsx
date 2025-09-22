@@ -10,10 +10,12 @@ import {
   Package,
   TicketPercent,
   BarChart3,
+  Menu
 } from "lucide-react";
 
 const menuItems = [
   { href: "/enterprise/dashboard", label: "Dashboard", icon: BarChart3 },
+  { href: "/enterprise/menu", label: "Menu", icon: Menu },
   { href: "/enterprise/product", label: "Product", icon: Package },
   { href: "/enterprise/add-product", label: "Add Product", icon: SquarePlus },
   { href: "/enterprise/discount", label: "Discount", icon: TicketPercent },
