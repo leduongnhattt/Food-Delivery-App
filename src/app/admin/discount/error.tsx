@@ -9,5 +9,5 @@ export default function DashboardError({
   error: Error;
   reset: () => void;
 }) {
-  return <ErrorFallback error={error} reset={reset} title="Lỗi rồi bạn ơi!!!" />;
+  return <ErrorFallback error={error} reset={reset} title="System Error" />;
 }
