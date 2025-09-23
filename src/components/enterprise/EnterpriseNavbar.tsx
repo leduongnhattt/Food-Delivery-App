@@ -12,6 +12,8 @@ import {
   BarChart3,
   Menu
 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { log } from "console";
 
 const menuItems = [
   { href: "/enterprise/dashboard", label: "Dashboard", icon: BarChart3 },
@@ -24,14 +26,16 @@ const menuItems = [
 
 export default function EnterpriseNavbar() {
   const pathname = usePathname();
+  const { user, logout } = useAuth()
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
 
   const handleLogout = () => {
-    localStorage.removeItem("verified");
-    window.location.href = "/auth/admin";
+    logout();
   };
+
+  const firsrTwoLetters = user?.username ? user.username.slice(0, 2).toUpperCase() : "";
 
   return (
     <>
@@ -46,10 +50,10 @@ export default function EnterpriseNavbar() {
           {/* Enterprise Info */}
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-medium">MR</span>
+              <span className="text-white text-sm font-medium">{ firsrTwoLetters }</span>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-800">Mint Roy</p>
+              <p className="text-sm font-medium text-gray-800">{ user?.username }</p>
               <p className="text-xs text-gray-500">Enterprise</p>
             </div>
           </div>
