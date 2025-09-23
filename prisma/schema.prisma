@@ -86,6 +86,7 @@ model Enterprise {
   Address         String   @db.VarChar(255)
   Description     String?  @db.VarChar(255)
   PhoneNumber     String   @unique @db.VarChar(15)
+  Logo            String?  @db.VarChar(255)
   OpenHours       String   @db.VarChar(10)
   CloseHours      String   @db.VarChar(10)
   IsActive        Boolean  @default(true)
@@ -110,7 +111,6 @@ model Enterprise {
 model Admin {
   AdminID           String  @id @default(uuid()) @db.VarChar(36)
   AccountID         String  @unique @db.VarChar(36)
-  Permission        Json?
   CanManageSystem   Boolean @default(false)
   CanViewReport     Boolean @default(false)
   RoleLevel         Int     @default(1)
