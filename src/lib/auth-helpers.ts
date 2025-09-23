@@ -313,7 +313,7 @@ export function requireEnterprise(request: NextRequest): AuthResult {
         return authResult;
     }
 
-    if (authResult.user?.role !== 'enterprise') {
+    if (authResult.user?.role !== 'Enterprise') {
         return {
             success: false,
             error: 'Enterprise access required'
