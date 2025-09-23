@@ -29,7 +29,7 @@ class ApiClient {
         const url = `${this.baseURL}${endpoint}`
         
         // Get token from localStorage for authenticated requests
-        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+        const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
         
         const config: RequestInit = {
             headers: {
