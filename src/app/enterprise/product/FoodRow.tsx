@@ -2,6 +2,7 @@ import React from "react";
 import { Edit, Trash2 } from "lucide-react";
 import { Food } from "./FoodList";
 import Image from "next/image";
+import { Button } from "@/components/ui/button";
 
 export interface FoodRowProps {
   food: Food;
@@ -28,16 +29,17 @@ const FoodRow: React.FC<FoodRowProps> = ({ food, onEdit, onDelete }) => {
       <div className="col-span-1">
         {food.ImageURL ? (
           <Image
-          fill
-          src={food.ImageURL}
-          alt={food.DishName}
-          className="w-12 h-12 object-cover rounded-lg"
+            width={48}
+            height={48}
+            src={food.ImageURL}
+            alt={food.DishName}
+            className="w-12 h-12 object-cover"
           />
         ) : (
-            <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400">
-              <span>No Image</span>
-            </div>
-        ) }
+          <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400">
+            <span>No Image</span>
+          </div>
+        )}
       </div>
 
       {/* Food Name */}
@@ -81,23 +83,23 @@ const FoodRow: React.FC<FoodRowProps> = ({ food, onEdit, onDelete }) => {
 
       {/* Actions */}
       <div className="col-span-2">
-        <div className="flex items-center space-x-2">
+        <div className="inline-flex items-center border rounded-md overflow-hidden">
           {onEdit && (
             <button
               onClick={handleEdit}
-              className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+              className="p-2 bg-white text-blue-500 hover:bg-blue-50 hover:text-blue-600 transition-colors"
               title="Edit food item"
             >
-              <Edit size={16} />
+              <Edit size={18} />
             </button>
           )}
           {onDelete && (
             <button
               onClick={handleDelete}
-              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+              className="p-2 bg-white text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors border-l border-gray-300"
               title="Delete food item"
             >
-              <Trash2 size={16} />
+              <Trash2 size={18} />
             </button>
           )}
         </div>

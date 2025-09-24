@@ -9,50 +9,63 @@ export async function GET(request: NextRequest) {
   }
 
   const user = authResult.user!;
+  const { searchParams } = new URL(request.url);
+  const include = searchParams.get("include"); // "menus" | "foods" | null
+
   try {
-    const enterpriseProfile = await prisma.enterprise.findUnique({
-      where: { AccountID: user.id },
-      select: {
-        EnterpriseID: true,
-        EnterpriseName: true,
-        Address: true,
-        PhoneNumber: true,
-        Description: true,
-        Logo: true,
-        OpenHours: true,
-        CloseHours: true,
-        account: {
-          select: {
-            Email: true,
-          },
-        },
-        menus: {
-          select: {
-            MenuID: true,
-            MenuName: true,
-            Description: true,
-          },
-          orderBy: { MenuName: "asc" },
-        },
-        foods: {
-          select: {
-            FoodID: true,
-            DishName: true,
-            Description: true,
-            Price: true,
-            ImageURL: true,
-            Stock: true,
-            foodCategory: { select: { CategoryName: true } },
-          },
+    const baseSelect = {
+      EnterpriseID: true,
+      EnterpriseName: true,
+      Address: true,
+      PhoneNumber: true,
+      Description: true,
+      Logo: true,
+      OpenHours: true,
+      CloseHours: true,
+      account: {
+        select: {
+          Email: true,
         },
       },
+    };
+
+    let select: any = { ...baseSelect };
+
+    if (include === "menus") {
+      select.menus = {
+        select: {
+          MenuID: true,
+          MenuName: true,
+          Description: true,
+        },
+        orderBy: { MenuName: "asc" },
+      };
+    } else if (include === "foods") {
+      select.foods = {
+        select: {
+          FoodID: true,
+          DishName: true,
+          Description: true,
+          Price: true,
+          ImageURL: true,
+          Stock: true,
+          foodCategory: { select: { CategoryName: true } },
+        },
+      };
+    }
+
+    const enterpriseProfile = await prisma.enterprise.findUnique({
+      where: { AccountID: user.id },
+      select,
     });
+
     if (!enterpriseProfile) {
       return NextResponse.json(
         { error: "Enterprise profile not found" },
         { status: 404 }
       );
     }
+
     return NextResponse.json({ enterprise: enterpriseProfile });
   } catch (error) {
     console.error("Error fetching enterprise profile:", error);

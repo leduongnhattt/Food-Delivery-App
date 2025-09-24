@@ -14,6 +14,20 @@ export interface Food {
   };
 }
 
+// dummy data for testing
+const dummyFoods: Food[] = [
+  {
+    FoodID: "1",
+    DishName: "Spaghetti Carbonara",
+    Description:
+      "Classic Italian pasta dish with eggs, cheese, pancetta, and pepper.",
+    Price: 12.99,
+    ImageURL: "/images/enterprise/enterprise_1758618572622.jpg",
+    Stock: 20,
+    foodCategory: { CategoryName: "Pasta" },
+  },
+];
+
 export interface FoodListProps {
   foods: Food[];
   onEdit?: (foodId: string) => void;
@@ -21,6 +35,7 @@ export interface FoodListProps {
 }
 
 const FoodList: React.FC<FoodListProps> = ({ foods, onEdit, onDelete }) => {
+  foods = foods.length === 0 ? dummyFoods : foods; // Use dummy data if foods is empty
   return (
     <div className="bg-white rounded-lg shadow">
       {/* Header */}

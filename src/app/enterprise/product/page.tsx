@@ -10,7 +10,7 @@ export default function AdminDashboardPage() {
     async function fetchEnterpriseData() {
       try {
         const { enterprise } = await apiClient.get<{ enterprise: any }>(
-                  "/enterprise/profile"
+                  "/enterprise/profile?include=foods"
                 );
         setEnterpriseData(enterprise);
       } catch (error) {
@@ -26,12 +26,13 @@ export default function AdminDashboardPage() {
   const handleDelete = (foodId: string) => {
     console.log("Delete food:", foodId);
   };
+  console.log(entepriseData);
 
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">Product</h1>
       <FoodList
-        foods={entepriseData?.Foods ?? []}
+        foods={entepriseData?.foods ?? []}
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
