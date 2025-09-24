@@ -75,20 +75,17 @@ export default function EnterpriseNavbar() {
                       flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-200 group relative
                       ${
                         active
-                          ? "bg-blue-50 text-blue-600"
+                          ? "bg-blue-500 text-white"
                           : "hover:bg-gray-50 text-gray-600 hover:text-gray-800"
                       }
                     `}
                   >
                     <Icon
                       className={`w-5 h-5 transition-transform duration-200 ${
-                        active ? "text-blue-600" : "text-gray-500"
+                        active ? "text-white" : "text-gray-500"
                       }`}
                     />
                     <span className="font-medium text-sm">{label}</span>
-                    {active && (
-                      <div className="absolute right-0 top-0 bottom-0 w-1 bg-blue-600 rounded-l-full" />
-                    )}
                   </Link>
                 </li>
               );
