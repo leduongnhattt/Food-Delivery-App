@@ -26,7 +26,6 @@ export default function AdminDashboardPage() {
   const handleDelete = (foodId: string) => {
     console.log("Delete food:", foodId);
   };
-  console.log(entepriseData);
 
   return (
     <div>
