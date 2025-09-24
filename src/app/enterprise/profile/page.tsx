@@ -29,6 +29,7 @@ export default function EnterpriseProfile() {
         const { enterprise } = await apiClient.get<{ enterprise: any }>(
           "/enterprise/profile"
         );
+        console.log(enterprise);
 
         setEnterpriseName(enterprise.EnterpriseName || "");
         setEmail(enterprise.account.Email || "");
