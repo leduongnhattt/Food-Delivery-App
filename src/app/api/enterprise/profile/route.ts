@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
 
   const user = authResult.user!;
   const { searchParams } = new URL(request.url);
-  const include = searchParams.get("include"); // "menus" | "foods" | null
+  const include = searchParams.get("include"); // "menus" | "foods" | "vouchers"
 
   try {
     const baseSelect = {
@@ -50,6 +50,17 @@ export async function GET(request: NextRequest) {
           Stock: true,
           foodCategory: { select: { CategoryName: true } },
         },
+      };
+    } else if (include === "vouchers") {
+      select.vouchers = {
+        select: {
+          VoucherID: true,
+          Code: true,
+          DiscountPercent: true,
+          ExpiryDate: true,
+          Status: true,
+        },
+        orderBy: { ExpiryDate: "asc" },
       };
     }
 

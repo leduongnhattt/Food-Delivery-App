@@ -48,7 +48,6 @@ export default function AdminDashboardPage() {
     }
   };
 
-  console.log(entepriseData);
   return (
     <div>
       <div className="flex items-center justify-between">
