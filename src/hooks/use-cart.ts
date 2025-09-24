@@ -1,85 +1,143 @@
-'use client'
-import { useState, useEffect } from 'react'
-import { CartItem, MenuItem } from '@/types'
+"use client"
+import React, { useEffect, useMemo, useRef } from 'react'
+import { CartItem, MenuItem } from '@/types/models'
 
-export function useCart() {
-    const [cartItems, setCartItems] = useState<CartItem[]>([])
-    const [isOpen, setIsOpen] = useState(false)
+type CartContextType = {
+    cartItems: CartItem[]
+    isOpen: boolean
+    activeRestaurantId: string | null
+    addToCart: (menuItem: MenuItem, quantity?: number, specialInstructions?: string) => void
+    updateQuantity: (menuItemId: string, quantity: number) => void
+    removeFromCart: (menuItemId: string) => void
+    clearCart: () => void
+    getTotalItems: () => number
+    getTotalAmount: () => number
+    openCart: () => void
+    closeCart: () => void
+}
 
-    // Load cart from localStorage on mount
+const CartContext = React.createContext<CartContextType | undefined>(undefined)
+
+export function CartProvider({ children }: { children: React.ReactNode }) {
+    const [cartItems, setCartItems] = React.useState<CartItem[]>([])
+    const [isOpen, setIsOpen] = React.useState(false)
+    const [activeRestaurantId, setActiveRestaurantId] = React.useState<string | null>(null)
+    const isMounted = useRef(false)
+
+    // Load from localStorage once
     useEffect(() => {
-        const savedCart = localStorage.getItem('cart')
-        if (savedCart) {
-            try {
-                setCartItems(JSON.parse(savedCart))
-            } catch (error) {
-                console.error('Error loading cart from localStorage:', error)
+        try {
+            const saved = localStorage.getItem('cart')
+            if (saved) {
+                setCartItems(JSON.parse(saved))
             }
+            const savedRid = localStorage.getItem('cartRestaurantId')
+            if (savedRid) setActiveRestaurantId(savedRid)
+        } catch (e) {
+            console.error('Error loading cart from localStorage:', e)
+        }
+        isMounted.current = true
+    }, [])
+
+    // Persist changes only (avoid self-dispatch loops)
+    useEffect(() => {
+        if (!isMounted.current) return
+        localStorage.setItem('cart', JSON.stringify(cartItems))
+        if (cartItems.length === 0) {
+            localStorage.removeItem('cartRestaurantId')
+            setActiveRestaurantId(null)
+        } else if (activeRestaurantId) {
+            localStorage.setItem('cartRestaurantId', activeRestaurantId)
+        }
+    }, [cartItems, activeRestaurantId])
+
+    // Listen to cross-tab updates (storage event doesn't fire in the same tab)
+    useEffect(() => {
+        const onStorage = (e: StorageEvent) => {
+            if (e.key !== 'cart') return
+            try {
+                if (typeof e.newValue === 'string') {
+                    setCartItems(JSON.parse(e.newValue))
+                }
+            } catch { }
+        }
+        window.addEventListener('storage', onStorage)
+        return () => {
+            window.removeEventListener('storage', onStorage)
         }
     }, [])
 
-    // Save cart to localStorage whenever it changes
-    useEffect(() => {
-        localStorage.setItem('cart', JSON.stringify(cartItems))
-    }, [cartItems])
-
     const addToCart = (menuItem: MenuItem, quantity: number = 1, specialInstructions?: string) => {
-        setCartItems(prevItems => {
-            const existingItem = prevItems.find(item => item.menuItem.id === menuItem.id)
-
-            if (existingItem) {
-                return prevItems.map(item =>
-                    item.menuItem.id === menuItem.id
-                        ? { ...item, quantity: item.quantity + quantity }
-                        : item
-                )
-            } else {
-                return [...prevItems, { menuItem, quantity, specialInstructions }]
+        // Ensure restaurant name is set
+        const enhancedMenuItem = {
+            ...menuItem,
+            restaurantName: menuItem.restaurantName || 
+                           (menuItem as any).restaurant?.name || 
+                           (menuItem as any).enterprise?.EnterpriseName ||
+                           `Restaurant #${menuItem.restaurantId.substring(0, 6)}`
+        };
+        
+        // Enforce single-restaurant cart
+        setCartItems(prev => {
+            if (activeRestaurantId && activeRestaurantId !== enhancedMenuItem.restaurantId) {
+                // Switch restaurant: start a new cart for that restaurant
+                setActiveRestaurantId(enhancedMenuItem.restaurantId)
+                setIsOpen(true)
+                return [{ menuItem: enhancedMenuItem, quantity, specialInstructions }]
             }
+            if (!activeRestaurantId) {
+                setActiveRestaurantId(enhancedMenuItem.restaurantId)
+            }
+            const existing = prev.find(i => i.menuItem.id === enhancedMenuItem.id)
+            if (existing) {
+                return prev.map(i => i.menuItem.id === enhancedMenuItem.id ? { ...i, quantity: i.quantity + quantity } : i)
+            }
+            return [...prev, { menuItem: enhancedMenuItem, quantity, specialInstructions }]
         })
     }
 
     const updateQuantity = (menuItemId: string, quantity: number) => {
-        setCartItems(prevItems =>
-            prevItems.map(item =>
-                item.menuItem.id === menuItemId
-                    ? { ...item, quantity }
-                    : item
-            )
-        )
+        setCartItems(prev => prev.map(i => i.menuItem.id === menuItemId ? { ...i, quantity } : i))
     }
 
     const removeFromCart = (menuItemId: string) => {
-        setCartItems(prevItems =>
-            prevItems.filter(item => item.menuItem.id !== menuItemId)
-        )
+        setCartItems(prev => {
+            const next = prev.filter(i => i.menuItem.id !== menuItemId)
+            if (next.length === 0) setActiveRestaurantId(null)
+            return next
+        })
     }
 
     const clearCart = () => {
         setCartItems([])
+        setActiveRestaurantId(null)
     }
 
-    const getTotalItems = () => {
-        return cartItems.reduce((sum, item) => sum + item.quantity, 0)
-    }
+    // Count unique items (not total quantities)
+    const getTotalItems = () => cartItems.length
+    const getTotalAmount = () => cartItems.reduce((s, i) => s + i.menuItem.price * i.quantity, 0)
 
-    const getTotalAmount = () => {
-        return cartItems.reduce((sum, item) => sum + item.menuItem.price * item.quantity, 0)
-    }
-
-    const openCart = () => setIsOpen(true)
-    const closeCart = () => setIsOpen(false)
-
-    return {
+    const value: CartContextType = useMemo(() => ({
         cartItems,
         isOpen,
+        activeRestaurantId,
         addToCart,
         updateQuantity,
         removeFromCart,
         clearCart,
         getTotalItems,
         getTotalAmount,
-        openCart,
-        closeCart,
+        openCart: () => setIsOpen(true),
+        closeCart: () => setIsOpen(false),
+    }), [cartItems, isOpen, activeRestaurantId])
+
+    return React.createElement(CartContext.Provider, { value }, children)
+}
+
+export function useCart(): CartContextType {
+    const ctx = React.useContext(CartContext)
+    if (!ctx) {
+        throw new Error('useCart must be used within CartProvider')
     }
+    return ctx
 }

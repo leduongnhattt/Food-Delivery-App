@@ -133,7 +133,7 @@ export function Header() {
         onCheckout={() => {
           closeCart()
           // Navigate to checkout page
-          window.location.href = '/checkout'
+          router.push('/checkout')
         }}
       />
     </>

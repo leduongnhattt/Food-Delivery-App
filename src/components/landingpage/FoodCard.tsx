@@ -1,22 +1,6 @@
 import React from 'react';
-import { Star } from 'lucide-react';
 import Image from 'next/image';
-
-// Unified nested JSON structure
-interface Menu {
-  menuId: string;
-  category: string;
-}
-
-interface Food {
-  foodId: string;
-  dishName: string;
-  price: number;
-  stock: number;
-  description: string;
-  imageUrl: string;
-  menu: Menu;
-}
+import { Food } from '@/types/models';
 
 interface FoodCardProps {
   food: Food;

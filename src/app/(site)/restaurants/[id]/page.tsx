@@ -1,155 +1,131 @@
 'use client'
-import Image from 'next/image'
-import { notFound } from 'next/navigation'
-import { MenuItemCard } from '@/components/menu/menu-item-card'
+import React from 'react'
+import { notFound, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { formatPrice } from '@/lib/utils'
-import { Restaurant, MenuItem } from '@/types'
+import { Restaurant, MenuItem } from '@/types/models'
 import { useCart } from '@/hooks/use-cart'
+import { useRestaurantDetail, useRestaurantCategoryNav } from '@/hooks/use-restaurant-detail'
+import { ShoppingCart } from 'lucide-react'
+import { RestaurantService } from '@/services/restaurant.service'
+import { FoodService } from '@/services/food.service'
+import EnterpriseHero from '@/components/restaurant/EnterpriseHero'
+import EnterpriseInfoCard from '@/components/restaurant/EnterpriseInfoCard'
+import CategoryPills from '@/components/restaurant/CategoryPills'
+import RestaurantMenuSection from '@/components/restaurant/RestaurantMenuSection'
 
-// Mock data - replace with actual API call
-const mockRestaurant: Restaurant = {
-  id: '1',
-  name: 'Pizza Palace',
-  description: 'Authentic Italian pizza with fresh ingredients and traditional recipes. We use only the finest ingredients imported directly from Italy to create the most delicious pizzas you\'ve ever tasted.',
-  address: '123 Main St, Ho Chi Minh City',
-  phone: '+84 123 456 789',
-  image: '/api/placeholder/800/400',
-  rating: 4.5,
-  deliveryTime: '30-45 min',
-  minimumOrder: 50000,
-  isOpen: true,
-  createdAt: new Date(),
-  updatedAt: new Date(),
-}
-
-const mockMenuItems: MenuItem[] = [
-  {
-    id: '1',
-    name: 'Margherita Pizza',
-    description: 'Classic tomato sauce with mozzarella cheese and fresh basil',
-    price: 150000,
-    image: '/api/placeholder/300/200',
-    category: 'Pizza',
-    isAvailable: true,
-    restaurantId: '1',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '2',
-    name: 'Pepperoni Pizza',
-    description: 'Spicy pepperoni with melted cheese and tomato sauce',
-    price: 180000,
-    image: '/api/placeholder/300/200',
-    category: 'Pizza',
-    isAvailable: true,
-    restaurantId: '1',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '3',
-    name: 'Garlic Bread',
-    description: 'Fresh baked bread with garlic butter and herbs',
-    price: 45000,
-    image: '/api/placeholder/300/200',
-    category: 'Appetizer',
-    isAvailable: true,
-    restaurantId: '1',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '4',
-    name: 'Caesar Salad',
-    description: 'Fresh romaine lettuce with Caesar dressing and croutons',
-    price: 80000,
-    image: '/api/placeholder/300/200',
-    category: 'Salad',
-    isAvailable: false,
-    restaurantId: '1',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-]
 
 interface RestaurantPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export default function RestaurantPage({ params }: RestaurantPageProps) {
-  const { addToCart } = useCart()
+  const router = useRouter()
+  const { addToCart, cartItems, getTotalItems, getTotalAmount, openCart, isOpen } = useCart()
 
-  // In a real app, fetch restaurant data based on params.id
-  // if (params.id !== '2') {
-  //   notFound()
-  // }
+  // Unwrap params using React.use()
+  const { id } = React.use(params)
 
-  const handleAddToCart = (menuItem: MenuItem) => {
-    addToCart(menuItem, 1)
+  const { restaurant, items: menuItems, loading, error } = useRestaurantDetail(id)
+  const { activeCategory, categoryRefs, categories: catList, handleSelectCategory, getCount } = useRestaurantCategoryNav(menuItems)
+
+  if (!loading && !restaurant) {
+    notFound()
   }
 
-  const categories = [...new Set(mockMenuItems.map(item => item.category))]
+  const handleAddToCart = (menuItem: MenuItem) => {
+    const enriched: MenuItem = {
+      ...menuItem,
+      restaurantName: menuItem.restaurantName || restaurant!.name,
+      restaurantId: menuItem.restaurantId || restaurant!.id,
+    }
+    addToCart(enriched, 1)
+  }
+
+  const handleViewCart = () => {
+    openCart()
+  }
+
+  const categories = catList
+  const cartItemCount = getTotalItems()
+  const cartTotal = getTotalAmount()
+
+  if (loading || !restaurant) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>
+    )
+  }
 
   return (
-    <div className="container py-8">
-      {/* Restaurant Header */}
-      <div className="mb-8">
-        <div className="relative h-64 w-full rounded-lg overflow-hidden mb-6">
-          <Image
-            src={mockRestaurant.image}
-            alt={mockRestaurant.name}
-            fill
-            className="object-cover"
+    <div className="min-h-screen bg-gray-50">
+      <EnterpriseHero 
+        name={restaurant!.name}
+        description={restaurant!.description}
+        avatarUrl={restaurant!.avatarUrl}
+        rating={restaurant!.rating}
+        isOpen={restaurant!.isOpen}
+      />
+
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        <EnterpriseInfoCard 
+          isOpen={restaurant!.isOpen}
+          rating={restaurant!.rating}
+          phone={restaurant!.phone}
+          address={restaurant!.address}
+          deliveryTime={restaurant!.deliveryTime}
+          description={restaurant!.description}
+        />
+
+        {/* Menu Section */}
+        <div className="mb-8">
+          <CategoryPills 
+            categories={categories}
+            active={activeCategory}
+            getCount={(c) => menuItems.filter(i => i.category === c).length}
+            onSelect={handleSelectCategory}
           />
-        </div>
-        
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">{mockRestaurant.name}</h1>
-            <p className="text-muted-foreground mb-2">{mockRestaurant.description}</p>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>⭐ {mockRestaurant.rating}</span>
-              <span>🕒 {mockRestaurant.deliveryTime}</span>
-              <span>📞 {mockRestaurant.phone}</span>
+
+          {/* Section Header */}
+          <div className="flex items-center justify-between mb-6 mt-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Menu</h2>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-sm">
+                {menuItems.length} items
+              </Badge>
             </div>
           </div>
-          
-          <div className="flex flex-col gap-2">
-            <p className="text-sm text-muted-foreground">
-              Min. order: {formatPrice(mockRestaurant.minimumOrder)}
-            </p>
-            <Button disabled={!mockRestaurant.isOpen}>
-              {mockRestaurant.isOpen ? 'Order Now' : 'Currently Closed'}
-            </Button>
-          </div>
+
+          {categories.map((category) => (
+            <RestaurantMenuSection
+              key={category}
+              category={category}
+              items={menuItems.filter(item => item.category === category)}
+              onAddToCart={handleAddToCart}
+              registerRef={(el) => { categoryRefs.current[category] = el }}
+            />
+          ))}
         </div>
       </div>
 
-      {/* Menu */}
-      <div>
-        <h2 className="text-2xl font-bold mb-6">Menu</h2>
-        
-        {categories.map((category) => (
-          <div key={category} className="mb-8">
-            <h3 className="text-xl font-semibold mb-4">{category}</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {mockMenuItems
-                .filter(item => item.category === category)
-                .map((menuItem) => (
-                  <MenuItemCard
-                    key={menuItem.id}
-                    menuItem={menuItem}
-                    onAddToCart={handleAddToCart}
-                  />
-                ))}
+      {/* Floating Cart Button (hidden when cart sidebar is open) */}
+      {cartItemCount > 0 && !isOpen && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <Button 
+            size="lg" 
+            className="rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-orange-500 hover:bg-orange-600"
+            onClick={handleViewCart}
+          >
+            <ShoppingCart className="w-5 h-5 mr-2" />
+            <div className="flex flex-col items-start">
+              <span className="text-sm font-semibold">View Cart ({cartItemCount})</span>
+              <span className="text-xs opacity-90">{formatPrice(cartTotal)}</span>
             </div>
-          </div>
-        ))}
-      </div>
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

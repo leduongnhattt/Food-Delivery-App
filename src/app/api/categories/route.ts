@@ -18,15 +18,9 @@ export async function GET(request: NextRequest) {
                         foods: {
                             where: {
                                 IsAvailable: true,
-                                // Filter by enterprise if provided
+                                // Filter by enterprise directly via Food.EnterpriseID if provided
                                 ...(enterpriseId && {
-                                    menuFoods: {
-                                        some: {
-                                            menu: {
-                                                EnterpriseID: enterpriseId
-                                            }
-                                        }
-                                    }
+                                    EnterpriseID: enterpriseId
                                 })
                             }
                         }
@@ -41,7 +35,7 @@ export async function GET(request: NextRequest) {
         const formattedCategories = categories.map(cat => ({
             id: cat.CategoryID,
             name: cat.CategoryName,
-            description: cat.Description,
+            description: cat.Description || '',
             foodCount: cat._count.foods
         }))
 

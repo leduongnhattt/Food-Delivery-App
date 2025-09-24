@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { formatPrice } from '@/lib/utils'
-import { CartItem as CartItemType } from '@/types'
+import { CartItem as CartItemType } from '@/types/models'
 
 interface CartItemProps {
   item: CartItemType
@@ -19,8 +19,8 @@ export function CartItem({ item, onUpdateQuantity, onRemove }: CartItemProps) {
   }
 
   return (
-    <div className="flex items-center gap-4 p-4 border-b">
-      <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+    <div className="grid grid-cols-[64px_1fr_auto_auto] items-center gap-4 p-4 border-b">
+      <div className="relative w-16 h-16 rounded-lg overflow-hidden">
         <Image
           src={item.menuItem.image}
           alt={item.menuItem.name}
@@ -29,7 +29,7 @@ export function CartItem({ item, onUpdateQuantity, onRemove }: CartItemProps) {
         />
       </div>
       
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0">
         <h3 className="font-medium text-sm truncate">{item.menuItem.name}</h3>
         <p className="text-sm text-muted-foreground">
           {formatPrice(item.menuItem.price)}
@@ -41,33 +41,28 @@ export function CartItem({ item, onUpdateQuantity, onRemove }: CartItemProps) {
         )}
       </div>
       
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 min-w-[122px] justify-center">
         <Button
           variant="outline"
           size="sm"
           onClick={() => handleQuantityChange(item.quantity - 1)}
-          className="w-8 h-8 p-0"
+          className="w-8 h-8 p-0 rounded-md"
         >
           -
         </Button>
-        <span className="w-8 text-center text-sm font-medium">
+        <span className="w-8 text-center text-sm font-medium tabular-nums">
           {item.quantity}
         </span>
         <Button
           variant="outline"
           size="sm"
           onClick={() => handleQuantityChange(item.quantity + 1)}
-          className="w-8 h-8 p-0"
+          className="w-8 h-8 p-0 rounded-md"
         >
           +
         </Button>
       </div>
-      
-      <div className="text-right">
-        <p className="font-medium text-sm">
-          {formatPrice(item.menuItem.price * item.quantity)}
-        </p>
-      </div>
+    
     </div>
   )
 }

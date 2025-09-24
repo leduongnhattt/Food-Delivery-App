@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { formatPrice, formatDate } from '@/lib/utils'
-import { Order, OrderStatus } from '@/types'
+import { Order, OrderStatus } from '@/types/models'
 
 // Mock data - replace with actual API call
 const mockOrders: Order[] = [

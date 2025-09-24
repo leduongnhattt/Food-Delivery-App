@@ -1,10 +1,10 @@
 'use client'
-import { useState } from 'react'
+import { useMemo } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatPrice } from '@/lib/utils'
-import { CartItem as CartItemType, MenuItem } from '@/types'
+import { CartItem as CartItemType } from '@/types/models'
 import { CartItem } from './cart-item'
+import { Store } from 'lucide-react'
 
 interface CartSidebarProps {
   isOpen: boolean
@@ -23,11 +23,38 @@ export function CartSidebar({
   onRemove,
   onCheckout
 }: CartSidebarProps) {
-  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
+  // Unique items count (not quantities)
+  const totalItems = cartItems.length
   const totalAmount = cartItems.reduce(
     (sum, item) => sum + item.menuItem.price * item.quantity,
     0
   )
+
+  // Group items by restaurant
+  const groups = useMemo(() => {
+    const map: Record<string, { name: string; items: CartItemType[]; subtotal: number }> = {}
+    for (const ci of cartItems) {
+      const rid = ci.menuItem.restaurantId
+      // Try to get the restaurant name from multiple places to ensure display
+      const rname = ci.menuItem.restaurantName || 
+                   (ci.menuItem as any).restaurant?.name || 
+                   (ci.menuItem as any).enterprise?.EnterpriseName ||
+                   (ci.menuItem as any).restaurantName ||
+                   `Restaurant #${rid.substring(0, 6)}`
+      
+      if (!map[rid]) {
+        map[rid] = { name: rname, items: [], subtotal: 0 }
+      }
+      map[rid].items.push(ci)
+      map[rid].subtotal += ci.menuItem.price * ci.quantity
+    }
+    return Object.entries(map).map(([rid, v]) => ({ id: rid, ...v }))
+  }, [cartItems])
+
+  const handleCheckoutGroup = (restaurantId: string) => {
+    try { localStorage.setItem('cartSelectedRestaurantId', restaurantId) } catch {}
+    onCheckout()
+  }
 
   if (!isOpen) return null
 
@@ -44,7 +71,7 @@ export function CartSidebar({
             </Button>
           </div>
 
-          {/* Cart Items */}
+          {/* Cart Items - grouped by restaurant */}
           <div className="flex-1 overflow-y-auto">
             {cartItems.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center p-8">
@@ -58,32 +85,54 @@ export function CartSidebar({
               </div>
             ) : (
               <div className="divide-y">
-                {cartItems.map((item) => (
-                  <CartItem
-                    key={item.menuItem.id}
-                    item={item}
-                    onUpdateQuantity={onUpdateQuantity}
-                    onRemove={onRemove}
-                  />
+                {groups.map(group => (
+                  <div key={group.id} className="py-2">
+                    <div className="px-4 py-2 bg-gray-50 flex items-center justify-between border-b">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Store className="w-4 h-4 text-gray-500" aria-hidden="true" />
+                        <div className="flex items-baseline gap-2 min-w-0">
+                          <span className="text-[10px] uppercase tracking-wide text-gray-500 shrink-0">Restaurant</span>
+                          <span className="text-sm font-semibold text-gray-900 truncate" title={group.name || group.id}>
+                            {group.name || `#${group.id.slice(0,8)}`}
+                          </span>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        className="h-8 px-3 rounded-full bg-orange-500 hover:bg-orange-600 text-white"
+                        onClick={() => handleCheckoutGroup(group.id)}
+                        aria-label={`Checkout ${group.name || 'restaurant'}`}
+                      >
+                        Checkout
+                      </Button>
+                    </div>
+                    <div className="divide-y">
+                      {group.items.map(item => (
+                        <CartItem
+                          key={item.menuItem.id}
+                          item={item}
+                          onUpdateQuantity={onUpdateQuantity}
+                          onRemove={onRemove}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-between px-4 py-3 text-sm">
+                      <span className="text-gray-600">Subtotal</span>
+                      <span className="font-semibold">{formatPrice(group.subtotal)}</span>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
           </div>
 
           {/* Footer */}
-          {cartItems.length > 0 && (
-            <div className="border-t p-4 space-y-4">
+          {cartItems.length > 0 && groups.length === 1 && (
+            <div className="border-t p-4 space-y-3">
               <div className="flex justify-between text-lg font-semibold">
                 <span>Total:</span>
                 <span>{formatPrice(totalAmount)}</span>
               </div>
-              <Button 
-                className="w-full" 
-                size="lg"
-                onClick={onCheckout}
-              >
-                Proceed to Checkout
-              </Button>
             </div>
           )}
         </div>

@@ -3,6 +3,7 @@
 import React, { createContext, useContext, ReactNode } from 'react'
 import { useAppSetup } from '@/hooks/use-app-setup'
 import { SetupStatus } from '@/lib/main'
+import { CartProvider } from '@/hooks/use-cart'
 
 interface AppContextType {
     isLoading: boolean
@@ -75,7 +76,9 @@ export function AppProvider({
     // App is ready, render children
     return (
         <AppContext.Provider value={appSetup}>
-            {children}
+            <CartProvider>
+                {children}
+            </CartProvider>
         </AppContext.Provider>
     )
 }
