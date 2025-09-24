@@ -26,6 +26,25 @@ export async function GET(request: NextRequest) {
             Email: true,
           },
         },
+        menus: {
+          select: {
+            MenuID: true,
+            MenuName: true,
+            Description: true,
+          },
+          orderBy: { MenuName: "asc" },
+        },
+        foods: {
+          select: {
+            FoodID: true,
+            DishName: true,
+            Description: true,
+            Price: true,
+            ImageURL: true,
+            Stock: true,
+            foodCategory: { select: { CategoryName: true } },
+          },
+        },
       },
     });
     if (!enterpriseProfile) {
