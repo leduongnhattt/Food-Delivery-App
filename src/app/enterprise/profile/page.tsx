@@ -15,12 +15,9 @@ export default function EnterpriseProfile() {
   const [description, setDescription] = useState("");
   const [openHours, setOpenHours] = useState("");
   const [closeHours, setCloseHours] = useState("");
-  const [logo, setLogo] = useState<string | null>(null);
-  const [oldLogo, setOldLogo] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const { uploadImage, deleteImage, isUploading, isDeleting } = useEnterpriseUpload();
 
   // Get current profile data
   useEffect(() => {
@@ -38,7 +35,6 @@ export default function EnterpriseProfile() {
         setDescription(enterprise.Description || "");
         setOpenHours(enterprise.OpenHours || "");
         setCloseHours(enterprise.CloseHours || "");
-        setLogo(enterprise.Logo || null);
       } catch (error) {
         console.error("Error fetching profile:", error);
         setMessage("Failed to load profile data");
@@ -47,27 +43,10 @@ export default function EnterpriseProfile() {
     fetchProfile();
   }, []);
 
-  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-      setOldLogo(logo); // keep track of old logo for deletion
-      setLogo(URL.createObjectURL(selectedFile)); // preview only
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
-      let logoUrl = logo;
-
-      if (file) {
-        const uploadedUrl = await uploadImage(file);
-        if (!uploadedUrl) throw new Error("Upload failed");
-        if (oldLogo) await deleteImage(oldLogo); // delete old logo
-        logoUrl = uploadedUrl;
-      }
 
       const payload = {
         EnterpriseName: enterpriseName,
@@ -77,7 +56,6 @@ export default function EnterpriseProfile() {
         Description: description,
         OpenHours: openHours,
         CloseHours: closeHours,
-        Logo: logoUrl,
       };
 
       await apiClient.put("/enterprise/profile", payload);
@@ -91,8 +69,8 @@ export default function EnterpriseProfile() {
   };
 
   return (
-    <div className="p-6 bg-white rounded-2xl shadow-md">
-      <h2 className="text-2xl font-semibold mb-6">Enterprise Profile</h2>
+    <div>
+      <h2 className="text-2xl font-bold mb-4">Enterprise Profile</h2>
 
       {message && (
         <div
@@ -107,34 +85,6 @@ export default function EnterpriseProfile() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Avatar upload */}
-        <div className="flex justify-center">
-          <label className="relative cursor-pointer">
-            <div className="w-32 h-32 rounded-full bg-gray-100 border flex items-center justify-center overflow-hidden">
-              {isUploading ? (
-                <span className="text-gray-400">Uploading...</span>
-              ) : logo ? (
-                <Image
-                  width={128}
-                  height={128}
-                  src={logo}
-                  alt="Logo preview"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-gray-400">Upload Logo</span>
-              )}
-            </div>
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageChange}
-              disabled={isUploading}
-            />
-          </label>
-        </div>
-
         {/* Grid layout 2x2 */}
         <div className="grid grid-cols-2 gap-6">
           <div>
@@ -220,7 +170,7 @@ export default function EnterpriseProfile() {
         <div className="flex justify-center">
           <Button
             type="submit"
-            disabled={isLoading || isUploading}
+            disabled={isLoading}
             className="px-6 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-50"
           >
             {isLoading ? "Saving..." : "Save"}

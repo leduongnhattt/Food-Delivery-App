@@ -19,7 +19,6 @@ export async function GET(request: NextRequest) {
       Address: true,
       PhoneNumber: true,
       Description: true,
-      Logo: true,
       OpenHours: true,
       CloseHours: true,
       account: {
@@ -91,7 +90,6 @@ export async function PUT(request: NextRequest) {
       Address,
       PhoneNumber,
       Description,
-      Logo,
       OpenHours,
       CloseHours,
     } = body;
@@ -124,7 +122,6 @@ export async function PUT(request: NextRequest) {
         Address: Address?.trim() || null,
         PhoneNumber: PhoneNumber?.trim() || null,
         Description: Description?.trim() || null,
-        Logo: Logo || null,
         OpenHours: OpenHours || null,
         CloseHours: CloseHours || null,
         UpdatedAt: new Date(),
@@ -135,7 +132,6 @@ export async function PUT(request: NextRequest) {
         Address: true,
         PhoneNumber: true,
         Description: true,
-        Logo: true,
         OpenHours: true,
         CloseHours: true,
         account: {
