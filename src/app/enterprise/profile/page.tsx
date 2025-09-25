@@ -2,10 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import Image from "next/image";
-import React, { useState, ChangeEvent, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { apiClient } from "@/services/api";
-import { useEnterpriseUpload } from "@/hooks/use-enterprise-upload";
 
 export default function EnterpriseProfile() {
   const [enterpriseName, setEnterpriseName] = useState("");

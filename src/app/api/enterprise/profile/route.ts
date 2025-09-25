@@ -48,7 +48,11 @@ export async function GET(request: NextRequest) {
           Price: true,
           ImageURL: true,
           Stock: true,
-          foodCategory: { select: { CategoryName: true } },
+          foodCategory: {
+            select: {
+              CategoryID: true,
+              CategoryName: true,
+           } },
         },
       };
     } else if (include === "vouchers") {

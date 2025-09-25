@@ -2,24 +2,23 @@ import React from "react";
 import { Edit, Trash2 } from "lucide-react";
 import { Food } from "./FoodList";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
 
 export interface FoodRowProps {
   food: Food;
-  onEdit?: (foodId: string) => void;
-  onDelete?: (foodId: string) => void;
+  onEdit?: (food: Food) => void;
+  onDelete?: (food: Food) => void;
 }
 
 const FoodRow: React.FC<FoodRowProps> = ({ food, onEdit, onDelete }) => {
   const handleEdit = () => {
     if (onEdit) {
-      onEdit(food.FoodID);
+      onEdit(food);
     }
   };
 
   const handleDelete = () => {
     if (onDelete) {
-      onDelete(food.FoodID);
+      onDelete(food);
     }
   };
 
@@ -62,7 +61,7 @@ const FoodRow: React.FC<FoodRowProps> = ({ food, onEdit, onDelete }) => {
       {/* Price */}
       <div className="col-span-2">
         <span className="text-gray-900 font-medium">
-          ${food.Price.toFixed(2)}
+          ${food.Price}
         </span>
       </div>
 
