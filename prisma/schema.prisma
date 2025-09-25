@@ -270,17 +270,21 @@ model OrderDetail {
 
 model Cart {
   CartID       String   @id @default(uuid()) @db.VarChar(36)
-  CustomerID   String   @db.VarChar(36)
+  CustomerID   String?  @db.VarChar(36)
   EnterpriseID String?  @db.VarChar(36)
+  GuestToken   String?  @unique @db.VarChar(64)
+  Status       CartStatus @default(Active)
+  ExpiresAt    DateTime?
   CreatedAt    DateTime @default(now())
   UpdatedAt    DateTime? @updatedAt
 
-  customer  Customer   @relation(fields: [CustomerID], references: [CustomerID], onDelete: Cascade)
+  customer  Customer?  @relation(fields: [CustomerID], references: [CustomerID], onDelete: Cascade)
   enterprise Enterprise? @relation(fields: [EnterpriseID], references: [EnterpriseID], onDelete: SetNull)
   items      CartItem[]
 
   @@index([CustomerID])
   @@index([EnterpriseID])
+  @@index([ExpiresAt])
   @@map("CART")
 }
 
@@ -301,6 +305,12 @@ model CartItem {
   @@index([FoodID])
   @@unique([CartID, FoodID])
   @@map("CART_ITEM")
+}
+
+enum CartStatus {
+  Active
+  CheckedOut
+  Abandoned
 }
 
 model DeliveryDriver {
