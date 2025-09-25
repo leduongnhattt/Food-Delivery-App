@@ -1,10 +1,12 @@
 'use client'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatPrice } from '@/lib/utils'
 import { CartItem as CartItemType } from '@/types/models'
 import { CartItem } from './cart-item'
-import { Store } from 'lucide-react'
+import { useAuth } from '@/hooks/use-auth'
+import { useRouter } from 'next/navigation'
 
 interface CartSidebarProps {
   isOpen: boolean
@@ -23,6 +25,9 @@ export function CartSidebar({
   onRemove,
   onCheckout
 }: CartSidebarProps) {
+  const { isAuthenticated, isLoading } = useAuth()
+  const router = useRouter()
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
   // Unique items count (not quantities)
   const totalItems = cartItems.length
   const totalAmount = cartItems.reduce(
@@ -35,13 +40,7 @@ export function CartSidebar({
     const map: Record<string, { name: string; items: CartItemType[]; subtotal: number }> = {}
     for (const ci of cartItems) {
       const rid = ci.menuItem.restaurantId
-      // Try to get the restaurant name from multiple places to ensure display
-      const rname = ci.menuItem.restaurantName || 
-                   (ci.menuItem as any).restaurant?.name || 
-                   (ci.menuItem as any).enterprise?.EnterpriseName ||
-                   (ci.menuItem as any).restaurantName ||
-                   `Restaurant #${rid.substring(0, 6)}`
-      
+      const rname = ci.menuItem.restaurantName || 'Restaurant'
       if (!map[rid]) {
         map[rid] = { name: rname, items: [], subtotal: 0 }
       }
@@ -53,6 +52,11 @@ export function CartSidebar({
 
   const handleCheckoutGroup = (restaurantId: string) => {
     try { localStorage.setItem('cartSelectedRestaurantId', restaurantId) } catch {}
+    // If user is not authenticated, prompt login modal instead of proceeding
+    if (!isLoading && !isAuthenticated) {
+      setShowLoginPrompt(true)
+      return
+    }
     onCheckout()
   }
 
@@ -88,14 +92,10 @@ export function CartSidebar({
                 {groups.map(group => (
                   <div key={group.id} className="py-2">
                     <div className="px-4 py-2 bg-gray-50 flex items-center justify-between border-b">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Store className="w-4 h-4 text-gray-500" aria-hidden="true" />
-                        <div className="flex items-baseline gap-2 min-w-0">
-                          <span className="text-[10px] uppercase tracking-wide text-gray-500 shrink-0">Restaurant</span>
-                          <span className="text-sm font-semibold text-gray-900 truncate" title={group.name || group.id}>
-                            {group.name || `#${group.id.slice(0,8)}`}
-                          </span>
-                        </div>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="text-sm font-semibold text-gray-900 truncate" title={group.name || group.id}>
+                          {group.name || `#${group.id.slice(0,8)}`}
+                        </span>
                       </div>
                       <Button
                         size="sm"
@@ -137,6 +137,31 @@ export function CartSidebar({
           )}
         </div>
       </div>
+      {/* Login required modal */}
+      {showLoginPrompt && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setShowLoginPrompt(false)} />
+          <div className="relative bg-white rounded-lg shadow-xl w-full max-w-sm p-6">
+            <h3 className="text-lg font-semibold mb-2">Sign in required</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Please sign in to proceed to checkout.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowLoginPrompt(false)}>Cancel</Button>
+              <Button
+                className="bg-orange-600 hover:bg-orange-700 text-white"
+                onClick={() => {
+                  setShowLoginPrompt(false)
+                  onClose()
+                  router.push('/signin')
+                }}
+              >
+                Sign In
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

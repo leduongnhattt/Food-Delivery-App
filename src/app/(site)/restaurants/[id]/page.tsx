@@ -1,17 +1,13 @@
 'use client'
 import React from 'react'
-import { notFound, useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
+import { notFound } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
-import { formatPrice } from '@/lib/utils'
-import { Restaurant, MenuItem } from '@/types/models'
+import { MenuItem } from '@/types/models'
 import { useCart } from '@/hooks/use-cart'
 import { useRestaurantDetail, useRestaurantCategoryNav } from '@/hooks/use-restaurant-detail'
-import { ShoppingCart } from 'lucide-react'
-import { RestaurantService } from '@/services/restaurant.service'
-import { FoodService } from '@/services/food.service'
 import EnterpriseHero from '@/components/restaurant/EnterpriseHero'
 import EnterpriseInfoCard from '@/components/restaurant/EnterpriseInfoCard'
+import ReviewsSection from '@/components/restaurant/ReviewsSection'
 import CategoryPills from '@/components/restaurant/CategoryPills'
 import RestaurantMenuSection from '@/components/restaurant/RestaurantMenuSection'
 
@@ -23,8 +19,7 @@ interface RestaurantPageProps {
 }
 
 export default function RestaurantPage({ params }: RestaurantPageProps) {
-  const router = useRouter()
-  const { addToCart, cartItems, getTotalItems, getTotalAmount, openCart, isOpen } = useCart()
+  const { addToCart } = useCart()
 
   // Unwrap params using React.use()
   const { id } = React.use(params)
@@ -45,13 +40,7 @@ export default function RestaurantPage({ params }: RestaurantPageProps) {
     addToCart(enriched, 1)
   }
 
-  const handleViewCart = () => {
-    openCart()
-  }
-
   const categories = catList
-  const cartItemCount = getTotalItems()
-  const cartTotal = getTotalAmount()
 
   if (loading || !restaurant) {
     return (
@@ -108,24 +97,16 @@ export default function RestaurantPage({ params }: RestaurantPageProps) {
             />
           ))}
         </div>
-      </div>
 
-      {/* Floating Cart Button (hidden when cart sidebar is open) */}
-      {cartItemCount > 0 && !isOpen && (
-        <div className="fixed bottom-6 right-6 z-50">
-          <Button 
-            size="lg" 
-            className="rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-orange-500 hover:bg-orange-600"
-            onClick={handleViewCart}
-          >
-            <ShoppingCart className="w-5 h-5 mr-2" />
-            <div className="flex flex-col items-start">
-              <span className="text-sm font-semibold">View Cart ({cartItemCount})</span>
-              <span className="text-xs opacity-90">{formatPrice(cartTotal)}</span>
-            </div>
-          </Button>
-        </div>
-      )}
+        <ReviewsSection 
+          rating={restaurant!.rating}
+          reviews={[
+            { id: '1', author: 'Anonymous', rating: 4, content: 'Great desserts and quick delivery. Will order again!', images: ['/static/rev1.jpg','/static/rev2.jpg'] },
+            { id: '2', author: 'Nguyen', rating: 3, content: 'Tasty, but the salad could be fresher.', images: ['/static/rev3.jpg'] },
+            { id: '3', author: 'Linh', rating: 5, content: 'Excellent service and the pasta was amazing! Highly recommended.', images: ['/static/rev4.jpg'] },
+          ]}
+        />
+      </div>
     </div>
   )
 }

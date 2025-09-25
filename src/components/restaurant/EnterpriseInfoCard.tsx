@@ -38,6 +38,12 @@ export default function EnterpriseInfoCard({ isOpen, rating, phone, address, del
             }}>
               Directions
             </Button>
+            <Button size="sm" variant="secondary" className="rounded-full" onClick={() => {
+              const el = document.getElementById('reviews')
+              el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }}>
+              Reviews
+            </Button>
           </div>
         </div>
 

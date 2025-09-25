@@ -30,6 +30,9 @@ const ROUTE_PERMISSIONS = {
     '/api/categories': [],
     '/api/menu-items': [],
     '/api/test': [], // Test endpoint - public for testing
+    // Cart APIs are public (guest supported)
+    '/api/cart': [],
+    '/api/cart/items': [],
 }
 
 // Get user role from token
@@ -107,7 +110,20 @@ export function middleware(request: NextRequest) {
 
     // If no roles required, allow access
     if (requiredRoles.length === 0) {
-        return NextResponse.next()
+        const res = NextResponse.next()
+        // Ensure guest_token for public routes (guest cart)
+        const hasGuest = request.cookies.get('guest_token')?.value
+        if (!hasGuest) {
+            const token = crypto.randomUUID()
+            res.cookies.set('guest_token', token, {
+                httpOnly: true,
+                sameSite: 'lax',
+                secure: process.env.NODE_ENV === 'production',
+                path: '/',
+                maxAge: 60 * 60 * 24, // 1 day
+            })
+        }
+        return res
     }
 
     // Get token from Authorization header or refresh_token cookie
@@ -172,6 +188,18 @@ export function middleware(request: NextRequest) {
         response.headers.set('x-user-id', decoded.accountId || decoded.userId || '')
     }
 
+    // Ensure guest_token also for authenticated traffic (to support pre-login cart merge)
+    const hasGuest = request.cookies.get('guest_token')?.value
+    if (!hasGuest) {
+        const token = crypto.randomUUID()
+        response.cookies.set('guest_token', token, {
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production',
+            path: '/',
+            maxAge: 60 * 60 * 24,
+        })
+    }
     return response
 }
 

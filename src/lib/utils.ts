@@ -6,9 +6,14 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatPrice(price: number): string {
-  return new Intl.NumberFormat('vi-VN', {
+  const parts = String(price).split('.')
+  const decimals = parts.length > 1 ? Math.min(parts[1].length, 6) : 0
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'VND',
+    currency: 'USD',
+    currencyDisplay: 'symbol',
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
   }).format(price)
 }
 

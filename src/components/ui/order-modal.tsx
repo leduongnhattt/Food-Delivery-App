@@ -52,7 +52,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({
       id: food.foodId,
       name: food.dishName,
       description: food.description,
-      price: Math.round(food.price * 1000), // Convert USD to VND
+      price: food.price,
       image: food.imageUrl || '/api/placeholder/300/200',
       category: food.menu.category,
       isAvailable: true,
@@ -118,7 +118,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({
                   {food.menu.category}
                 </Badge>
                 <span className="text-lg sm:text-xl font-bold text-orange-600">
-                  {formatPrice(Math.round(food.price * 1000))}
+                  {formatPrice(food.price)}
                 </span>
               </div>
             </div>
@@ -174,7 +174,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({
               </div>
               <div className="text-sm text-gray-600">
                 Total: <span className="font-semibold text-orange-600">
-                  {formatPrice(Math.round(food.price * 1000) * quantity)}
+                  {formatPrice(food.price * quantity)}
                 </span>
               </div>
             </div>

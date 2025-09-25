@@ -131,4 +131,20 @@ export interface FoodsSlideMenuProps {
     category?: string
     limit?: number
 }
+export interface CartItemPayload {
+    foodId: string
+    quantity: number
+    note?: string
+}
 
+export interface CartSnapshotItem {
+    foodId: string
+    quantity: number
+    priceSnapshot?: number
+    note?: string
+}
+
+export interface CartSnapshot {
+    cartId: string | null
+    items: CartSnapshotItem[]
+}

@@ -1,6 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { Food } from '@/types/models';
+import { formatPrice } from '@/lib/utils';
 
 interface FoodCardProps {
   food: Food;
@@ -62,7 +63,7 @@ const FoodCard: React.FC<FoodCardProps> = ({ food, onOrderNow }) => {
         {/* Price and Order Button */}
         <div className="flex items-center justify-between">
           <span className="text-2xl font-bold text-gray-800">
-            ${food.price.toFixed(2)}
+            {formatPrice(food.price)}
           </span>
           <button 
             onClick={handleOrderClick}

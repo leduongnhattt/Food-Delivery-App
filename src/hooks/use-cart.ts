@@ -1,6 +1,8 @@
 "use client"
 import React, { useEffect, useMemo, useRef } from 'react'
 import { CartItem, MenuItem } from '@/types/models'
+import { addItemToCart, updateItemQuantity, clearCart as apiClearCart, fetchCart } from '@/services/cart.service'
+import { FoodService } from '@/services/food.service'
 
 type CartContextType = {
     cartItems: CartItem[]
@@ -14,6 +16,7 @@ type CartContextType = {
     getTotalAmount: () => number
     openCart: () => void
     closeCart: () => void
+    resetAfterLogout: () => Promise<void>
 }
 
 const CartContext = React.createContext<CartContextType | undefined>(undefined)
@@ -24,32 +27,52 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const [activeRestaurantId, setActiveRestaurantId] = React.useState<string | null>(null)
     const isMounted = useRef(false)
 
-    // Load from localStorage once
+    // Load from server snapshot (Redis-backed) once
     useEffect(() => {
-        try {
-            const saved = localStorage.getItem('cart')
-            if (saved) {
-                setCartItems(JSON.parse(saved))
+        (async () => {
+            try {
+                const snap = await fetchCart()
+                if (!snap || !Array.isArray(snap.items) || snap.items.length === 0) {
+                    isMounted.current = true
+                    return
+                }
+                const foodIds = snap.items.map(i => i.foodId)
+                const foods = await FoodService.getFoodsByIds(foodIds)
+                const menuItemsMap = new Map(foods.map(f => [f.id, f]))
+                const items: CartItem[] = snap.items
+                    .map(i => {
+                        const f = menuItemsMap.get(i.foodId)
+                        if (!f) return null
+                        return {
+                            menuItem: {
+                                id: f.id,
+                                name: f.name,
+                                description: f.description || '',
+                                price: i.priceSnapshot ?? f.price,
+                                image: f.imageUrl,
+                                category: f.category || '',
+                                isAvailable: true,
+                                restaurantId: f.restaurantId,
+                                restaurantName: f.restaurantName,
+                                createdAt: new Date(),
+                                updatedAt: new Date(),
+                            },
+                            quantity: i.quantity,
+                            specialInstructions: i.note,
+                        } as CartItem
+                    })
+                    .filter(Boolean) as CartItem[]
+                setCartItems(items)
+                if (items.length > 0) setActiveRestaurantId(items[0].menuItem.restaurantId)
+            } catch (e) {
+                // eslint-disable-next-line no-console
+                console.error('Error hydrating cart from server:', e)
             }
-            const savedRid = localStorage.getItem('cartRestaurantId')
-            if (savedRid) setActiveRestaurantId(savedRid)
-        } catch (e) {
-            console.error('Error loading cart from localStorage:', e)
-        }
-        isMounted.current = true
+            isMounted.current = true
+        })()
     }, [])
 
-    // Persist changes only (avoid self-dispatch loops)
-    useEffect(() => {
-        if (!isMounted.current) return
-        localStorage.setItem('cart', JSON.stringify(cartItems))
-        if (cartItems.length === 0) {
-            localStorage.removeItem('cartRestaurantId')
-            setActiveRestaurantId(null)
-        } else if (activeRestaurantId) {
-            localStorage.setItem('cartRestaurantId', activeRestaurantId)
-        }
-    }, [cartItems, activeRestaurantId])
+    // Remove localStorage persistence; server snapshot is the source of truth
 
     // Listen to cross-tab updates (storage event doesn't fire in the same tab)
     useEffect(() => {
@@ -68,49 +91,188 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }, [])
 
     const addToCart = (menuItem: MenuItem, quantity: number = 1, specialInstructions?: string) => {
-        // Ensure restaurant name is set
-        const enhancedMenuItem = {
-            ...menuItem,
-            restaurantName: menuItem.restaurantName || 
-                           (menuItem as any).restaurant?.name || 
-                           (menuItem as any).enterprise?.EnterpriseName ||
-                           `Restaurant #${menuItem.restaurantId.substring(0, 6)}`
-        };
-        
-        // Enforce single-restaurant cart
-        setCartItems(prev => {
-            if (activeRestaurantId && activeRestaurantId !== enhancedMenuItem.restaurantId) {
-                // Switch restaurant: start a new cart for that restaurant
-                setActiveRestaurantId(enhancedMenuItem.restaurantId)
+        // Do not optimistically update; rely on server snapshot (prevents UI if DB fails)
+        addItemToCart({ foodId: menuItem.id, quantity, note: specialInstructions })
+            .then(async () => {
+                const snap = await fetchCart()
+                const ids = snap.items.map(i => i.foodId)
+                const foods = await FoodService.getFoodsByIds(ids)
+                const map = new Map(foods.map(f => [f.id, f]))
+                const items = snap.items.map(i => {
+                    const f = map.get(i.foodId)!
+                    return {
+                        menuItem: {
+                            id: f.id,
+                            name: f.name,
+                            description: f.description || '',
+                            price: i.priceSnapshot ?? f.price,
+                            image: f.imageUrl,
+                            category: f.category || '',
+                            isAvailable: true,
+                            restaurantId: f.restaurantId,
+                            restaurantName: f.restaurantName,
+                            createdAt: new Date(),
+                            updatedAt: new Date(),
+                        },
+                        quantity: i.quantity,
+                        specialInstructions: i.note,
+                    }
+                })
+                setCartItems(items)
+                if (items.length > 0) setActiveRestaurantId(items[0].menuItem.restaurantId)
                 setIsOpen(true)
-                return [{ menuItem: enhancedMenuItem, quantity, specialInstructions }]
-            }
-            if (!activeRestaurantId) {
-                setActiveRestaurantId(enhancedMenuItem.restaurantId)
-            }
-            const existing = prev.find(i => i.menuItem.id === enhancedMenuItem.id)
-            if (existing) {
-                return prev.map(i => i.menuItem.id === enhancedMenuItem.id ? { ...i, quantity: i.quantity + quantity } : i)
-            }
-            return [...prev, { menuItem: enhancedMenuItem, quantity, specialInstructions }]
-        })
+            })
+            .catch(() => { /* keep UI unchanged on failure */ })
     }
 
     const updateQuantity = (menuItemId: string, quantity: number) => {
         setCartItems(prev => prev.map(i => i.menuItem.id === menuItemId ? { ...i, quantity } : i))
+        updateItemQuantity(menuItemId, quantity)
+            .then(async () => {
+                // Re-hydrate from server to ensure snapshot consistency
+                const snap = await fetchCart()
+                const ids = snap.items.map(i => i.foodId)
+                const foods = await FoodService.getFoodsByIds(ids)
+                const map = new Map(foods.map(f => [f.id, f]))
+                setCartItems(snap.items.map(i => {
+                    const f = map.get(i.foodId)!
+                    return {
+                        menuItem: {
+                            id: f.id,
+                            name: f.name,
+                            description: f.description || '',
+                            price: f.price,
+                            image: f.imageUrl,
+                            category: f.category || '',
+                            isAvailable: true,
+                            restaurantId: f.restaurantId,
+                            restaurantName: f.restaurantName,
+                            createdAt: new Date(),
+                            updatedAt: new Date(),
+                        },
+                        quantity: i.quantity,
+                        specialInstructions: i.note,
+                    }
+                }))
+            })
+            .catch(() => { })
     }
 
     const removeFromCart = (menuItemId: string) => {
+        // Optimistic UI update
         setCartItems(prev => {
             const next = prev.filter(i => i.menuItem.id !== menuItemId)
             if (next.length === 0) setActiveRestaurantId(null)
             return next
         })
+        // Tell server to delete (set quantity = 0), then rehydrate
+        updateItemQuantity(menuItemId, 0)
+            .then(async () => {
+                const snap = await fetchCart()
+                const ids = snap.items.map(i => i.foodId)
+                const foods = await FoodService.getFoodsByIds(ids)
+                const map = new Map(foods.map(f => [f.id, f]))
+                setCartItems(snap.items.map(i => {
+                    const f = map.get(i.foodId)!
+                    return {
+                        menuItem: {
+                            id: f.id,
+                            name: f.name,
+                            description: f.description || '',
+                            price: f.price,
+                            image: f.imageUrl,
+                            category: f.category || '',
+                            isAvailable: true,
+                            restaurantId: f.restaurantId,
+                            restaurantName: f.restaurantName,
+                            createdAt: new Date(),
+                            updatedAt: new Date(),
+                        },
+                        quantity: i.quantity,
+                        specialInstructions: i.note,
+                    }
+                }))
+            })
+            .catch(() => { })
     }
 
     const clearCart = () => {
         setCartItems([])
         setActiveRestaurantId(null)
+        apiClearCart()
+            .then(async () => {
+                const snap = await fetchCart()
+                if (!snap.items.length) return
+                const ids = snap.items.map(i => i.foodId)
+                const foods = await FoodService.getFoodsByIds(ids)
+                const map = new Map(foods.map(f => [f.id, f]))
+                setCartItems(snap.items.map(i => {
+                    const f = map.get(i.foodId)!
+                    return {
+                        menuItem: {
+                            id: f.id,
+                            name: f.name,
+                            description: f.description || '',
+                            price: f.price,
+                            image: f.imageUrl,
+                            category: f.category || '',
+                            isAvailable: true,
+                            restaurantId: f.restaurantId,
+                            restaurantName: f.restaurantName,
+                            createdAt: new Date(),
+                            updatedAt: new Date(),
+                        },
+                        quantity: i.quantity,
+                        specialInstructions: i.note,
+                    }
+                }))
+            })
+            .catch(() => { })
+    }
+
+    // Helper to call on logout to fully resync UI
+    const resetAfterLogout = async () => {
+        try {
+            // Clear local auth and notify other tabs
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('access_token')
+                localStorage.setItem('auth_event', `logout:${Date.now()}`)
+            }
+        } catch { }
+        // Reset local cart state immediately
+        setCartItems([])
+        setActiveRestaurantId(null)
+        setIsOpen(false)
+        // Re-fetch cart snapshot as guest
+        try {
+            const snap = await fetchCart()
+            if (!snap.items.length) return
+            const ids = snap.items.map(i => i.foodId)
+            const foods = await FoodService.getFoodsByIds(ids)
+            const map = new Map(foods.map(f => [f.id, f]))
+            const items = snap.items.map(i => {
+                const f = map.get(i.foodId)!
+                return {
+                    menuItem: {
+                        id: f.id,
+                        name: f.name,
+                        description: f.description || '',
+                        price: i.priceSnapshot ?? f.price,
+                        image: f.imageUrl,
+                        category: f.category || '',
+                        isAvailable: true,
+                        restaurantId: f.restaurantId,
+                        restaurantName: f.restaurantName,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    },
+                    quantity: i.quantity,
+                    specialInstructions: i.note,
+                }
+            })
+            setCartItems(items)
+            if (items.length > 0) setActiveRestaurantId(items[0].menuItem.restaurantId)
+        } catch { }
     }
 
     // Count unique items (not total quantities)
@@ -125,6 +287,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         updateQuantity,
         removeFromCart,
         clearCart,
+        resetAfterLogout,
         getTotalItems,
         getTotalAmount,
         openCart: () => setIsOpen(true),

@@ -160,4 +160,17 @@ export class FoodService {
     static async getFoodsByCategory(category: string, limit?: number): Promise<PopularFoodsResponse> {
         return this.getPopularFoods({ category, limit })
     }
+
+    static async getFoodsByIds(ids: string[]): Promise<Array<{ id: string, name: string, price: number, imageUrl: string, restaurantId: string, category?: string, description?: string, restaurantName?: string }>> {
+        if (!ids.length) return []
+        const res = await fetch(`${this.baseUrl}/by-ids`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids }),
+            cache: 'no-store',
+        })
+        if (!res.ok) return []
+        const data = await res.json()
+        return data.foods || []
+    }
 }
