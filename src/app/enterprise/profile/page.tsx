@@ -13,9 +13,21 @@ export default function EnterpriseProfile() {
   const [description, setDescription] = useState("");
   const [openHours, setOpenHours] = useState("");
   const [closeHours, setCloseHours] = useState("");
-  const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
+
+  // Validation functions
+  const validateEnterpriseName = (name: string) => {
+    // Chỉ cho phép chữ cái, số, khoảng trắng và một số ký tự đặc biệt cơ bản
+    const regex = /^[a-zA-ZÀ-ỹ0-9\s&.,()-]+$/;
+    return regex.test(name);
+  };
+
+  const validatePhoneNumber = (phone: string) => {
+    // Chỉ cho phép số và dấu +, -, (), khoảng trắng
+    const regex = /^[\d\s+()-]+$/;
+    return regex.test(phone);
+  };
 
   // Get current profile data
   useEffect(() => {
@@ -40,28 +52,60 @@ export default function EnterpriseProfile() {
     fetchProfile();
   }, []);
 
+  // Handle enterprise name change with validation
+  const handleEnterpriseNameChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = e.target.value;
+    if (value === "" || validateEnterpriseName(value)) {
+      setEnterpriseName(value);
+    }
+  };
+
+  // Handle phone number change with validation
+  const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value === "" || validatePhoneNumber(value)) {
+      setPhoneNumber(value);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    setMessage("");
+
+    // Client-side validation
+    if (!enterpriseName.trim()) {
+      setMessage("Enterprise name is required");
+      setIsLoading(false);
+      return;
+    }
+
+    if (phoneNumber && !validatePhoneNumber(phoneNumber)) {
+      setMessage("Invalid phone number format");
+      setIsLoading(false);
+      return;
+    }
 
     try {
-
       const payload = {
-        EnterpriseName: enterpriseName,
-        Address: address,
-        PhoneNumber: phoneNumber,
+        EnterpriseName: enterpriseName.trim(),
+        Address: address.trim(),
+        PhoneNumber: phoneNumber.trim(),
         Email: email,
-        Description: description,
+        Description: description.trim(),
         OpenHours: openHours,
         CloseHours: closeHours,
       };
 
       await apiClient.put("/enterprise/profile", payload);
-
       setMessage("Profile updated successfully");
-      setFile(null); // clear file
     } catch (error) {
       console.error("Error updating profile:", error);
       setMessage("Failed to update profile");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -91,10 +135,11 @@ export default function EnterpriseProfile() {
             <Input
               type="text"
               value={enterpriseName}
-              onChange={(e) => setEnterpriseName(e.target.value)}
+              onChange={handleEnterpriseNameChange}
               className="w-full mt-1 px-3 py-2 border rounded-lg bg-gray-100"
               placeholder="Enterprise Name"
               required
+              maxLength={100}
             />
           </div>
           <div>
@@ -117,16 +162,18 @@ export default function EnterpriseProfile() {
                 onChange={(e) => setAddress(e.target.value)}
                 className="w-full mt-1 px-3 py-2 border rounded-lg bg-gray-100"
                 placeholder="Address"
+                maxLength={200}
               />
             </div>
             <div>
               <label className="block text-sm font-medium">Phone Number</label>
               <Input
-                type="text"
+                type="tel"
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
+                onChange={handlePhoneNumberChange}
                 className="w-full mt-1 px-3 py-2 border rounded-lg bg-gray-100"
-                placeholder="Phone Number"
+                placeholder="Phone Number (numbers only)"
+                maxLength={15}
               />
             </div>
           </div>
@@ -136,8 +183,9 @@ export default function EnterpriseProfile() {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full mt-1 px-3 py-2 border rounded-lg h-[140px] bg-gray-100"
+              className="w-full mt-1 px-3 py-2 border rounded-lg h-[140px] bg-gray-100 resize-none"
               placeholder="Description"
+              maxLength={255}
             />
           </div>
 
@@ -148,7 +196,6 @@ export default function EnterpriseProfile() {
               value={openHours}
               onChange={(e) => setOpenHours(e.target.value)}
               className="w-full mt-1 px-3 py-2 border rounded-lg bg-gray-100"
-              placeholder="Open Hours"
             />
           </div>
           <div>
@@ -158,7 +205,6 @@ export default function EnterpriseProfile() {
               value={closeHours}
               onChange={(e) => setCloseHours(e.target.value)}
               className="w-full mt-1 px-3 py-2 border rounded-lg bg-gray-100"
-              placeholder="Close Hours"
             />
           </div>
         </div>
