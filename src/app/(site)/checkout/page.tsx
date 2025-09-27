@@ -7,12 +7,39 @@ import { formatPrice } from '@/lib/utils'
 import { CartItem } from '@/types/models'
 import { useCart } from '@/hooks/use-cart'
 import { useRouter } from 'next/navigation'
-import { Minus, Plus, Trash2, ArrowLeft } from 'lucide-react'
+import { Minus, Plus, Trash2, ArrowLeft, Clock, MapPin, Star, Truck, Gift, CheckCircle, Circle, Info, X } from 'lucide-react'
 import Image from 'next/image'
+import { useEffect, useState } from 'react'
+import { RestaurantService } from '@/services/restaurant.service'
+import { RestaurantHeader } from '@/components/checkout/RestaurantHeader'
+import { CartItems } from '@/components/checkout/CartItems'
+import { DeliveryForm } from '@/components/checkout/DeliveryForm'
+import { PromoOffers } from '@/components/checkout/PromoOffers'
+import { PaymentSelector } from '@/components/checkout/PaymentSelector'
+import { OrderSummary } from '@/components/checkout/OrderSummary'
 
 export default function CheckoutPage() {
   const router = useRouter()
   const { cartItems, updateQuantity, removeFromCart, clearCart } = useCart()
+  const [appliedVoucher, setAppliedVoucher] = useState<{code: string, discount: number} | null>(null)
+  const [isOffersModalOpen, setIsOffersModalOpen] = useState(false)
+  // Mock user data - in real app, this would come from user profile
+  const userInfo = {
+    phone: '0123456789',
+    address: '123 Đường ABC, Quận 1, TP.HCM',
+    email: 'user@example.com'
+  }
+
+  const [deliveryInfo, setDeliveryInfo] = useState({
+    phone: userInfo.phone,
+    address: userInfo.address
+  })
+
+  // Payment method and modal to switch methods
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'momo'>('cash')
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+
+  // Payment method is fixed to Cash on Delivery per UX
 
   // Redirect if cart is empty
   if (cartItems.length === 0) {
@@ -39,8 +66,30 @@ export default function CheckoutPage() {
     (sum, item) => sum + item.menuItem.price * item.quantity,
     0
   )
-  const deliveryFee = 15000
-  const total = subtotal + deliveryFee
+  const deliveryFee = 0.5
+  const voucherDiscount = appliedVoucher?.discount || 0
+  const total = subtotal + deliveryFee - voucherDiscount
+
+  // Get restaurant info from first cart item
+  const restaurantInfo = cartItems[0]?.menuItem ? {
+    name: cartItems[0].menuItem.restaurantName || 'Restaurant Name',
+    rating: 4.5,
+    deliveryTime: '25-35 min',
+    address: '123 Main Street, City'
+  } : null
+
+  const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null)
+
+  useEffect(() => {
+    const first = cartItems[0]?.menuItem
+    if (!first) return
+    // Try to fetch restaurant avatar/logo by restaurantId
+    RestaurantService.getRestaurantById(first.restaurantId)
+      .then((r) => {
+        if (r && r.avatarUrl) setRestaurantLogo(r.avatarUrl)
+      })
+      .catch(() => {})
+  }, [cartItems])
 
   const handleQuantityChange = (menuItemId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
@@ -48,6 +97,25 @@ export default function CheckoutPage() {
     } else {
       updateQuantity(menuItemId, newQuantity)
     }
+  }
+
+  // Mock available offers list (some may not be eligible)
+  const availableOffers: Array<{ code: string; discount: number; description: string; eligible: boolean }> = [
+    { code: 'WELCOME10', discount: 10000, description: 'New user discount', eligible: true },
+    { code: 'SAVE20', discount: 20000, description: 'Orders over 200k', eligible: true },
+    { code: 'LUNCHONLY', discount: 15000, description: 'Valid 11:00-14:00', eligible: false }
+  ]
+
+  const handleApplyVoucher = (code: string) => {
+    const offer = availableOffers.find(o => o.code === code && o.eligible)
+    if (offer) {
+      setAppliedVoucher({ code: offer.code, discount: offer.discount })
+      setIsOffersModalOpen(false)
+    }
+  }
+
+  const handleRemoveVoucher = () => {
+    setAppliedVoucher(null)
   }
 
   const handlePlaceOrder = () => {
@@ -58,179 +126,109 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50">
       <div className="container py-8">
-        <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="flex items-center gap-4 mb-8">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => router.back()}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </Button>
-            <h1 className="text-3xl font-bold">Checkout</h1>
+        <div className="max-w-6xl mx-auto">
+          {/* Header with Progress */}
+          <div className="mb-8">
+            <div className="flex items-center gap-4 mb-6">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => router.back()}
+                className="flex items-center gap-2 hover:bg-white/50"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back
+              </Button>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                Checkout
+              </h1>
+            </div>
+            
+            {/* Order Status Progress */}
+            <div className="flex items-center justify-center mb-8">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center">
+                    <CheckCircle className="w-5 h-5" />
+                  </div>
+                  <span className="ml-2 text-sm font-medium text-orange-600">Confirmed</span>
+                </div>
+                <div className="w-16 h-0.5 bg-orange-300"></div>
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center">
+                    <CheckCircle className="w-5 h-5" />
+                  </div>
+                  <span className="ml-2 text-sm font-medium text-orange-600">Preparing</span>
+                </div>
+                <div className="w-16 h-0.5 bg-orange-300"></div>
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center">
+                    <CheckCircle className="w-5 h-5" />
+                  </div>
+                  <span className="ml-2 text-sm font-medium text-orange-600">On the way</span>
+                </div>
+                <div className="w-16 h-0.5 bg-gray-300"></div>
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-gray-300 text-gray-500 rounded-full flex items-center justify-center">
+                    <Circle className="w-5 h-5" />
+                  </div>
+                  <span className="ml-2 text-sm font-medium text-gray-500">Delivered</span>
+                </div>
+              </div>
+            </div>
           </div>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Order Summary */}
-            <div>
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Order Summary</CardTitle>
-                    <Badge variant="secondary">{totalItems} items</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    {cartItems.map((item) => (
-                      <div key={item.menuItem.id} className="flex gap-4 p-4 bg-gray-50 rounded-lg">
-                        <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                          <Image
-                            src={item.menuItem.image}
-                            alt={item.menuItem.name}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                        
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900">{item.menuItem.name}</h3>
-                          <p className="text-sm text-gray-600 mb-2">{item.menuItem.description}</p>
-                          <p className="text-sm font-medium text-orange-600">
-                            {formatPrice(item.menuItem.price)} each
-                          </p>
-                          {item.specialInstructions && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              Note: {item.specialInstructions}
-                            </p>
-                          )}
-                        </div>
-                        
-                        <div className="flex flex-col items-end gap-2">
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleQuantityChange(item.menuItem.id, item.quantity - 1)}
-                              className="w-8 h-8 p-0"
-                            >
-                              <Minus className="w-3 h-3" />
-                            </Button>
-                            <span className="w-8 text-center font-medium">{item.quantity}</span>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleQuantityChange(item.menuItem.id, item.quantity + 1)}
-                              className="w-8 h-8 p-0"
-                            >
-                              <Plus className="w-3 h-3" />
-                            </Button>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => removeFromCart(item.menuItem.id)}
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                          <p className="font-semibold text-gray-900">
-                            {formatPrice(item.menuItem.price * item.quantity)}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                    
-                    <div className="border-t pt-4 space-y-3">
-                      <div className="flex justify-between">
-                        <span>Subtotal ({totalItems} items)</span>
-                        <span className="font-medium">{formatPrice(subtotal)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Delivery Fee</span>
-                        <span className="font-medium">{formatPrice(deliveryFee)}</span>
-                      </div>
-                      <div className="flex justify-between text-lg font-bold border-t pt-3">
-                        <span>Total</span>
-                        <span className="text-orange-600">{formatPrice(total)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            {/* Left - Order & Restaurant */}
+            <div className="space-y-6">
+              {/* Restaurant Information */}
+              {restaurantInfo && (
+                <RestaurantHeader
+                  name={restaurantInfo.name}
+                  rating={restaurantInfo.rating}
+                  deliveryTime={restaurantInfo.deliveryTime}
+                  address={restaurantInfo.address}
+                  logoUrl={restaurantLogo || undefined}
+                />
+              )}
+
+              <CartItems items={cartItems} totalItems={totalItems} onChangeQuantity={handleQuantityChange} onRemove={(id) => removeFromCart(id)} />
             </div>
 
-            {/* Delivery Information */}
+            {/* Right - Checkout Form */}
             <div className="space-y-6">
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle>Delivery Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2 text-gray-700">
-                      Full Name
-                    </label>
-                    <Input placeholder="Enter your full name" className="border-gray-300" />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-2 text-gray-700">
-                      Phone Number
-                    </label>
-                    <Input placeholder="Enter your phone number" className="border-gray-300" />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-2 text-gray-700">
-                      Delivery Address
-                    </label>
-                    <Input placeholder="Enter your delivery address" className="border-gray-300" />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-2 text-gray-700">
-                      Delivery Instructions (Optional)
-                    </label>
-                    <Input placeholder="e.g., Call when arriving, leave at gate" className="border-gray-300" />
-                  </div>
-                </CardContent>
-              </Card>
+              <DeliveryForm phone={deliveryInfo.phone} address={deliveryInfo.address} onChange={(n) => setDeliveryInfo(n)} />
 
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle>Payment Method</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <label className="flex items-center space-x-3 cursor-pointer p-3 rounded-lg hover:bg-gray-50">
-                      <input type="radio" name="payment" value="cash" defaultChecked className="text-orange-500" />
-                      <span className="font-medium">Cash on Delivery</span>
-                    </label>
-                    <label className="flex items-center space-x-3 cursor-pointer p-3 rounded-lg hover:bg-gray-50">
-                      <input type="radio" name="payment" value="card" className="text-orange-500" />
-                      <span className="font-medium">Credit/Debit Card</span>
-                    </label>
-                    <label className="flex items-center space-x-3 cursor-pointer p-3 rounded-lg hover:bg-gray-50">
-                      <input type="radio" name="payment" value="momo" className="text-orange-500" />
-                      <span className="font-medium">MoMo</span>
-                    </label>
-                  </div>
-                </CardContent>
-              </Card>
+              <PromoOffers
+                applied={appliedVoucher}
+                offers={availableOffers}
+                isModalOpen={isOffersModalOpen}
+                onOpenModal={() => setIsOffersModalOpen(true)}
+                onCloseModal={() => setIsOffersModalOpen(false)}
+                onApply={handleApplyVoucher}
+                onRemove={handleRemoveVoucher}
+              />
 
-              <Button 
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-4 text-lg shadow-lg hover:shadow-xl transition-all duration-200" 
-                size="lg"
-                onClick={handlePlaceOrder}
-              >
-                Place Order - {formatPrice(total)}
-              </Button>
+              {/* Offers modal moved inside PromoOffers */}
+
+              <PaymentSelector
+                method={paymentMethod}
+                isModalOpen={isPaymentModalOpen}
+                onOpen={() => setIsPaymentModalOpen(true)}
+                onClose={() => setIsPaymentModalOpen(false)}
+                onChange={(m) => setPaymentMethod(m)}
+              />
+
+              <OrderSummary
+                totalItems={totalItems}
+                subtotal={subtotal}
+                deliveryFee={deliveryFee}
+                discount={appliedVoucher ? { code: appliedVoucher.code, amount: appliedVoucher.discount } : null}
+                total={total}
+                onPlaceOrder={handlePlaceOrder}
+              />
             </div>
           </div>
         </div>

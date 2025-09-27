@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireEnterprise } from '@/lib/auth-helpers'
 import { Prisma } from '@/generated/prisma'
-import { retryDatabaseOperation } from '@/lib/database-retry'
+import { retryDatabaseOperation } from '@/lib/retry-utils'
 
 export async function GET(request: NextRequest) {
     try {

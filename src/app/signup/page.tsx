@@ -5,66 +5,57 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SuccessPopup } from "@/components/ui/success-popup";
 import { PasswordStrength } from "@/components/ui/password-strength";
-import { ErrorDisplay } from "@/components/ui/error-display";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { registerUser } from "@/lib/client-auth";
 import { usePasswordToggle } from "@/hooks/use-password-toggle";
 import { useTranslations } from "@/lib/i18n";
+import { useToast } from "@/contexts/toast-context";
 import GoogleAuthButton from "@/components/ui/google-auth-button";
+import { useAuthValidation } from "@/hooks/use-auth-validation";
 
 export default function SignupPage() {
   const router = useRouter();
   const { t, isLoading: i18nLoading } = useTranslations();
+  const { showToast } = useToast();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   
   // Password toggle hooks
   const passwordToggle = usePasswordToggle();
   const confirmPasswordToggle = usePasswordToggle();
+  
+  // Auth validation hook
+  const { validateSignupForm } = useAuthValidation();
 
-  // Clear error when user starts typing
-  const handleFieldFocus = () => {
-    if (error) {
-      setError("");
-    }
+  // Clear form fields when needed
+  const clearForm = () => {
+    setUsername("");
+    setEmail("");
+    setPassword("");
+    setConfirmPassword("");
   };
 
   // Handle success popup close
   const handleSuccessPopupClose = () => {
     setShowSuccessPopup(false);
-    // Clear form
-    setUsername("");
-    setEmail("");
-    setPassword("");
-    setConfirmPassword("");
-    setError("");
+    clearForm();
     // Redirect to signin page
     router.push("/signin?registered=success");
   };
 
   const handleSubmit = async () => {
-    // Reset error state
-    setError("");
-    
-    // Validate password confirmation
-    if (password !== confirmPassword) {
-      setError(t("signup.errors.passwordMismatch"));
-      setPassword("");
-      setConfirmPassword("");
+    // Don't proceed if translations are still loading
+    if (i18nLoading) {
       return;
     }
     
-    // Validate password length
-    if (password.length < 8) {
-      setError(t("signup.errors.passwordTooShort"));
-      setPassword("");
-      setConfirmPassword("");
+    // Validate form fields using shared validation logic
+    if (!validateSignupForm(username, password, confirmPassword, setUsername, setPassword, setConfirmPassword)) {
       return;
     }
     
@@ -79,7 +70,17 @@ export default function SignupPage() {
       });
       
       if (!result.success) {
-        setError(result.error?.message || t("signup.errors.registrationFailed"));
+        const errorMessage = result.error?.message;
+        
+        // Check if it's a translation key or direct message
+        let displayMessage;
+        if (errorMessage && errorMessage.includes('signup.errors.')) {
+          displayMessage = t(errorMessage);
+        } else {
+          displayMessage = errorMessage || t("signup.errors.registrationFailed");
+        }
+        
+        showToast(displayMessage, "error");
         
         // Clear specific fields based on error type
         if (result.error?.field === 'username') {
@@ -88,10 +89,7 @@ export default function SignupPage() {
           setEmail("");
         } else {
           // Clear all fields for general errors
-          setUsername("");
-          setEmail("");
-          setPassword("");
-          setConfirmPassword("");
+          clearForm();
         }
         return;
       }
@@ -99,12 +97,9 @@ export default function SignupPage() {
       // Registration successful - show success popup
       setShowSuccessPopup(true);
     } catch (err) {
-      setError(t("signup.errors.unexpectedError"));
+      showToast(t("signup.errors.unexpectedError"), "error");
       // Clear all fields for unexpected errors
-      setUsername("");
-      setEmail("");
-      setPassword("");
-      setConfirmPassword("");
+      clearForm();
     } finally {
       setIsLoading(false);
     }
@@ -151,7 +146,7 @@ export default function SignupPage() {
                     placeholder={t("common.usernamePlaceholder")}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                onFocus={handleFieldFocus}
+                maxLength={50}
                 className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 transition-all text-sm sm:text-base shadow-sm"
                 required
               />
@@ -166,7 +161,6 @@ export default function SignupPage() {
                 placeholder={t("signup.emailPlaceholder")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                onFocus={handleFieldFocus}
                 className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 transition-all text-sm sm:text-base shadow-sm"
                 required
               />
@@ -182,7 +176,6 @@ export default function SignupPage() {
                       placeholder={t("common.passwordPlaceholder")}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  onFocus={handleFieldFocus}
                   className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 transition-all pr-10 sm:pr-12 text-sm sm:text-base shadow-sm"
                   required
                 />
@@ -217,7 +210,6 @@ export default function SignupPage() {
                   placeholder={t("signup.confirmPasswordPlaceholder")}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  onFocus={handleFieldFocus}
                   className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 transition-all pr-10 sm:pr-12 text-sm sm:text-base shadow-sm"
                   required
                 />
@@ -239,14 +231,6 @@ export default function SignupPage() {
                 </button>
               </div>
             </div>
-
-            {/* Error message */}
-            <ErrorDisplay 
-              error={error} 
-              type="error"
-              onClose={() => setError("")}
-              className="mb-4"
-            />
             
             {/* Actions */}
             <div className="space-y-2">
@@ -267,7 +251,7 @@ export default function SignupPage() {
 
               {/* Continue with Google */}
               <GoogleAuthButton 
-                onError={(errorMessage) => setError(errorMessage)}
+                onError={(errorMessage) => showToast(errorMessage, "error")}
               />
             </div>
           </form>

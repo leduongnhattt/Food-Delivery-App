@@ -1,30 +1,5 @@
 import { CartItemPayload, CartSnapshot } from "@/types/models"
-
-// Internal helpers
-function getAccessToken(): string | null {
-    if (typeof window === 'undefined') return null
-    try {
-        return localStorage.getItem('access_token')
-    } catch {
-        return null
-    }
-}
-
-function buildHeaders(extra?: Record<string, string>): HeadersInit | undefined {
-    const token = getAccessToken()
-    const base: Record<string, string> = extra ? { ...extra } : {}
-    if (token) base['Authorization'] = `Bearer ${token}`
-    return Object.keys(base).length > 0 ? base : undefined
-}
-
-async function requestJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
-    const res = await fetch(input, { cache: 'no-store', ...init })
-    if (!res.ok) {
-        const message = `Cart request failed (${res.status})`
-        throw new Error(message)
-    }
-    return res.json() as Promise<T>
-}
+import { buildHeaders, requestJson } from '@/lib/http-client'
 
 // Public API used by hooks/components
 export async function fetchCart(): Promise<CartSnapshot> {

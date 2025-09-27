@@ -276,3 +276,47 @@ export function createUnauthorizedResponse(message: string = 'Unauthorized') {
         error: message
     };
 }
+
+/**
+ * Build authorization header
+ */
+export function buildAuthHeader(): Record<string, string> {
+    const token = getAuthToken()
+    return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+/**
+ * Common API response types
+ */
+export interface AuthResponse {
+    success: boolean
+    accessToken?: string
+    refreshToken?: string
+    user?: any
+    error?: string
+}
+
+export interface LoginCredentials {
+    username: string
+    password: string
+}
+
+export interface RegisterCredentials {
+    username: string
+    email: string
+    password: string
+}
+
+export interface PasswordResetRequest {
+    email: string
+}
+
+export interface PasswordResetConfirm {
+    tokenId: string
+    newPassword: string
+}
+
+export interface VerifyCodeRequest {
+    email: string
+    code: string
+}

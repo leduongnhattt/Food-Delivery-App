@@ -1,0 +1,100 @@
+import { useState, useEffect } from 'react'
+import { CustomerService } from '@/services/customer.service'
+import { useAuth } from './use-auth'
+
+export interface ProfileData {
+    fullName: string
+    email: string
+    phone: string
+    address: string
+}
+
+export interface Notification {
+    type: 'success' | 'error'
+    message: string
+}
+
+export function useProfileData() {
+    const { user, isAuthenticated } = useAuth()
+    const [isEditing, setIsEditing] = useState(false)
+    const [profileData, setProfileData] = useState<ProfileData>({
+        fullName: '',
+        email: '',
+        phone: '',
+        address: ''
+    })
+    const [notification, setNotification] = useState<Notification | null>(null)
+
+    // Fetch customer data on mount/auth ready
+    useEffect(() => {
+        const loadProfileData = async () => {
+            if (!isAuthenticated || !user?.id) return
+
+            try {
+                const customer = await CustomerService.getByAccount(user.id)
+                if (customer) {
+                    setProfileData({
+                        fullName: customer.FullName || '',
+                        email: (user as any)?.email || '',
+                        phone: customer.PhoneNumber || '',
+                        address: customer.Address || ''
+                    })
+                }
+            } catch (error) {
+                console.error('Failed to load profile data:', error)
+            }
+        }
+
+        loadProfileData()
+    }, [isAuthenticated, user?.id])
+
+    // Auto-hide notification after 3 seconds
+    useEffect(() => {
+        if (!notification) return
+        const timer = setTimeout(() => setNotification(null), 3000)
+        return () => clearTimeout(timer)
+    }, [notification])
+
+    // Update field value
+    const updateField = (field: keyof ProfileData, value: string) => {
+        setProfileData(prev => ({ ...prev, [field]: value }))
+    }
+
+    // Save profile data
+    const saveProfile = async () => {
+        try {
+            const result = await CustomerService.updateSelf({
+                fullName: profileData.fullName,
+                phone: profileData.phone,
+                address: profileData.address,
+            })
+
+            if (result.success) {
+                setNotification({ type: 'success', message: 'Profile updated successfully!' })
+                setIsEditing(false)
+                return true
+            } else {
+                setNotification({ type: 'error', message: result.error || 'Failed to update profile' })
+                return false
+            }
+        } catch (error) {
+            setNotification({ type: 'error', message: 'Failed to update profile' })
+            return false
+        }
+    }
+
+    // Clear notification
+    const clearNotification = () => {
+        setNotification(null)
+    }
+
+    return {
+        profileData,
+        isEditing,
+        notification,
+        setIsEditing,
+        updateField,
+        saveProfile,
+        clearNotification
+    }
+}

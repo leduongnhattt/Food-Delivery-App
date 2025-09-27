@@ -1,4 +1,6 @@
 import { Food } from '@/types/models'
+import { BaseService } from '@/lib/base-service'
+import { buildQueryString, requestJson, createEmptyPaginatedResponse, type PaginatedResponse } from '@/lib/http-client'
 
 export interface PopularFoodsResponse {
     foods: Food[]
@@ -19,60 +21,27 @@ export interface FoodServiceFilters {
     isAvailable?: boolean
 }
 
-export class FoodService {
-    private static baseUrl = '/api/foods'
+export class FoodService extends BaseService {
+    constructor() {
+        super('/api/foods')
+    }
 
     /**
      * Fetch popular foods from the database
      */
     static async getPopularFoods(filters: FoodServiceFilters = {}): Promise<PopularFoodsResponse> {
-        const params = new URLSearchParams()
-
-        if (filters.limit) {
-            params.append('limit', filters.limit.toString())
-        }
-
-        if (filters.page) {
-            params.append('page', filters.page.toString())
-        }
-
-        if (filters.restaurantId) {
-            params.append('restaurantId', filters.restaurantId)
-        }
-
-        if (filters.category) {
-            params.append('category', filters.category)
-        }
-
-        if (filters.search) {
-            params.append('search', filters.search)
-        }
-
-        if (filters.isAvailable !== undefined) {
-            params.append('isAvailable', filters.isAvailable.toString())
-        }
-
-        const queryString = params.toString()
-        const url = `${this.baseUrl}/popular${queryString ? `?${queryString}` : ''}`
-
         try {
-            const response = await fetch(url, {
+            const queryString = buildQueryString(filters)
+            const url = `/api/foods/popular${queryString ? `?${queryString}` : ''}`
+
+            const response = await requestJson<PopularFoodsResponse>(url, {
                 method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                cache: 'no-store', // Always fetch fresh data
+                cache: 'no-store'
             })
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`)
-            }
-
-            const data = await response.json()
-            return data
+            return response
         } catch (error) {
             console.error('Error fetching popular foods:', error)
-            // Return empty array as fallback
             return {
                 foods: [],
                 pagination: {
@@ -89,50 +58,16 @@ export class FoodService {
      * Fetch all foods with filters
      */
     static async getAllFoods(filters: FoodServiceFilters = {}): Promise<PopularFoodsResponse> {
-        const params = new URLSearchParams()
-
-        if (filters.limit) {
-            params.append('limit', filters.limit.toString())
-        }
-
-        if (filters.page) {
-            params.append('page', filters.page.toString())
-        }
-
-        if (filters.restaurantId) {
-            params.append('restaurantId', filters.restaurantId)
-        }
-
-        if (filters.category) {
-            params.append('category', filters.category)
-        }
-
-        if (filters.search) {
-            params.append('search', filters.search)
-        }
-
-        if (filters.isAvailable !== undefined) {
-            params.append('isAvailable', filters.isAvailable.toString())
-        }
-
-        const queryString = params.toString()
-        const url = `${this.baseUrl}${queryString ? `?${queryString}` : ''}`
-
         try {
-            const response = await fetch(url, {
+            const queryString = buildQueryString(filters)
+            const url = `/api/foods${queryString ? `?${queryString}` : ''}`
+
+            const response = await requestJson<PopularFoodsResponse>(url, {
                 method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                cache: 'no-store',
+                cache: 'no-store'
             })
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`)
-            }
-
-            const data = await response.json()
-            return data
+            return response
         } catch (error) {
             console.error('Error fetching foods:', error)
             return {
@@ -163,14 +98,17 @@ export class FoodService {
 
     static async getFoodsByIds(ids: string[]): Promise<Array<{ id: string, name: string, price: number, imageUrl: string, restaurantId: string, category?: string, description?: string, restaurantName?: string }>> {
         if (!ids.length) return []
-        const res = await fetch(`${this.baseUrl}/by-ids`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ids }),
-            cache: 'no-store',
-        })
-        if (!res.ok) return []
-        const data = await res.json()
-        return data.foods || []
+
+        try {
+            const response = await requestJson<{ foods: any[] }>('/api/foods/by-ids', {
+                method: 'POST',
+                body: JSON.stringify({ ids }),
+                cache: 'no-store'
+            })
+            return response.foods || []
+        } catch (error) {
+            console.error('Error fetching foods by IDs:', error)
+            return []
+        }
     }
 }

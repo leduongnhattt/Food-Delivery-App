@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { retryDatabaseOperation } from '@/lib/database-retry'
+import { retryDatabaseOperation } from '@/lib/retry-utils'
 
 export async function GET(
     request: NextRequest,

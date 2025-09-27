@@ -14,7 +14,7 @@ const ROUTE_PERMISSIONS = {
     // Customer routes - only customer can access
     '/orders': ['customer'],
     '/api/orders': ['customer'],
-    '/profile': ['customer'],
+    '/profile': [], // Let client-side handle authentication for profile page
     '/api/auth/profile': ['customer'],
     '/api/orders/track': ['customer'],
 

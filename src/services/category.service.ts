@@ -1,3 +1,6 @@
+import { BaseService } from '@/lib/base-service'
+import { requestJson } from '@/lib/http-client'
+
 export interface CategoryDto {
     id: string
     name: string
@@ -5,13 +8,21 @@ export interface CategoryDto {
     foodCount?: number
 }
 
-export class CategoryService {
-    private static baseUrl = '/api/categories'
+export class CategoryService extends BaseService {
+    constructor() {
+        super('/api/categories')
+    }
 
     static async getAll(): Promise<CategoryDto[]> {
-        const res = await fetch(this.baseUrl, { cache: 'no-store' })
-        if (!res.ok) throw new Error('Failed to fetch categories')
-        const data = await res.json() as { categories: CategoryDto[] }
-        return data.categories ?? []
+        try {
+            const response = await requestJson<{ categories: CategoryDto[] }>('/api/categories', {
+                method: 'GET',
+                cache: 'no-store'
+            })
+            return response.categories ?? []
+        } catch (error) {
+            console.error('Error fetching categories:', error)
+            return []
+        }
     }
 }

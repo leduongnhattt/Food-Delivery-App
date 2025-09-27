@@ -110,7 +110,7 @@ export async function createAccount(params: {
     const customer = await createCustomer({
         accountId: account.AccountID,
         fullName: params.username, // Use username as temporary full name
-        phoneNumber: `temp_${account.AccountID.slice(-8)}`, // Unique temporary phone number
+        phoneNumber: '', // Unique temporary phone number
         address: 'Default Address', // Default address
         preferredPaymentMethod: 'Cash' // Default payment method
     });

@@ -23,12 +23,18 @@
     "errors": {
       "registrationFailed": "Registration failed",
       "passwordMismatch": "Passwords do not match. Please try again.",
-      "passwordTooShort": "Password must be at least 8 characters long."
+      "passwordTooShort": "Password must be at least 8 characters long.",
+      "usernameExists": "This username is already taken. Please choose another one.",
+      "emailExists": "This email is already registered. Please use a different email or sign in.",
+      "validationFailed": "Invalid information. Please check the required fields.",
+      "unexpectedError": "An unexpected error occurred. Please try again.",
+      "allFieldsRequired": "Please fill in all required information"
     },
     "success": {
       "title": "Registration Successful!",
       "registrationComplete": "Your account has been created successfully. You can now sign in with your credentials.",
-      "continue": "Continue to Sign In"
+      "continue": "Continue to Sign In",
+      "welcomeMessage": "Registration successful! Welcome to HanalaFood."
     }
   },
   "signin": {
