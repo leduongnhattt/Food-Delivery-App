@@ -10,9 +10,10 @@ interface OrderSummaryProps {
   discount?: { code: string; amount: number } | null
   total: number
   onPlaceOrder: () => void
+  buttonText?: string
 }
 
-export function OrderSummary({ totalItems, subtotal, deliveryFee, discount, total, onPlaceOrder }: OrderSummaryProps) {
+export function OrderSummary({ totalItems, subtotal, deliveryFee, discount, total, onPlaceOrder, buttonText }: OrderSummaryProps) {
   return (
     <Card className="shadow-xl border-0 bg-gradient-to-br from-orange-500 to-red-500 text-white">
       <CardContent className="p-6">
@@ -40,7 +41,7 @@ export function OrderSummary({ totalItems, subtotal, deliveryFee, discount, tota
           </div>
         </div>
         <Button className="w-full mt-6 bg-white text-orange-600 hover:bg-gray-100 font-bold py-4 text-lg shadow-lg hover:shadow-xl transition-all duration-200" size="lg" onClick={onPlaceOrder}>
-          Place Order - {formatPrice(total)}
+          {buttonText ?? `Place Order - ${formatPrice(total)}`}
         </Button>
       </CardContent>
     </Card>

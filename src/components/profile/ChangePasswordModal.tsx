@@ -1,6 +1,11 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PasswordStrength } from '@/components/ui/password-strength'
 import { X, Eye, EyeOff } from 'lucide-react'
+import { useAuthValidation } from '@/hooks/use-auth-validation'
+import { useToast } from '@/contexts/toast-context'
+import { changePassword } from '@/services/change-password.service'
+import { useState } from 'react'
 
 interface ChangePasswordModalProps {
   isOpen: boolean
@@ -41,6 +46,74 @@ export function ChangePasswordModal({
   onToggleConfirmVisibility,
   onUpdatePassword
 }: ChangePasswordModalProps) {
+  const { showToast } = useToast()
+  const { validatePassword, validatePasswordMatch } = useAuthValidation()
+  const [isLoading, setIsLoading] = useState(false)
+
+  // Validate new password strength
+  const handleNewPasswordChange = (value: string) => {
+    onNewPasswordChange(value)
+    
+    // Check if new password is same as current password (real-time validation)
+    if (value && currentPassword && value === currentPassword) {
+      showToast("New password must be different from current password", "error")
+    }
+  }
+
+  // Validate password confirmation
+  const handleConfirmPasswordChange = (value: string) => {
+    onConfirmPasswordChange(value)
+  }
+
+  // Check if new password is same as current password
+  const isNewPasswordSameAsCurrent = () => {
+    return newPassword && currentPassword && newPassword === currentPassword
+  }
+
+  // Validate all fields before updating password
+  const handleUpdatePassword = async () => {
+    // Check if new password is same as current password
+    if (isNewPasswordSameAsCurrent()) {
+      showToast("New password must be different from current password", "error")
+      onNewPasswordChange("")
+      onConfirmPasswordChange("")
+      return
+    }
+
+    // Validate new password strength
+    if (!validatePassword(newPassword, onNewPasswordChange)) {
+      return
+    }
+
+    // Validate password confirmation
+    if (!validatePasswordMatch(newPassword, confirmPassword, onNewPasswordChange, onConfirmPasswordChange)) {
+      return
+    }
+
+    // If all validations pass, call API to change password
+    try {
+      setIsLoading(true)
+      
+      const result = await changePassword({
+        currentPassword,
+        newPassword
+      })
+
+      if (result.success) {
+        showToast("Password changed successfully! Please log in again.", "success")
+        onClose() // Close modal
+        // Optionally redirect to login or refresh the page
+        window.location.reload()
+      } else {
+        showToast(result.error?.message || "Failed to change password", "error")
+      }
+    } catch (error) {
+      showToast("An unexpected error occurred", "error")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   if (!isOpen) return null
 
   return (
@@ -73,20 +146,37 @@ export function ChangePasswordModal({
               disabled={!canEditPassword}
               type={showNew ? 'text' : 'password'}
               value={newPassword}
-              onChange={(e) => onNewPasswordChange(e.target.value)}
+              onChange={(e) => handleNewPasswordChange(e.target.value)}
               className="border-gray-300 focus:border-orange-600 focus:ring-orange-600 h-11 rounded-lg disabled:bg-gray-100 pr-10"
             />
             <button type="button" className="absolute right-3 top-[38px] text-gray-500" onClick={onToggleNewVisibility}>
               {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
+          
+          {/* Password Strength Indicator */}
+          {newPassword && (
+            <PasswordStrength password={newPassword} className="mt-2" />
+          )}
+          
+          {/* Warning if new password is same as current password */}
+          {newPassword && currentPassword && newPassword === currentPassword && (
+            <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center">
+                <div className="w-4 h-4 text-red-500 mr-2">⚠️</div>
+                <span className="text-red-700 text-sm">
+                  New password must be different from current password
+                </span>
+              </div>
+            </div>
+          )}
           <div className="relative">
             <label className="block text-sm font-medium mb-2 text-gray-700">Confirm New Password</label>
             <Input
               disabled={!canEditPassword}
               type={showConfirm ? 'text' : 'password'}
               value={confirmPassword}
-              onChange={(e) => onConfirmPasswordChange(e.target.value)}
+              onChange={(e) => handleConfirmPasswordChange(e.target.value)}
               className="border-gray-300 focus:border-orange-600 focus:ring-orange-600 h-11 rounded-lg disabled:bg-gray-100 pr-10"
             />
             <button type="button" className="absolute right-3 top-[38px] text-gray-500" onClick={onToggleConfirmVisibility}>
@@ -103,11 +193,18 @@ export function ChangePasswordModal({
               Cancel
             </Button>
             <Button
-              disabled={!canEditPassword}
+              disabled={!canEditPassword || isLoading}
               className="bg-orange-600 hover:bg-orange-700 text-white disabled:opacity-50"
-              onClick={onUpdatePassword}
+              onClick={handleUpdatePassword}
             >
-              Update Password
+              {isLoading ? (
+                <div className="flex items-center">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Updating...
+                </div>
+              ) : (
+                "Update Password"
+              )}
             </Button>
           </div>
         </div>

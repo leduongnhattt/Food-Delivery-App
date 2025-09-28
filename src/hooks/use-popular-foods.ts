@@ -31,7 +31,7 @@ export function usePopularFoods(filters: FoodServiceFilters = {}): UsePopularFoo
             setLoading(true)
             setError(null)
 
-            const response = await FoodService.getPopularFoods(filters)
+            const response = await FoodService.getPopularFoodsDebounced(filters)
             setFoods(response.foods)
             setPagination(response.pagination)
         } catch (err) {

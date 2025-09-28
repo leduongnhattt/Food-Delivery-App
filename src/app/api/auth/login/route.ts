@@ -47,7 +47,8 @@ export async function POST(request: NextRequest) {
         // Issue tokens
         const { accessToken, refreshToken, expiredAt } = await issueTokens(
             account.AccountID,
-            account.role?.RoleName || 'customer'
+            account.role?.RoleName || 'customer',
+            'email' // Provider for email/password login
         )
 
         // Create response

@@ -90,10 +90,10 @@ export function validateFullName(fullName: string): ValidationResult {
         errors.push('Full name must be less than 100 characters')
     }
 
-    // Allow letters, spaces, hyphens, and apostrophes
-    const nameRegex = /^[a-zA-Z\s\-']+$/
+    // Allow letters, numbers, spaces, hyphens, and apostrophes
+    const nameRegex = /^[a-zA-Z0-9\s\-']+$/
     if (!nameRegex.test(fullName)) {
-        errors.push('Full name can only contain letters, spaces, hyphens, and apostrophes')
+        errors.push('Full name can only contain letters, numbers, spaces, hyphens, and apostrophes')
     }
 
     // Check for multiple consecutive spaces
@@ -316,7 +316,7 @@ export const commonValidationRules = {
     fullName: {
         required: true,
         maxLength: 100,
-        pattern: /^[a-zA-Z\s\-']+$/,
+        pattern: /^[a-zA-Z0-9\s\-']+$/,
         custom: (value: string) => {
             if (/\s{2,}/.test(value)) {
                 return 'Full name cannot contain multiple consecutive spaces'

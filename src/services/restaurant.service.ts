@@ -2,6 +2,7 @@ import { apiClient } from './api'
 import { Restaurant } from '@/types/models'
 import { BaseService } from '@/lib/base-service'
 import { buildQueryString, requestJson, createEmptyPaginatedResponse } from '@/lib/http-client'
+import { createDebouncedApiCall } from '@/lib/debounce'
 
 export interface RestaurantFilters {
     search?: string
@@ -127,4 +128,10 @@ export class RestaurantService extends BaseService {
         // In a real app, you'd use actual geolocation API
         return apiClient.get<Restaurant[]>('/restaurants', { limit: 10 })
     }
+
+    // Debounced version to prevent multiple calls
+    static getRestaurantsDebounced = createDebouncedApiCall(
+        RestaurantService.getRestaurants,
+        200
+    )
 }

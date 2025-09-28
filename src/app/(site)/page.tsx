@@ -27,7 +27,7 @@ export default function HomePage() {
 
   React.useEffect(() => {
     let mounted = true
-    CategoryService.getAll().then(list => {
+    CategoryService.getAllDebounced().then(list => {
       if (mounted) setCategories(list)
     }).finally(() => mounted && setLoadingCategories(false))
     return () => { mounted = false }

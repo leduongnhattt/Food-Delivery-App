@@ -19,13 +19,16 @@ export function useRestaurantDetail(id: string): UseRestaurantResult {
     const [loading, setLoading] = React.useState(true)
     const [error, setError] = React.useState<string | null>(null)
 
+    // Memoize the ID to prevent unnecessary re-renders
+    const memoizedId = React.useMemo(() => id, [id])
+
     const load = React.useCallback(async () => {
         setLoading(true)
         setError(null)
         try {
             const [r, foodsResp] = await Promise.all([
-                RestaurantService.getRestaurantById(id),
-                FoodService.getAllFoods({ restaurantId: id, limit: 100 })
+                RestaurantService.getRestaurantById(memoizedId),
+                FoodService.getAllFoods({ restaurantId: memoizedId, limit: 100 })
             ])
 
             setRestaurant(mapRestaurantToVM(r))
@@ -35,9 +38,18 @@ export function useRestaurantDetail(id: string): UseRestaurantResult {
         } finally {
             setLoading(false)
         }
-    }, [id])
+    }, [memoizedId])
 
-    React.useEffect(() => { load() }, [load])
+    React.useEffect(() => {
+        // Simple debounce to prevent double calls
+        const timeoutId = setTimeout(() => {
+            load()
+        }, 100)
+
+        return () => {
+            clearTimeout(timeoutId)
+        }
+    }, [load])
 
     return { restaurant, items, loading, error, refetch: load }
 }

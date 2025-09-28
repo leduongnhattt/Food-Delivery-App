@@ -1,5 +1,6 @@
 import { BaseService } from '@/lib/base-service'
 import { requestJson } from '@/lib/http-client'
+import { createDebouncedApiCall } from '@/lib/debounce'
 
 export interface CategoryDto {
     id: string
@@ -25,4 +26,10 @@ export class CategoryService extends BaseService {
             return []
         }
     }
+
+    // Debounced version to prevent multiple calls
+    static getAllDebounced = createDebouncedApiCall(
+        CategoryService.getAll,
+        200
+    )
 }

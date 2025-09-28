@@ -71,18 +71,8 @@ export function validateAndFormatPhoneNumber(phoneNumber: string): PhoneNumberIn
  * @returns Temporary phone number
  */
 export function generateTemporaryPhoneNumber(accountId: string): string {
-    // Generate a pseudo-unique VN-style number: leading 0 + 9 digits
-    try {
-        const nodeCrypto = require('crypto') as typeof import('crypto')
-        const seed = `${accountId}:${Date.now()}:${Math.random()}`
-        const hex = nodeCrypto.createHash('sha256').update(seed).digest('hex')
-        const digits = hex.replace(/\D/g, '').slice(0, 9).padEnd(9, '0')
-        return `0${digits}`
-    } catch {
-        // Fallback: timestamp-based
-        const ts = `${Date.now()}`.slice(-9).padStart(9, '0')
-        return `0${ts}`
-    }
+    // Return 11 zeros as temporary phone number
+    return '00000000000'
 }
 
 /**

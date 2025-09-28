@@ -1,6 +1,7 @@
 import { Food } from '@/types/models'
 import { BaseService } from '@/lib/base-service'
 import { buildQueryString, requestJson, createEmptyPaginatedResponse, type PaginatedResponse } from '@/lib/http-client'
+import { createDebouncedApiCall } from '@/lib/debounce'
 
 export interface PopularFoodsResponse {
     foods: Food[]
@@ -111,4 +112,16 @@ export class FoodService extends BaseService {
             return []
         }
     }
+
+    // Debounced version to prevent multiple calls
+    static getFoodsByIdsDebounced = createDebouncedApiCall(
+        FoodService.getFoodsByIds,
+        200
+    )
+
+    // Debounced version for popular foods
+    static getPopularFoodsDebounced = createDebouncedApiCall(
+        FoodService.getPopularFoods,
+        200
+    )
 }

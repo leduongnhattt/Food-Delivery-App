@@ -6,7 +6,10 @@ import { Badge } from '@/components/ui/badge'
 import { formatPrice } from '@/lib/utils'
 import { CartItem } from '@/types/models'
 import { useCart } from '@/hooks/use-cart'
+import { useDeliveryData } from '@/hooks/use-delivery-data'
+import { useAuth } from '@/hooks/use-auth'
 import { useRouter } from 'next/navigation'
+import { PaymentService } from '@/services/payment.service'
 import { Minus, Plus, Trash2, ArrowLeft, Clock, MapPin, Star, Truck, Gift, CheckCircle, Circle, Info, X } from 'lucide-react'
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
@@ -17,31 +20,125 @@ import { DeliveryForm } from '@/components/checkout/DeliveryForm'
 import { PromoOffers } from '@/components/checkout/PromoOffers'
 import { PaymentSelector } from '@/components/checkout/PaymentSelector'
 import { OrderSummary } from '@/components/checkout/OrderSummary'
+import { StripeProvider } from '@/components/payments/StripeProvider'
+import { StripePaymentForm } from '@/components/payments/StripePaymentForm'
+
+// Constants
+const DELIVERY_FEE = 0.5
+const RESTAURANT_LOGO_DEBOUNCE_MS = 200
+
+// Mock available offers (in real app, this would come from API)
+const AVAILABLE_OFFERS = [
+  { code: 'WELCOME10', discount: 10000, description: 'New user discount', eligible: true },
+  { code: 'SAVE20', discount: 20000, description: 'Orders over 200k', eligible: true },
+  { code: 'LUNCHONLY', discount: 15000, description: 'Valid 11:00-14:00', eligible: false }
+]
+
+// Types
+type PaymentMethod = 'cash' | 'card' | 'momo' | 'stripe'
+type AppliedVoucher = { code: string; discount: number } | null
+
+interface CheckoutData {
+  cartItems: CartItem[]
+  deliveryInfo: {
+    phone: string
+    address: string
+  }
+  voucherCode?: string
+  total: number
+}
 
 export default function CheckoutPage() {
   const router = useRouter()
   const { cartItems, updateQuantity, removeFromCart, clearCart } = useCart()
-  const [appliedVoucher, setAppliedVoucher] = useState<{code: string, discount: number} | null>(null)
+  const { deliveryData, isLoading: isDeliveryLoading } = useDeliveryData()
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth()
+  
+  // State management
+  const [appliedVoucher, setAppliedVoucher] = useState<AppliedVoucher>(null)
   const [isOffersModalOpen, setIsOffersModalOpen] = useState(false)
-  // Mock user data - in real app, this would come from user profile
-  const userInfo = {
-    phone: '0123456789',
-    address: '123 Đường ABC, Quận 1, TP.HCM',
-    email: 'user@example.com'
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+  const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null)
+
+  // Calculate totals
+  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
+  const subtotal = cartItems.reduce(
+    (sum, item) => sum + item.menuItem.price * item.quantity,
+    0
+  )
+  const voucherDiscount = appliedVoucher?.discount || 0
+  const total = subtotal + DELIVERY_FEE - voucherDiscount
+
+  // Get restaurant info from first cart item
+  const restaurantInfo = cartItems[0]?.menuItem ? {
+    name: cartItems[0].menuItem.restaurantName || 'Restaurant Name',
+    rating: 4.5,
+    deliveryTime: '25-35 min',
+    address: '123 Main Street, City'
+  } : null
+
+  // Debounced restaurant logo fetch
+  useEffect(() => {
+    const first = cartItems[0]?.menuItem
+    if (!first) return
+    
+    const timeoutId = setTimeout(() => {
+      RestaurantService.getRestaurantById(first.restaurantId)
+        .then((restaurant) => {
+          if (restaurant?.avatarUrl) setRestaurantLogo(restaurant.avatarUrl)
+        })
+        .catch(() => {}) // Silent fail for better UX
+    }, RESTAURANT_LOGO_DEBOUNCE_MS)
+
+    return () => clearTimeout(timeoutId)
+  }, [cartItems])
+
+  // Show loading while checking authentication
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
   }
 
-  const [deliveryInfo, setDeliveryInfo] = useState({
-    phone: userInfo.phone,
-    address: userInfo.address
-  })
+  // Redirect to login if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 flex items-center justify-center">
+        <div className="max-w-md mx-auto text-center">
+          <div className="mb-6">
+            <div className="w-24 h-24 mx-auto mb-4 bg-orange-100 rounded-full flex items-center justify-center">
+              <span className="text-4xl">🔒</span>
+            </div>
+            <h1 className="text-2xl font-bold mb-2">Login Required</h1>
+            <p className="text-gray-600 mb-6">Please login to place an order.</p>
+            <div className="space-y-3">
+              <Button 
+                onClick={() => router.push('/signin')} 
+                className="w-full bg-orange-500 hover:bg-orange-600"
+              >
+                Login
+              </Button>
+              <Button 
+                onClick={() => router.push('/signup')} 
+                variant="outline" 
+                className="w-full"
+              >
+                Sign Up
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
-  // Payment method and modal to switch methods
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'momo'>('cash')
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
-
-  // Payment method is fixed to Cash on Delivery per UX
-
-  // Redirect if cart is empty
+  // Redirect if cart is empty - AFTER all hooks
   if (cartItems.length === 0) {
     return (
       <div className="container py-8">
@@ -61,36 +158,6 @@ export default function CheckoutPage() {
     )
   }
 
-  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.menuItem.price * item.quantity,
-    0
-  )
-  const deliveryFee = 0.5
-  const voucherDiscount = appliedVoucher?.discount || 0
-  const total = subtotal + deliveryFee - voucherDiscount
-
-  // Get restaurant info from first cart item
-  const restaurantInfo = cartItems[0]?.menuItem ? {
-    name: cartItems[0].menuItem.restaurantName || 'Restaurant Name',
-    rating: 4.5,
-    deliveryTime: '25-35 min',
-    address: '123 Main Street, City'
-  } : null
-
-  const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null)
-
-  useEffect(() => {
-    const first = cartItems[0]?.menuItem
-    if (!first) return
-    // Try to fetch restaurant avatar/logo by restaurantId
-    RestaurantService.getRestaurantById(first.restaurantId)
-      .then((r) => {
-        if (r && r.avatarUrl) setRestaurantLogo(r.avatarUrl)
-      })
-      .catch(() => {})
-  }, [cartItems])
-
   const handleQuantityChange = (menuItemId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
       removeFromCart(menuItemId)
@@ -99,15 +166,8 @@ export default function CheckoutPage() {
     }
   }
 
-  // Mock available offers list (some may not be eligible)
-  const availableOffers: Array<{ code: string; discount: number; description: string; eligible: boolean }> = [
-    { code: 'WELCOME10', discount: 10000, description: 'New user discount', eligible: true },
-    { code: 'SAVE20', discount: 20000, description: 'Orders over 200k', eligible: true },
-    { code: 'LUNCHONLY', discount: 15000, description: 'Valid 11:00-14:00', eligible: false }
-  ]
-
   const handleApplyVoucher = (code: string) => {
-    const offer = availableOffers.find(o => o.code === code && o.eligible)
+    const offer = AVAILABLE_OFFERS.find(o => o.code === code && o.eligible)
     if (offer) {
       setAppliedVoucher({ code: offer.code, discount: offer.discount })
       setIsOffersModalOpen(false)
@@ -118,12 +178,69 @@ export default function CheckoutPage() {
     setAppliedVoucher(null)
   }
 
-  const handlePlaceOrder = () => {
-    // TODO: Implement order placement
-    alert('Order placed successfully!')
-    clearCart()
-    router.push('/orders')
+  const handlePlaceOrder = async () => {
+    try {
+      const checkoutData: CheckoutData = {
+        cartItems,
+        deliveryInfo: {
+          phone: deliveryData.phone,
+          address: deliveryData.address
+        },
+        voucherCode: appliedVoucher?.code,
+        total: total
+      }
+
+      if (paymentMethod === 'stripe') {
+        await handleStripePayment(checkoutData)
+      } else if (paymentMethod === 'cash') {
+        await handleCashPayment(checkoutData)
+      }
+    } catch (error) {
+      console.error('Error processing order:', error)
+      alert('Failed to process order')
+    }
   }
+
+  const handleStripePayment = async (checkoutData: CheckoutData) => {
+    const result = await PaymentService.processStripePayment(checkoutData)
+    
+    if (result.error) {
+      alert(`Failed to create checkout session: ${result.error}`)
+      return
+    }
+
+    if (result.redirectUrl) {
+      window.location.href = result.redirectUrl
+    }
+  }
+
+  const handleCashPayment = async (checkoutData: CheckoutData) => {
+    const paymentNotification = PaymentService.createPaymentNotification()
+    
+    const result = await PaymentService.processCashOnDelivery(
+      checkoutData,
+      clearCart,
+      paymentNotification
+    )
+
+    if (result.success && result.orderId) {
+      // Cart is already cleared in PaymentService.processCashOnDelivery()
+      // Just notify other tabs and redirect
+      paymentNotification.notifyOtherTabs()
+      
+      // Redirect to success page with delivery information
+      const deliveryParams = new URLSearchParams({
+        orderId: result.orderId,
+        paymentMethod: 'cash',
+        phone: deliveryData.phone,
+        address: deliveryData.address
+      })
+      router.push(`/order-success?${deliveryParams.toString()}`)
+    } else {
+      alert(`Failed to create order: ${result.error}`)
+    }
+  }
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50">
@@ -133,10 +250,10 @@ export default function CheckoutPage() {
           <div className="mb-8">
             <div className="flex items-center gap-4 mb-6">
               <Button 
-                variant="ghost" 
+                variant="outline" 
                 size="sm" 
                 onClick={() => router.back()}
-                className="flex items-center gap-2 hover:bg-white/50"
+                className="flex items-center gap-2 h-9 rounded-full border border-gray-200 bg-white text-gray-700 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-300 shadow-sm"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back
@@ -199,11 +316,15 @@ export default function CheckoutPage() {
 
             {/* Right - Checkout Form */}
             <div className="space-y-6">
-              <DeliveryForm phone={deliveryInfo.phone} address={deliveryInfo.address} onChange={(n) => setDeliveryInfo(n)} />
+              <DeliveryForm 
+                phone={deliveryData.phone} 
+                address={deliveryData.address} 
+                isLoading={isDeliveryLoading}
+              />
 
               <PromoOffers
                 applied={appliedVoucher}
-                offers={availableOffers}
+                offers={AVAILABLE_OFFERS}
                 isModalOpen={isOffersModalOpen}
                 onOpenModal={() => setIsOffersModalOpen(true)}
                 onCloseModal={() => setIsOffersModalOpen(false)}
@@ -224,11 +345,19 @@ export default function CheckoutPage() {
               <OrderSummary
                 totalItems={totalItems}
                 subtotal={subtotal}
-                deliveryFee={deliveryFee}
+                deliveryFee={DELIVERY_FEE}
                 discount={appliedVoucher ? { code: appliedVoucher.code, amount: appliedVoucher.discount } : null}
                 total={total}
+                buttonText={
+                  paymentMethod === 'stripe'
+                    ? `Pay Now — ${formatPrice(total)}`
+                    : paymentMethod === 'cash'
+                      ? `Confirm Order — ${formatPrice(total)}`
+                      : `Proceed to Payment — ${formatPrice(total)}`
+                }
                 onPlaceOrder={handlePlaceOrder}
               />
+
             </div>
           </div>
         </div>
@@ -236,3 +365,4 @@ export default function CheckoutPage() {
     </div>
   )
 }
+

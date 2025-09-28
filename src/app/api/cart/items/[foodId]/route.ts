@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { resolveActiveCartId, setCartItemQty, snapshotCart } from '../../_service/cart.server'
 import { ONE_DAY_SECONDS } from '@/lib/cart-keys'
-import { verifyToken } from '@/lib/auth'
+import { verifyTokenEdgeSync } from '@/lib/auth-edge'
 
 function getActor(req: NextRequest): { userId?: string, guestToken?: string } {
     let userId = req.headers.get('x-user-id') || undefined
@@ -9,7 +9,7 @@ function getActor(req: NextRequest): { userId?: string, guestToken?: string } {
         const authHeader = req.headers.get('authorization')
         const bearer = authHeader?.replace('Bearer ', '')
         if (bearer) {
-            const decoded = verifyToken(bearer)
+            const decoded = verifyTokenEdgeSync(bearer)
             if (decoded?.accountId && decoded.role?.toLowerCase() === 'customer') {
                 userId = decoded.accountId
             }

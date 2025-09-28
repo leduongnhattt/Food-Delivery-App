@@ -31,7 +31,7 @@ export function useRestaurantList(filters: RestaurantFilters = {}): UseRestauran
             setLoading(true)
             setError(null)
 
-            const response = await RestaurantService.getRestaurants(filters)
+            const response = await RestaurantService.getRestaurantsDebounced(filters)
 
             setRestaurants(response.restaurants)
             setPagination(response.pagination)

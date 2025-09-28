@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
 
-type Method = 'cash' | 'card' | 'momo'
+type Method = 'cash' | 'card' | 'momo' | 'stripe'
 
 interface PaymentSelectorProps {
   method: Method
@@ -23,8 +23,8 @@ export function PaymentSelector({ method, isModalOpen, onOpen, onClose, onChange
       <CardContent>
         <button type="button" onClick={onOpen} className="w-full flex items-center justify-between p-3 rounded-lg border border-gray-200 bg-white hover:bg-orange-50 transition-colors">
           <div className="flex items-center gap-2 text-left">
-            <span className="text-lg" aria-hidden>{method === 'cash' ? '💵' : method === 'card' ? '💳' : '📱'}</span>
-            <span className="font-medium">{method === 'cash' ? 'Cash on Delivery' : method === 'card' ? 'Credit/Debit Card' : 'MoMo Wallet'}</span>
+            <span className="text-lg" aria-hidden>{method === 'cash' ? '💵' : method === 'card' ? '💳' : method === 'stripe' ? '💳' : '📱'}</span>
+            <span className="font-medium">{method === 'cash' ? 'Cash on Delivery' : method === 'card' ? 'Credit/Debit Card' : method === 'stripe' ? 'Stripe Payment' : 'MoMo Wallet'}</span>
           </div>
           <Badge variant="secondary" className="bg-green-100 text-green-700">Change</Badge>
         </button>
@@ -41,12 +41,12 @@ export function PaymentSelector({ method, isModalOpen, onOpen, onClose, onChange
               </Button>
             </div>
             <div className="p-4 space-y-3">
-              {(['cash','card','momo'] as Method[]).map((m) => (
+              {(['cash','card','stripe','momo'] as Method[]).map((m) => (
                 <label key={m} className="flex items-center space-x-3 cursor-pointer p-3 rounded-lg hover:bg-orange-50 border border-gray-200 hover:border-orange-300 transition-colors">
                   <input type="radio" name="payment" value={m} checked={method===m} onChange={() => { onChange(m); onClose() }} className="text-orange-500" />
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">{m === 'cash' ? '💵' : m === 'card' ? '💳' : '📱'}</span>
-                    <span className="font-medium">{m === 'cash' ? 'Cash on Delivery' : m === 'card' ? 'Credit/Debit Card' : 'MoMo Wallet'}</span>
+                    <span className="text-lg">{m === 'cash' ? '💵' : m === 'card' ? '💳' : m === 'stripe' ? '💳' : '📱'}</span>
+                    <span className="font-medium">{m === 'cash' ? 'Cash on Delivery' : m === 'card' ? 'Credit/Debit Card' : m === 'stripe' ? 'Stripe Payment' : 'MoMo Wallet'}</span>
                   </div>
                 </label>
               ))}

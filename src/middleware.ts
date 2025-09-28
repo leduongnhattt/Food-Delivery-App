@@ -1,22 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/auth'
+import { verifyTokenEdgeSync, generateUUID } from '@/lib/auth-edge'
 
 // Define route patterns and their required roles
 const ROUTE_PERMISSIONS = {
     // Admin routes - only admin can access
-    '/admin': ['admin'],
-    '/api/admin': ['admin'],
+    '/admin': ['Admin'],
+    '/api/admin': ['Admin'],
 
     // Enterprise routes - only enterprise can access
-    '/enterprise': ['enterprise'],
-    '/api/enterprise': ['enterprise'],
+    '/enterprise': ['Enterprise'],
+    '/api/enterprise': ['Enterprise'],
 
     // Customer routes - only customer can access
-    '/orders': ['customer'],
-    '/api/orders': ['customer'],
+    '/orders': ['Customer'],
+    '/api/orders': ['Customer'],
+    '/api/orders/create': ['Customer'],
+    '/api/payments/create-checkout-session': ['Customer'],
+    '/api/payments/process-checkout-success': ['Customer'],
+    '/api/payments/store-cart-data': ['Customer'],
     '/profile': [], // Let client-side handle authentication for profile page
-    '/api/auth/profile': ['customer'],
-    '/api/orders/track': ['customer'],
+    '/api/auth/profile': ['Customer'],
+    '/api/orders/track': ['Customer'],
 
     // Public routes - no authentication required
     '/': [],
@@ -38,7 +42,7 @@ const ROUTE_PERMISSIONS = {
 // Get user role from token
 function getUserRole(token: string): string | null {
     try {
-        const decoded = verifyToken(token)
+        const decoded = verifyTokenEdgeSync(token)
         return decoded?.role || null
     } catch {
         return null
@@ -67,7 +71,7 @@ function getRoutePermissions(pathname: string): string[] {
     }
 
     // Default: require authentication for unknown routes
-    return ['customer', 'admin', 'enterprise']
+    return ['Customer', 'Admin', 'Enterprise']
 }
 
 export function middleware(request: NextRequest) {
@@ -90,7 +94,7 @@ export function middleware(request: NextRequest) {
         const refreshToken = request.cookies.get('refresh_token')?.value
         if (refreshToken) {
             try {
-                const decoded = verifyToken(refreshToken)
+                const decoded = verifyTokenEdgeSync(refreshToken)
                 if (decoded) {
                     // User is already authenticated, redirect to home
                     return NextResponse.redirect(new URL('/', request.url))
@@ -114,7 +118,7 @@ export function middleware(request: NextRequest) {
         // Ensure guest_token for public routes (guest cart)
         const hasGuest = request.cookies.get('guest_token')?.value
         if (!hasGuest) {
-            const token = crypto.randomUUID()
+            const token = generateUUID()
             res.cookies.set('guest_token', token, {
                 httpOnly: true,
                 sameSite: 'lax',
@@ -128,7 +132,9 @@ export function middleware(request: NextRequest) {
 
     // Get token from Authorization header or refresh_token cookie
     const authHeader = request.headers.get('authorization')
-    const token = authHeader?.replace('Bearer ', '') || request.cookies.get('refresh_token')?.value
+    const token = authHeader?.replace('Bearer ', '')
+        || request.cookies.get('refresh_token')?.value
+
 
     if (!token) {
         // For API routes, return 401
@@ -152,6 +158,7 @@ export function middleware(request: NextRequest) {
     // Verify token and get user role
     const userRole = getUserRole(token)
 
+
     if (!userRole) {
         // Clear invalid token cookie
         const response = pathname.startsWith('/api/')
@@ -170,7 +177,9 @@ export function middleware(request: NextRequest) {
     }
 
     // Check if user has required role
-    if (!hasRequiredRole(userRole, requiredRoles)) {
+    const hasRole = hasRequiredRole(userRole, requiredRoles)
+
+    if (!hasRole) {
         // User doesn't have required role
         return NextResponse.json(
             { error: 'Access denied. Insufficient permissions.' },
@@ -183,7 +192,7 @@ export function middleware(request: NextRequest) {
     response.headers.set('x-user-role', userRole)
 
     // Get user ID from token
-    const decoded = verifyToken(token)
+    const decoded = verifyTokenEdgeSync(token)
     if (decoded) {
         response.headers.set('x-user-id', decoded.accountId || decoded.userId || '')
     }
@@ -191,7 +200,7 @@ export function middleware(request: NextRequest) {
     // Ensure guest_token also for authenticated traffic (to support pre-login cart merge)
     const hasGuest = request.cookies.get('guest_token')?.value
     if (!hasGuest) {
-        const token = crypto.randomUUID()
+        const token = generateUUID()
         response.cookies.set('guest_token', token, {
             httpOnly: true,
             sameSite: 'lax',
@@ -214,4 +223,5 @@ export const config = {
          */
         '/((?!_next/static|_next/image|favicon.ico|.*\\.).*)',
     ],
+    runtime: 'experimental-edge',
 }

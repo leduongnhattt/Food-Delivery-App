@@ -10,6 +10,7 @@ export interface AuthUser {
     role: string;
     username?: string;
     email?: string;
+    provider?: string; // 'email' | 'google' | 'facebook' etc.
 }
 
 /**
@@ -68,7 +69,8 @@ export function getCurrentUserFromToken(): AuthUser | null {
             id: payload.accountId || payload.userId || '',
             role: payload.role,
             username: payload.username,
-            email: payload.email
+            email: payload.email,
+            provider: payload.provider || 'email' // Default to 'email' for backward compatibility
         };
     } catch (error) {
         console.error('Failed to decode token:', error);
@@ -104,7 +106,8 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
                 id: userData.id,
                 role: userData.role,
                 username: userData.username,
-                email: userData.email
+                email: userData.email,
+                provider: userData.provider || 'email'
             };
         } else {
             // Token is invalid, remove it
@@ -151,7 +154,7 @@ export function clearAuthData(): void {
 
 // Server-side authentication helpers
 import { NextRequest } from 'next/server';
-import { verifyToken } from '@/lib/auth';
+import { verifyTokenEdgeSync } from '@/lib/auth-edge';
 
 export interface AuthResult {
     success: boolean;
@@ -160,6 +163,7 @@ export interface AuthResult {
         role: string;
         username?: string;
         email?: string;
+        provider?: string;
     };
     error?: string;
 }
@@ -182,7 +186,7 @@ export function getAuthenticatedUser(request: NextRequest): AuthResult {
         }
 
         // Verify token
-        const decoded = verifyToken(token);
+        const decoded = verifyTokenEdgeSync(token);
         if (!decoded) {
             return {
                 success: false,
@@ -196,7 +200,8 @@ export function getAuthenticatedUser(request: NextRequest): AuthResult {
                 id: decoded.accountId || decoded.userId || '',
                 role: decoded.role,
                 username: decoded.username,
-                email: decoded.email
+                email: decoded.email,
+                provider: decoded.provider || 'email'
             }
         };
     } catch (error) {
