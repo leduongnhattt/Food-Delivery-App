@@ -6,6 +6,8 @@ import Image from 'next/image'
 import { Minus, Plus, Trash2 } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import { CartItem } from '@/types/models'
+import { StockValidationPopup, useStockValidationPopup } from '@/components/ui/stock-validation-popup'
+import { validateFoodStock } from '@/lib/stock-validation'
 
 interface CartItemsProps {
   items: CartItem[]
@@ -15,6 +17,32 @@ interface CartItemsProps {
 }
 
 export function CartItems({ items, totalItems, onChangeQuantity, onRemove }: CartItemsProps) {
+  const { isOpen, validationResult, showValidation, hideValidation } = useStockValidationPopup()
+
+  const handleQuantityChange = async (menuItemId: string, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      onRemove(menuItemId)
+      return
+    }
+
+    // Check stock before updating quantity
+    try {
+      const stockValidation = await validateFoodStock(menuItemId, newQuantity)
+      
+      if (!stockValidation.isValid) {
+        showValidation(stockValidation)
+        return
+      }
+      
+      // If stock is valid, proceed with update
+      onChangeQuantity(menuItemId, newQuantity)
+    } catch (error) {
+      console.error('Error checking stock:', error)
+      // Fallback to original method if stock check fails
+      onChangeQuantity(menuItemId, newQuantity)
+    }
+  }
+
   return (
     <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
       <CardHeader className="pb-4">
@@ -39,11 +67,11 @@ export function CartItems({ items, totalItems, onChangeQuantity, onRemove }: Car
                     <div className="text-xs text-gray-500">{formatPrice(item.menuItem.price)} each</div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button size="sm" variant="outline" onClick={() => onChangeQuantity(item.menuItem.id, item.quantity - 1)} className="w-7 h-7 p-0 border-orange-200 hover:bg-orange-50">
+                    <Button size="sm" variant="outline" onClick={() => handleQuantityChange(item.menuItem.id, item.quantity - 1)} className="w-7 h-7 p-0 border-orange-200 hover:bg-orange-50">
                       <Minus className="w-3 h-3" />
                     </Button>
                     <span className="w-7 text-center font-medium text-sm tabular-nums">{item.quantity}</span>
-                    <Button size="sm" variant="outline" onClick={() => onChangeQuantity(item.menuItem.id, item.quantity + 1)} className="w-7 h-7 p-0 border-orange-200 hover:bg-orange-50">
+                    <Button size="sm" variant="outline" onClick={() => handleQuantityChange(item.menuItem.id, item.quantity + 1)} className="w-7 h-7 p-0 border-orange-200 hover:bg-orange-50">
                       <Plus className="w-3 h-3" />
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => onRemove(item.menuItem.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50" aria-label="Remove item">
@@ -59,6 +87,12 @@ export function CartItems({ items, totalItems, onChangeQuantity, onRemove }: Car
           ))}
         </div>
       </CardContent>
+
+      <StockValidationPopup
+        isOpen={isOpen}
+        onClose={hideValidation}
+        validationResult={validationResult}
+      />
     </Card>
   )
 }

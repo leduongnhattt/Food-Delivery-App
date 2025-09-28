@@ -8,6 +8,8 @@ import { useCart } from '@/hooks/use-cart'
 import { useRouter } from 'next/navigation'
 import { ShoppingCart, Store, Plus, Minus, X } from 'lucide-react'
 import Image from 'next/image'
+import { StockValidationPopup, useStockValidationPopup } from '@/components/ui/stock-validation-popup'
+import { validateFoodStock } from '@/lib/stock-validation'
 
 interface OrderModalProps {
   isOpen: boolean
@@ -40,32 +42,50 @@ export const OrderModal: React.FC<OrderModalProps> = ({
 }) => {
   const router = useRouter()
   const { addToCart, cartItems } = useCart()
+  const { isOpen: isStockPopupOpen, validationResult, showValidation, hideValidation } = useStockValidationPopup()
   const [quantity, setQuantity] = React.useState(1)
+  const [isLoading, setIsLoading] = React.useState(false)
 
   // Check if this food is already in cart
   const existingCartItem = cartItems.find(item => item.menuItem.id === food.foodId)
   const currentQuantity = existingCartItem?.quantity || 0
 
-  const handleAddToCart = () => {
-    // Convert food to MenuItem format
-    const menuItem = {
-      id: food.foodId,
-      name: food.dishName,
-      description: food.description,
-      price: food.price,
-      image: food.imageUrl || '/api/placeholder/300/200',
-      category: food.menu.category,
-      isAvailable: true,
-      // Persist EnterpriseID for cart logic and show Enterprise (restaurant) name for UX
-      restaurantId: food.restaurantId, // EnterpriseID in DB
-      restaurantName: restaurant.name,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
+  const handleAddToCart = async () => {
+    setIsLoading(true)
+    
+    try {
+      // Check stock before adding to cart
+      const stockValidation = await validateFoodStock(food.foodId, quantity)
+      
+      if (!stockValidation.isValid) {
+        showValidation(stockValidation)
+        return
+      }
+      
+      // Convert food to MenuItem format
+      const menuItem = {
+        id: food.foodId,
+        name: food.dishName,
+        description: food.description,
+        price: food.price,
+        image: food.imageUrl || '/api/placeholder/300/200',
+        category: food.menu.category,
+        isAvailable: true,
+        // Persist EnterpriseID for cart logic and show Enterprise (restaurant) name for UX
+        restaurantId: food.restaurantId, // EnterpriseID in DB
+        restaurantName: restaurant.name,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
 
-    console.log('Adding to cart:', { menuItem, quantity }) // Debug log
-    addToCart(menuItem, quantity)
-    onClose()
+      console.log('Adding to cart:', { menuItem, quantity }) // Debug log
+      addToCart(menuItem, quantity)
+      onClose()
+    } catch (error) {
+      console.error('Error adding to cart:', error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleViewRestaurant = () => {
@@ -83,8 +103,9 @@ export const OrderModal: React.FC<OrderModalProps> = ({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4">
-      <div className="bg-white rounded-2xl w-full max-w-lg sm:max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl">
+    <>
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4">
+        <div className="bg-white rounded-2xl w-full max-w-lg sm:max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl">
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between p-4 sm:p-6 border-b bg-white">
           <h2 className="text-xl font-bold text-gray-900">Order Options</h2>
@@ -187,7 +208,8 @@ export const OrderModal: React.FC<OrderModalProps> = ({
         <div className="sticky bottom-0 bg-white border-t p-4 sm:p-5 space-y-2">
           <Button
             onClick={handleAddToCart}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold"
+            disabled={isLoading}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold disabled:opacity-50"
           >
             <ShoppingCart className="w-4 h-4 mr-2" />
             Add to Cart ({quantity})
@@ -200,7 +222,14 @@ export const OrderModal: React.FC<OrderModalProps> = ({
             View Full Menu
           </Button>
         </div>
+        </div>
       </div>
-    </div>
+
+      <StockValidationPopup
+        isOpen={isStockPopupOpen}
+        onClose={hideValidation}
+        validationResult={validationResult}
+      />
+    </>
   )
 }
