@@ -59,9 +59,18 @@ export function Header() {
             <Link href="/restaurants" className="transition-colors hover:text-foreground/80">
               Restaurants
             </Link>
-            <Link href="/orders" className="transition-colors hover:text-foreground/80">
-              My Orders
-            </Link>
+            {isAuthenticated ? (
+              <Link href="/orders" className="transition-colors hover:text-foreground/80">
+                My Orders
+              </Link>
+            ) : (
+              <button 
+                onClick={() => router.push('/signin')}
+                className="transition-colors hover:text-foreground/80"
+              >
+                My Orders
+              </button>
+            )}
             <Link href="/about" className="transition-colors hover:text-foreground/80">
               About
             </Link>

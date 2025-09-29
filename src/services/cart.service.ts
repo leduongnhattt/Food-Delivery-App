@@ -7,7 +7,9 @@ class DebouncedCartService {
     private lastFetchPromise: Promise<CartSnapshot> | null = null
     private clearTimeout: NodeJS.Timeout | null = null
     private lastClearPromise: Promise<void> | null = null
-    private readonly DEBOUNCE_DELAY = 300 // 300ms debounce delay
+    private updateTimeouts: Map<string, NodeJS.Timeout> = new Map()
+    private lastUpdatePromises: Map<string, Promise<CartSnapshot>> = new Map()
+    private readonly DEBOUNCE_DELAY = 0 // No debounce for immediate updates
     private isSilentMode = false // Silent mode for payment operations
 
     async fetchCart(): Promise<CartSnapshot> {
@@ -101,6 +103,28 @@ class DebouncedCartService {
 
         return this.lastClearPromise
     }
+
+    // Update quantity with request queuing to prevent race conditions
+    async updateItemQuantity(foodId: string, quantity: number): Promise<CartSnapshot> {
+        // Cancel any pending request for this item to allow new requests
+        if (this.lastUpdatePromises.has(foodId)) {
+            // Don't wait, just cancel the previous request
+            this.lastUpdatePromises.delete(foodId)
+        }
+
+        // Create immediate request without debounce
+        const updatePromise = requestJson<CartSnapshot>(`/api/cart/items/${foodId}`, {
+            method: 'PATCH',
+            headers: buildHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ quantity }),
+        }).finally(() => {
+            // Clear the promise reference after completion
+            this.lastUpdatePromises.delete(foodId)
+        })
+
+        this.lastUpdatePromises.set(foodId, updatePromise)
+        return updatePromise
+    }
 }
 
 // Create singleton instance
@@ -132,11 +156,7 @@ export async function addItemToCart(payload: CartItemPayload): Promise<CartSnaps
 }
 
 export async function updateItemQuantity(foodId: string, quantity: number): Promise<CartSnapshot> {
-    return requestJson<CartSnapshot>(`/api/cart/items/${foodId}`, {
-        method: 'PATCH',
-        headers: buildHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ quantity }),
-    })
+    return debouncedCartService.updateItemQuantity(foodId, quantity)
 }
 
 export async function clearCart(): Promise<void> {

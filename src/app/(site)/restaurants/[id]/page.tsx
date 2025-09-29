@@ -6,7 +6,6 @@ import { MenuItem } from '@/types/models'
 import { useCart } from '@/hooks/use-cart'
 import { useRestaurantDetail, useRestaurantCategoryNav } from '@/hooks/use-restaurant-detail'
 import EnterpriseHero from '@/components/restaurant/EnterpriseHero'
-import EnterpriseInfoCard from '@/components/restaurant/EnterpriseInfoCard'
 import ReviewsSection from '@/components/restaurant/ReviewsSection'
 import CategoryPills from '@/components/restaurant/CategoryPills'
 import RestaurantMenuSection from '@/components/restaurant/RestaurantMenuSection'
@@ -50,23 +49,21 @@ export default function RestaurantPage({ params }: RestaurantPageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      
       <EnterpriseHero 
         name={restaurant!.name}
         description={restaurant!.description}
         avatarUrl={restaurant!.avatarUrl}
         rating={restaurant!.rating}
         isOpen={restaurant!.isOpen}
+        phone={restaurant!.phone}
+        address={restaurant!.address}
+        deliveryTime={restaurant!.deliveryTime}
+        openHours={restaurant!.openHours}
+        closeHours={restaurant!.closeHours}
       />
 
       <div className="max-w-5xl mx-auto px-4 py-8">
-        <EnterpriseInfoCard 
-          isOpen={restaurant!.isOpen}
-          rating={restaurant!.rating}
-          phone={restaurant!.phone}
-          address={restaurant!.address}
-          deliveryTime={restaurant!.deliveryTime}
-          description={restaurant!.description}
-        />
 
         {/* Menu Section */}
         <div className="mb-8">

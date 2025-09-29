@@ -85,10 +85,21 @@ export async function requestJson<T>(
     })
 
     if (!response.ok) {
-        const errorData = await response.json().catch(() => ({
-            error: `HTTP error! status: ${response.status}`
-        }))
-        throw new Error(errorData.error || `Request failed with status ${response.status}`)
+        let errorMessage = `Request failed with status ${response.status}`
+
+        try {
+            const errorData = await response.json()
+            errorMessage = errorData.error || errorData.message || errorMessage
+        } catch (parseError) {
+            // If response is not JSON, use status text or default message
+            errorMessage = response.statusText || errorMessage
+        }
+
+        // Create error object with status for better handling
+        const error = new Error(errorMessage) as any
+        error.status = response.status
+        error.url = url
+        throw error
     }
 
     return response.json()

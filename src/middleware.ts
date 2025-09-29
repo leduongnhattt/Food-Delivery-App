@@ -135,24 +135,19 @@ export function middleware(request: NextRequest) {
     const token = authHeader?.replace('Bearer ', '')
         || request.cookies.get('refresh_token')?.value
 
+    // For page routes, let client-side handle authentication
+    // This allows the page to load and show proper authentication UI
+    if (!pathname.startsWith('/api/')) {
+        // Let the page load and handle authentication client-side
+        return NextResponse.next()
+    }
 
+    // For API routes, require authentication
     if (!token) {
-        // For API routes, return 401
-        if (pathname.startsWith('/api/')) {
-            return NextResponse.json(
-                { error: 'Authentication required' },
-                { status: 401 }
-            )
-        }
-
-        // For page routes, redirect to appropriate login page
-        if (pathname.startsWith('/admin')) {
-            return NextResponse.redirect(new URL('/admin/login', request.url))
-        } else if (pathname.startsWith('/enterprise')) {
-            return NextResponse.redirect(new URL('/enterprise/login', request.url))
-        } else {
-            return NextResponse.redirect(new URL('/signin', request.url))
-        }
+        return NextResponse.json(
+            { error: 'Authentication required' },
+            { status: 401 }
+        )
     }
 
     // Verify token and get user role

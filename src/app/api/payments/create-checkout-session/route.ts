@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { getAuthenticatedUser } from '@/lib/auth-helpers'
+import { prisma } from '@/lib/db'
 
 export async function POST(request: NextRequest) {
     try {
@@ -35,24 +36,43 @@ export async function POST(request: NextRequest) {
             quantity: item.quantity,
         }))
 
-        // Add delivery fee if needed
-        if (total > 0) {
-            const subtotal = cartItems.reduce((sum: number, item: any) =>
-                sum + (item.menuItem.price * item.quantity), 0
-            )
-            const deliveryFee = total - subtotal
+        // Calculate commission fee from enterprise CommissionRate in DB
+        let computedCommissionFee = 0
+        const firstRestaurantId = cartItems[0]?.menuItem?.restaurantId
+        const subtotal = cartItems.reduce((sum: number, item: any) => sum + (item.menuItem.price * item.quantity), 0)
+        if (firstRestaurantId) {
+            const enterprise = await prisma.enterprise.findUnique({
+                where: { EnterpriseID: firstRestaurantId },
+                select: { CommissionRate: true }
+            })
+            const commissionRate = Number(enterprise?.CommissionRate ?? 0)
+            computedCommissionFee = commissionRate
+        }
+        if (computedCommissionFee > 0) {
+            lineItems.push({
+                price_data: {
+                    currency: 'usd',
+                    product_data: { name: 'Commission Fee' },
+                    unit_amount: Math.round(computedCommissionFee * 100),
+                },
+                quantity: 1,
+            })
+        }
 
-            if (deliveryFee > 0) {
+        // Create automatic discount if voucher applied
+        let discounts: any[] | undefined
+        if (voucherCode) {
+            const absDiscount = Math.max(0, subtotal + computedCommissionFee) - total
+            if (absDiscount > 0) {
+                // Use custom negative line item to reflect discount (simplest without Stripe coupons)
                 lineItems.push({
                     price_data: {
                         currency: 'usd',
-                        product_data: {
-                            name: 'Delivery Fee',
-                        },
-                        unit_amount: Math.round(deliveryFee * 100),
+                        product_data: { name: `Discount (${voucherCode})` },
+                        unit_amount: -Math.round(absDiscount * 100),
                     },
                     quantity: 1,
-                })
+                } as any)
             }
         }
 
@@ -70,6 +90,7 @@ export async function POST(request: NextRequest) {
                 phone: deliveryInfo?.phone || '',
                 address: deliveryInfo?.address || '',
                 voucherCode: voucherCode || '',
+                commissionFee: computedCommissionFee.toString(),
             },
             customer_email: userEmail,
         })

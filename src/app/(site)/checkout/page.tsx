@@ -3,17 +3,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, calculatePrice, sumPrices } from '@/lib/utils'
 import { CartItem } from '@/types/models'
 import { useCart } from '@/hooks/use-cart'
 import { useDeliveryData } from '@/hooks/use-delivery-data'
 import { useAuth } from '@/hooks/use-auth'
 import { useRouter } from 'next/navigation'
 import { PaymentService } from '@/services/payment.service'
+import { useSearchParams } from 'next/navigation'
 import { Minus, Plus, Trash2, ArrowLeft, Clock, MapPin, Star, Truck, Gift, CheckCircle, Circle, Info, X } from 'lucide-react'
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
+import { requestJson } from '@/lib/http-client'
 import { RestaurantService } from '@/services/restaurant.service'
+import { VoucherService } from '@/services/voucher.service'
 import { RestaurantHeader } from '@/components/checkout/RestaurantHeader'
 import { CartItems } from '@/components/checkout/CartItems'
 import { DeliveryForm } from '@/components/checkout/DeliveryForm'
@@ -24,15 +27,10 @@ import { StripeProvider } from '@/components/payments/StripeProvider'
 import { StripePaymentForm } from '@/components/payments/StripePaymentForm'
 
 // Constants
-const DELIVERY_FEE = 0.5
+const DEFAULT_COMMISSION_FEE = 0.5
 const RESTAURANT_LOGO_DEBOUNCE_MS = 200
 
-// Mock available offers (in real app, this would come from API)
-const AVAILABLE_OFFERS = [
-  { code: 'WELCOME10', discount: 10000, description: 'New user discount', eligible: true },
-  { code: 'SAVE20', discount: 20000, description: 'Orders over 200k', eligible: true },
-  { code: 'LUNCHONLY', discount: 15000, description: 'Valid 11:00-14:00', eligible: false }
-]
+// Offers now loaded from API
 
 // Types
 type PaymentMethod = 'cash' | 'card' | 'momo' | 'stripe'
@@ -50,6 +48,7 @@ interface CheckoutData {
 
 export default function CheckoutPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { cartItems, updateQuantity, removeFromCart, clearCart } = useCart()
   const { deliveryData, isLoading: isDeliveryLoading } = useDeliveryData()
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth()
@@ -60,15 +59,28 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
   const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null)
+  const [availableVouchers, setAvailableVouchers] = useState<{ code: string, amount?: number, percent?: number, minOrder?: number }[]>([])
+  const [commissionFee, setCommissionFee] = useState<number>(DEFAULT_COMMISSION_FEE)
+
+  // Auto-apply promo from query (?promo=CODE) using API validation
+  useEffect(() => {
+    const promo = searchParams.get('promo')
+    if (!promo) return
+    VoucherService.validate(promo)
+      .then((v) => {
+        if (v) setAppliedVoucher({ code: promo, discount: Number(v.DiscountAmount) || 0 })
+      })
+      .finally(() => router.replace('/checkout'))
+  }, [searchParams, router])
 
   // Calculate totals
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
   const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.menuItem.price * item.quantity,
+    (sum, item) => sum + calculatePrice(item.menuItem.price, item.quantity),
     0
   )
   const voucherDiscount = appliedVoucher?.discount || 0
-  const total = subtotal + DELIVERY_FEE - voucherDiscount
+  const total = Math.max(0, subtotal + commissionFee - voucherDiscount)
 
   // Get restaurant info from first cart item
   const restaurantInfo = cartItems[0]?.menuItem ? {
@@ -93,6 +105,26 @@ export default function CheckoutPage() {
 
     return () => clearTimeout(timeoutId)
   }, [cartItems])
+
+  // Load commission fee from API based on restaurant
+  useEffect(() => {
+    const first = cartItems[0]?.menuItem
+    if (!first?.restaurantId) return
+    requestJson<any>(`/api/restaurants/${first.restaurantId}/commission`)
+      .then((res) => {
+        if (res?.success) setCommissionFee(Number(res.commissionFee) || 0)
+      })
+      .catch(() => {})
+  }, [cartItems])
+
+  // Load vouchers from API
+  useEffect(() => {
+    VoucherService.list()
+      .then((list) => {
+        setAvailableVouchers(list.map((v: any) => ({ code: v.Code, amount: Number(v.DiscountAmount) || undefined, percent: Number(v.DiscountPercent) || undefined, minOrder: Number(v.MinOrderValue) || undefined })))
+      })
+      .catch(() => {})
+  }, [])
 
   // Show loading while checking authentication
   if (isAuthLoading) {
@@ -167,11 +199,11 @@ export default function CheckoutPage() {
   }
 
   const handleApplyVoucher = (code: string) => {
-    const offer = AVAILABLE_OFFERS.find(o => o.code === code && o.eligible)
-    if (offer) {
-      setAppliedVoucher({ code: offer.code, discount: offer.discount })
-      setIsOffersModalOpen(false)
-    }
+    const v = availableVouchers.find(o => o.code === code)
+    if (!v) return
+    const discount = Number(v.amount || 0)
+    setAppliedVoucher({ code, discount })
+    setIsOffersModalOpen(false)
   }
 
   const handleRemoveVoucher = () => {
@@ -324,7 +356,7 @@ export default function CheckoutPage() {
 
               <PromoOffers
                 applied={appliedVoucher}
-                offers={AVAILABLE_OFFERS}
+                offers={availableVouchers.map(v => ({ code: v.code, amount: v.amount, percent: v.percent, minOrder: v.minOrder, eligible: subtotal >= (v.minOrder || 0) }))}
                 isModalOpen={isOffersModalOpen}
                 onOpenModal={() => setIsOffersModalOpen(true)}
                 onCloseModal={() => setIsOffersModalOpen(false)}
@@ -345,7 +377,7 @@ export default function CheckoutPage() {
               <OrderSummary
                 totalItems={totalItems}
                 subtotal={subtotal}
-                deliveryFee={DELIVERY_FEE}
+                deliveryFee={commissionFee}
                 discount={appliedVoucher ? { code: appliedVoucher.code, amount: appliedVoucher.discount } : null}
                 total={total}
                 buttonText={

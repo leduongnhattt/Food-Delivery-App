@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import React from "react";
 import { Star } from 'lucide-react';
 import { RestaurantCardData } from '@/types/models';
@@ -15,7 +16,8 @@ const RestaurantCard: React.FC<Props> = ({
   showDescription = true 
 }) => {
   return (
-    <div className="group bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-2 cursor-pointer">
+    <Link href={`/restaurants/${restaurant.enterpriseId}`} className="block">
+      <div className="group bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-2 cursor-pointer">
       {/* Restaurant Image */}
       <div className="relative h-48 overflow-hidden">
         {restaurant.avatarUrl ? (
@@ -93,7 +95,8 @@ const RestaurantCard: React.FC<Props> = ({
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </Link>
   );
 };
 

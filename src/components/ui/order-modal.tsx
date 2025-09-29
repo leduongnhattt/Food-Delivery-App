@@ -3,7 +3,7 @@ import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, calculatePrice } from '@/lib/utils'
 import { useCart } from '@/hooks/use-cart'
 import { useRouter } from 'next/navigation'
 import { ShoppingCart, Store, Plus, Minus, X } from 'lucide-react'
@@ -195,7 +195,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({
               </div>
               <div className="text-sm text-gray-600">
                 Total: <span className="font-semibold text-orange-600">
-                  {formatPrice(food.price * quantity)}
+                  {formatPrice(calculatePrice(food.price, quantity))}
                 </span>
               </div>
             </div>

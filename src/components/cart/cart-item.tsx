@@ -4,6 +4,7 @@ import { formatPrice } from '@/lib/utils'
 import { CartItem as CartItemType } from '@/types/models'
 import { StockValidationPopup, useStockValidationPopup } from '@/components/ui/stock-validation-popup'
 import { validateFoodStock } from '@/lib/stock-validation'
+import { useState, useEffect } from 'react'
 
 interface CartItemProps {
   item: CartItemType
@@ -13,6 +14,13 @@ interface CartItemProps {
 
 export function CartItem({ item, onUpdateQuantity, onRemove }: CartItemProps) {
   const { isOpen, validationResult, showValidation, hideValidation } = useStockValidationPopup()
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [currentQuantity, setCurrentQuantity] = useState(item.quantity)
+
+  // Sync with props when server data changes
+  useEffect(() => {
+    setCurrentQuantity(item.quantity)
+  }, [item.quantity])
 
   const handleQuantityChange = async (newQuantity: number) => {
     if (newQuantity <= 0) {
@@ -20,22 +28,42 @@ export function CartItem({ item, onUpdateQuantity, onRemove }: CartItemProps) {
       return
     }
 
-    // Check stock before updating quantity
-    try {
-      const stockValidation = await validateFoodStock(item.menuItem.id, newQuantity)
-      
-      if (!stockValidation.isValid) {
-        showValidation(stockValidation)
-        return
+    setIsUpdating(true)
+    
+    // Update local state immediately for responsive UI
+    setCurrentQuantity(newQuantity)
+
+    // Optimistic update - update UI immediately for better responsiveness
+    onUpdateQuantity(item.menuItem.id, newQuantity)
+
+    // Check stock in background (only for increases)
+    if (newQuantity > currentQuantity) {
+      try {
+        const stockValidation = await validateFoodStock(item.menuItem.id, newQuantity)
+        
+        if (!stockValidation.isValid) {
+          showValidation(stockValidation)
+          // Revert the optimistic update
+          setCurrentQuantity(currentQuantity)
+          onUpdateQuantity(item.menuItem.id, currentQuantity)
+        }
+      } catch {
+        // Ignore stock check errors for better UX
       }
-      
-      // If stock is valid, proceed with update
-      onUpdateQuantity(item.menuItem.id, newQuantity)
-    } catch (error) {
-      console.error('Error checking stock:', error)
-      // Fallback to original method if stock check fails
-      onUpdateQuantity(item.menuItem.id, newQuantity)
     }
+
+    // Reset loading state after a short delay
+    setTimeout(() => setIsUpdating(false), 150)
+  }
+
+  const handleIncrement = () => {
+    const newQuantity = currentQuantity + 1
+    handleQuantityChange(newQuantity)
+  }
+
+  const handleDecrement = () => {
+    const newQuantity = currentQuantity - 1
+    handleQuantityChange(newQuantity)
   }
 
   return (
@@ -66,19 +94,21 @@ export function CartItem({ item, onUpdateQuantity, onRemove }: CartItemProps) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleQuantityChange(item.quantity - 1)}
-            className="w-8 h-8 p-0 rounded-md"
+            onClick={handleDecrement}
+            className="w-8 h-8 p-0 rounded-md hover:bg-orange-50 hover:border-orange-200 transition-colors duration-150 active:scale-95"
           >
             -
           </Button>
-          <span className="w-8 text-center text-sm font-medium tabular-nums">
-            {item.quantity}
+          <span className={`w-8 text-center text-sm font-medium tabular-nums transition-colors duration-150 ${
+            isUpdating ? 'text-orange-600' : ''
+          }`}>
+            {currentQuantity}
           </span>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleQuantityChange(item.quantity + 1)}
-            className="w-8 h-8 p-0 rounded-md"
+            onClick={handleIncrement}
+            className="w-8 h-8 p-0 rounded-md hover:bg-orange-50 hover:border-orange-200 transition-colors duration-150 active:scale-95"
           >
             +
           </Button>

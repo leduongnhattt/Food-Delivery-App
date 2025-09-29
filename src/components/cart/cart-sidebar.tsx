@@ -2,7 +2,7 @@
 import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, calculatePrice, sumPrices } from '@/lib/utils'
 import { CartItem as CartItemType } from '@/types/models'
 import { CartItem } from './cart-item'
 import { useAuth } from '@/hooks/use-auth'
@@ -31,7 +31,7 @@ export function CartSidebar({
   // Unique items count (not quantities)
   const totalItems = cartItems.length
   const totalAmount = cartItems.reduce(
-    (sum, item) => sum + item.menuItem.price * item.quantity,
+    (sum, item) => sum + calculatePrice(item.menuItem.price, item.quantity),
     0
   )
 
@@ -45,7 +45,7 @@ export function CartSidebar({
         map[rid] = { name: rname, items: [], subtotal: 0 }
       }
       map[rid].items.push(ci)
-      map[rid].subtotal += ci.menuItem.price * ci.quantity
+      map[rid].subtotal += calculatePrice(ci.menuItem.price, ci.quantity)
     }
     return Object.entries(map).map(([rid, v]) => ({ id: rid, ...v }))
   }, [cartItems])

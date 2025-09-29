@@ -148,7 +148,7 @@ export default function PaymentSuccessPage() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => router.push('/profile')}
+              onClick={() => router.push('/orders')}
               className="flex-1"
             >
               View Orders

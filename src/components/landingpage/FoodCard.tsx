@@ -2,13 +2,15 @@ import React from 'react';
 import Image from 'next/image';
 import { Food } from '@/types/models';
 import { formatPrice } from '@/lib/utils';
+import { HighlightText } from '@/components/ui/highlight-text';
 
 interface FoodCardProps {
   food: Food;
   onOrderNow: (foodId: string) => void;
+  searchQuery?: string;
 }
 
-const FoodCard: React.FC<FoodCardProps> = ({ food, onOrderNow }) => {
+const FoodCard: React.FC<FoodCardProps> = ({ food, onOrderNow, searchQuery = '' }) => {
   const handleOrderClick = (): void => {
     onOrderNow(food.foodId);
   };
@@ -20,7 +22,7 @@ const FoodCard: React.FC<FoodCardProps> = ({ food, onOrderNow }) => {
         {food.imageUrl ? (
           <Image 
             src={food.imageUrl}
-            alt={food.dishName}
+            alt={food.dishName || 'Food item'}
             fill
             className="object-cover hover:scale-105 transition-transform duration-300"
           />
@@ -45,13 +47,16 @@ const FoodCard: React.FC<FoodCardProps> = ({ food, onOrderNow }) => {
       <div className="p-4">
         {/* Food Name */}
         <h3 className="font-bold text-lg text-gray-800 mb-1 line-clamp-1">
-          {food.dishName}
+          <HighlightText 
+            text={food.dishName} 
+            searchQuery={searchQuery}
+          />
         </h3>
 
         {/* Category and Rating */}
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium">
-            {food.menu.category}
+            {food.menu?.category || 'Food'}
           </span>
         </div>
 

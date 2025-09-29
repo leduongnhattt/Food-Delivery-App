@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import Image from 'next/image'
 import { Minus, Plus, Trash2 } from 'lucide-react'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, calculatePrice } from '@/lib/utils'
 import { CartItem } from '@/types/models'
 import { StockValidationPopup, useStockValidationPopup } from '@/components/ui/stock-validation-popup'
 import { validateFoodStock } from '@/lib/stock-validation'
@@ -81,7 +81,7 @@ export function CartItems({ items, totalItems, onChangeQuantity, onRemove }: Car
                 </div>
               </div>
               <div className="ml-auto text-right">
-                <p className="font-bold text-sm text-gray-900">{formatPrice(item.menuItem.price * item.quantity)}</p>
+                <p className="font-bold text-sm text-gray-900">{formatPrice(calculatePrice(item.menuItem.price, item.quantity))}</p>
               </div>
             </div>
           ))}

@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useRef } from 'react'
 import { CartItem, MenuItem } from '@/types/models'
 import { addItemToCart, updateItemQuantity, clearCart as apiClearCart, fetchCart, fetchCartImmediate } from '@/services/cart.service'
 import { FoodService } from '@/services/food.service'
+import { calculatePrice } from '@/lib/utils'
 
 type CartContextType = {
     cartItems: CartItem[]
@@ -113,13 +114,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
 
     const updateQuantity = (menuItemId: string, quantity: number) => {
+        // Immediate optimistic update for instant UI feedback
         setCartItems(prev => prev.map(i => i.menuItem.id === menuItemId ? { ...i, quantity } : i))
+
+        // Immediate API call with queuing to prevent race conditions
         updateItemQuantity(menuItemId, quantity)
             .then(async () => {
                 // Re-hydrate from server to ensure snapshot consistency
-                await updateCartFromServer() // Use debounced fetch
+                await updateCartFromServer()
             })
-            .catch(() => { })
+            .catch(() => {
+                // Revert optimistic update on error
+                updateCartFromServer()
+            })
     }
 
     const removeFromCart = (menuItemId: string) => {
@@ -166,7 +173,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     // Count unique items (not total quantities)
     const getTotalItems = () => cartItems.length
-    const getTotalAmount = () => cartItems.reduce((s, i) => s + i.menuItem.price * i.quantity, 0)
+    const getTotalAmount = () => cartItems.reduce((s, i) => s + calculatePrice(i.menuItem.price, i.quantity), 0)
 
     const value: CartContextType = useMemo(() => ({
         cartItems,

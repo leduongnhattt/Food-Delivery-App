@@ -2,14 +2,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { CheckCircle, Gift, Info, X } from 'lucide-react'
+import { CheckCircle, Gift, Info } from 'lucide-react'
+// Browse all offers removed per requirements
+import Image from 'next/image'
 import { formatPrice } from '@/lib/utils'
 
 interface Offer {
   code: string
-  discount: number
-  description: string
-  eligible: boolean
+  amount?: number
+  percent?: number
+  minOrder?: number
+  description?: string
+  eligible?: boolean
 }
 
 interface PromoOffersProps {
@@ -45,41 +49,62 @@ export function PromoOffers({ applied, offers, isModalOpen, onOpenModal, onClose
           <div className="space-y-3">
             <div className="flex items-start gap-2 text-sm text-gray-600">
               <Info className="w-4 h-4 mt-0.5" />
-              <span>Some offers cannot be used. Click to view available offers.</span>
+              <span>Click to choose one promo or browse all offers.</span>
             </div>
-            <Button className="w-full justify-between bg-orange-500 hover:bg-orange-600 text-white" onClick={onOpenModal}>
+            <Button className="w-full justify-between bg-orange-500 hover:bg-orange-600 text-white" onClick={onOpenModal} aria-haspopup="listbox" aria-expanded={isModalOpen}>
               <span className="flex items-center gap-2">
                 <span aria-hidden>🎟️</span>
-                View available offers
+                Select a promo
               </span>
             </Button>
+            {/* Browse all offers removed */}
+
+            {isModalOpen && (
+              <div className="mt-2 rounded-xl border border-gray-200 bg-white shadow-sm">
+                <div className="p-2 space-y-2 max-h-64 overflow-auto" role="listbox">
+                  {offers.map((offer) => (
+                    <button
+                      key={offer.code}
+                      type="button"
+                      disabled={offer.eligible === false}
+                      onClick={() => onApply(offer.code)}
+                      className={`w-full text-left p-4 rounded-xl border transition-colors ${(offer.eligible ?? true) ? 'border-gray-200 hover:border-orange-300 hover:bg-orange-50' : 'border-gray-100 bg-gray-50 opacity-70 cursor-not-allowed'}`}
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        {/* Logo */}
+                        <div className="flex-shrink-0">
+                          <div className="w-10 h-10 rounded-lg overflow-hidden bg-white border border-gray-200">
+                            <Image src="/images/logo.png" alt="Hanala Food" width={40} height={40} className="object-cover" />
+                          </div>
+                        </div>
+                        {/* Texts */}
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-gray-900 truncate">
+                            {offer.amount ? `Save ${formatPrice(offer.amount)}` : offer.percent ? `Save ${offer.percent}%` : 'Promotion'}
+                          </div>
+                          <div className="text-xs sm:text-sm text-gray-600 truncate">
+                            {offer.minOrder ? `Minimum spend ${formatPrice(offer.minOrder)}` : 'No minimum spend'}
+                            {` • Code: ${offer.code}`}
+                          </div>
+                          {offer.eligible === false && (
+                            <div className="text-xs text-red-600 mt-1">Not eligible yet{offer.minOrder ? ` • requires ${formatPrice(offer.minOrder)}+` : ''}</div>
+                          )}
+                        </div>
+                        {/* Action */}
+                        <Badge className={`${(offer.eligible ?? true) ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'}`} variant="secondary">Select</Badge>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <div className="p-2 text-right">
+                  <Button variant="ghost" size="sm" onClick={onCloseModal}>Close</Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/50" onClick={onCloseModal} />
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4">
-              <div className="flex items-center justify-between p-4 border-b">
-                <h3 className="text-lg font-semibold">Available Offers</h3>
-                <Button variant="ghost" size="sm" className="w-8 h-8 p-0" onClick={onCloseModal}>
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-              <div className="p-4 space-y-2 max-h-[60vh] overflow-y-auto">
-                {offers.map((offer) => (
-                  <div key={offer.code} className={`flex items-center justify-between p-3 rounded-lg border ${offer.eligible ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50 opacity-70'}`}>
-                    <div>
-                      <div className="font-medium">{offer.code} - {formatPrice(offer.discount)} off</div>
-                      <div className="text-xs text-gray-600">{offer.description}</div>
-                    </div>
-                    <Button size="sm" disabled={!offer.eligible} onClick={() => onApply(offer.code)}>Apply</Button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Removed popup/panel to prefer dedicated page */}
       </CardContent>
     </Card>
   )

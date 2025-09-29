@@ -11,8 +11,8 @@ export function mapFoodToMenuItem(food: any): MenuItem {
         id: food.foodId,
         name: food.dishName,
         description: food.description,
-        // Convert to VND once here to keep UI clean
-        price: Math.round((food.price ?? 0) * 1000),
+        // Keep price in USD as provided by API (supports decimals like 8.5)
+        price: Math.round(((food.price ?? 0) as number) * 100) / 100,
         image: food.imageUrl || '/api/placeholder/300/200',
         category: food.menu?.category ?? 'Others',
         isAvailable: (food.stock ?? 0) > 0,

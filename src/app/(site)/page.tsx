@@ -8,13 +8,17 @@ import RestaurantMenu from '@/components/landingpage/RestaurantMenu'
 import React from 'react'
 import { CategoryService, type CategoryDto } from '@/services/category.service'
 import { getCategoryIcon, getCategoryTone } from '@/lib/category-icons'
+import { useRouter } from 'next/navigation'
 
 export default function HomePage() {
   const [categories, setCategories] = React.useState<CategoryDto[]>([])
   const [loadingCategories, setLoadingCategories] = React.useState(true)
+  const router = useRouter()
 
   const handleSearch = (query: string) => {
-    console.log('Searching for:', query);
+    if (query.trim()) {
+      router.push(`/search?q=${encodeURIComponent(query)}`)
+    }
   };
   
   const handleOrderFood = (foodId: string) => {
@@ -22,7 +26,8 @@ export default function HomePage() {
   };
 
   const handleCategoryClick = (category: string) => {
-    console.log('Category selected:', category);
+    // Navigate to search page with category filter
+    router.push(`/search?q=${encodeURIComponent(category)}`)
   };
 
   React.useEffect(() => {
