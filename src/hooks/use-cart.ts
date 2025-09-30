@@ -141,7 +141,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             .then(async () => {
                 await updateCartFromServer() // Use debounced fetch
             })
-                .catch(() => { })
+            .catch(() => { })
     }, [updateCartFromServer])
 
     const clearCart = useCallback(() => {
