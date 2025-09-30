@@ -19,6 +19,8 @@ export interface Restaurant {
     deliveryTime: string
     minimumOrder: number
     isOpen: boolean
+    openHours?: string
+    closeHours?: string
     createdAt: Date
     updatedAt: Date
 }
