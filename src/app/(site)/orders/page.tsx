@@ -1,200 +1,249 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+"use client"
+
+import { useOrders } from '@/hooks/use-orders'
+import { OrderCard } from '@/components/orders/order-card'
+import { OrderFilters } from '@/components/orders/order-filters'
+import { OrderFilters as OrderFiltersType } from '@/services/order.service'
 import { Button } from '@/components/ui/button'
-import { formatPrice, formatDate } from '@/lib/utils'
-import { Order, OrderStatus } from '@/types'
-
-// Mock data - replace with actual API call
-const mockOrders: Order[] = [
-  {
-    id: '1',
-    userId: 'user1',
-    restaurantId: '1',
-    items: [
-      {
-        id: '1',
-        orderId: '1',
-        menuItemId: '1',
-        quantity: 2,
-        price: 150000,
-        specialInstructions: 'Extra cheese please'
-      },
-      {
-        id: '2',
-        orderId: '1',
-        menuItemId: '3',
-        quantity: 1,
-        price: 45000
-      }
-    ],
-    totalAmount: 345000,
-    status: 'delivered',
-    deliveryAddress: '123 Main St, Ho Chi Minh City',
-    deliveryInstructions: 'Please call when arriving',
-    createdAt: new Date('2024-01-15T10:30:00'),
-    updatedAt: new Date('2024-01-15T11:15:00'),
-  },
-  {
-    id: '2',
-    userId: 'user1',
-    restaurantId: '2',
-    items: [
-      {
-        id: '3',
-        orderId: '2',
-        menuItemId: '5',
-        quantity: 1,
-        price: 200000
-      }
-    ],
-    totalAmount: 200000,
-    status: 'out_for_delivery',
-    deliveryAddress: '456 Nguyen Hue, Ho Chi Minh City',
-    createdAt: new Date('2024-01-16T12:00:00'),
-    updatedAt: new Date('2024-01-16T12:45:00'),
-  },
-  {
-    id: '3',
-    userId: 'user1',
-    restaurantId: '1',
-    items: [
-      {
-        id: '4',
-        orderId: '3',
-        menuItemId: '2',
-        quantity: 1,
-        price: 180000
-      }
-    ],
-    totalAmount: 180000,
-    status: 'preparing',
-    deliveryAddress: '789 Le Loi, Ho Chi Minh City',
-    createdAt: new Date('2024-01-16T18:30:00'),
-    updatedAt: new Date('2024-01-16T18:35:00'),
-  },
-]
-
-const getStatusColor = (status: OrderStatus) => {
-  switch (status) {
-    case 'pending':
-      return 'text-yellow-600 bg-yellow-100'
-    case 'confirmed':
-      return 'text-blue-600 bg-blue-100'
-    case 'preparing':
-      return 'text-orange-600 bg-orange-100'
-    case 'out_for_delivery':
-      return 'text-purple-600 bg-purple-100'
-    case 'delivered':
-      return 'text-green-600 bg-green-100'
-    case 'cancelled':
-      return 'text-red-600 bg-red-100'
-    default:
-      return 'text-gray-600 bg-gray-100'
-  }
-}
-
-const getStatusText = (status: OrderStatus) => {
-  switch (status) {
-    case 'pending':
-      return 'Pending'
-    case 'confirmed':
-      return 'Confirmed'
-    case 'preparing':
-      return 'Preparing'
-    case 'out_for_delivery':
-      return 'Out for Delivery'
-    case 'delivered':
-      return 'Delivered'
-    case 'cancelled':
-      return 'Cancelled'
-    default:
-      return status
-  }
-}
+import { Badge } from '@/components/ui/badge'
+import { 
+  Package, 
+  RefreshCw, 
+  AlertCircle, 
+  ShoppingBag,
+  Clock,
+  CheckCircle
+} from 'lucide-react'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function OrdersPage() {
+  const router = useRouter()
+  const { orders, loading, error, total, hasMore, loadMore, refreshOrders, filterOrders } = useOrders()
+  const [filters, setFilters] = useState<OrderFiltersType>({})
+
+  const handleViewDetails = (orderId: string) => {
+    router.push(`/orders/${orderId}`)
+  }
+
+  const handleReorder = (orderId: string) => {
+    // TODO: Implement reorder logic
+  }
+
+  const handleTrack = (orderId: string) => {
+    router.push(`/orders/${orderId}/track`)
+  }
+
+  const handleCancel = (orderId: string) => {
+    // TODO: Implement cancel logic
+  }
+
+  const handleFilterChange = (newFilters: OrderFiltersType) => {
+    setFilters(newFilters)
+    filterOrders(newFilters)
+  }
+
+  const getOrderStats = () => {
+    const stats = {
+      total: orders.length,
+      pending: orders.filter(o => ['pending', 'confirmed', 'preparing'].includes(o.status)).length,
+      delivered: orders.filter(o => o.status === 'delivered').length,
+      cancelled: orders.filter(o => o.status === 'cancelled').length
+    }
+    return stats
+  }
+
+  const stats = getOrderStats()
+
+  // Handle authentication errors
+  if (error && error.includes('sign in')) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50">
+        <div className="container py-8">
+          <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+            <div className="w-24 h-24 bg-orange-100 rounded-full flex items-center justify-center mb-6">
+              <Package className="w-12 h-12 text-orange-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Sign In Required</h2>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <div className="flex space-x-4">
+              <Button onClick={() => router.push('/signin')} className="bg-orange-600 hover:bg-orange-700">
+                Sign In
+              </Button>
+              <Button onClick={() => router.push('/')} variant="outline">
+                Go Home
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50">
+        <div className="container py-8">
+          <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+            <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Something went wrong</h2>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <Button onClick={refreshOrders} className="flex items-center space-x-2">
+              <RefreshCw className="w-4 h-4" />
+              <span>Try Again</span>
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="container py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">My Orders</h1>
-        <p className="text-muted-foreground">
-          Track your order history and current orders
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50">
+      <div className="container py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">My Orders</h1>
+              <p className="text-gray-600">
+                Track your order history and current orders
+              </p>
+            </div>
+            <Button
+              onClick={refreshOrders}
+              disabled={loading}
+              className="flex items-center space-x-2"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <span>Refresh</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Stats Cards - Compact */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <ShoppingBag className="w-4 h-4 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-lg font-bold text-gray-900">{stats.total}</p>
+                <p className="text-xs text-gray-600">Total</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                <Clock className="w-4 h-4 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-lg font-bold text-gray-900">{stats.pending}</p>
+                <p className="text-xs text-gray-600">In Progress</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-4 h-4 text-green-600" />
+              </div>
+              <div>
+                <p className="text-lg font-bold text-gray-900">{stats.delivered}</p>
+                <p className="text-xs text-gray-600">Delivered</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                <Package className="w-4 h-4 text-red-600" />
+              </div>
+              <div>
+                <p className="text-lg font-bold text-gray-900">{stats.cancelled}</p>
+                <p className="text-xs text-gray-600">Cancelled</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        {/* Filters */}
+        <OrderFilters
+          onFilterChange={handleFilterChange}
+          currentFilters={filters}
+        />
+
+        {/* Orders List */}
+        {loading && orders.length === 0 ? (
+          <div className="flex flex-col items-center justify-center min-h-[400px]">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mb-4"></div>
+            <p className="text-gray-600">Loading your orders...</p>
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+              <Package className="w-12 h-12 text-gray-400" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">No orders found</h2>
+            <p className="text-gray-600 mb-6">
+              {Object.keys(filters).length > 0 
+                ? "No orders match your current filters. Try adjusting your search criteria."
+                : "You haven't placed any orders yet. Start by exploring our restaurants!"
+              }
+            </p>
+            {Object.keys(filters).length > 0 ? (
+              <Button onClick={() => handleFilterChange({})} variant="outline">
+                Clear Filters
+              </Button>
+            ) : (
+              <Button onClick={() => router.push('/restaurants')}>
+                Browse Restaurants
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {orders.map((order) => (
+              <OrderCard
+                key={order.id}
+                order={order}
+                onViewDetails={handleViewDetails}
+                onReorder={handleReorder}
+                onTrack={handleTrack}
+                onCancel={handleCancel}
+              />
+            ))}
+
+            {/* Load More Button */}
+            {hasMore && (
+              <div className="flex justify-center pt-6">
+                <Button
+                  onClick={loadMore}
+                  disabled={loading}
+                  variant="outline"
+                  className="px-8 py-3"
+                >
+                  {loading ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600"></div>
+                      <span>Loading...</span>
+                    </div>
+                  ) : (
+                    'Load More Orders'
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
       
-      <div className="space-y-6">
-        {mockOrders.map((order) => (
-          <Card key={order.id}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Order #{order.id}</CardTitle>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
-                  {getStatusText(order.status)}
-                </span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Ordered on {formatDate(order.createdAt)}
-              </p>
-            </CardHeader>
-            
-            <CardContent>
-              <div className="space-y-4">
-                {/* Order Items */}
-                <div>
-                  <h4 className="font-medium mb-2">Items:</h4>
-                  <div className="space-y-2">
-                    {order.items.map((item) => (
-                      <div key={item.id} className="flex justify-between text-sm">
-                        <span>
-                          {item.quantity}x Item #{item.menuItemId}
-                          {item.specialInstructions && (
-                            <span className="text-muted-foreground ml-2">
-                              ({item.specialInstructions})
-                            </span>
-                          )}
-                        </span>
-                        <span>{formatPrice(item.price)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Order Details */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium">Delivery Address:</span>
-                    <p className="text-muted-foreground">{order.deliveryAddress}</p>
-                    {order.deliveryInstructions && (
-                      <p className="text-muted-foreground text-xs mt-1">
-                        Note: {order.deliveryInstructions}
-                      </p>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">Total: {formatPrice(order.totalAmount)}</p>
-                  </div>
-                </div>
-                
-                {/* Actions */}
-                <div className="flex gap-2 pt-4 border-t">
-                  <Button variant="outline" size="sm">
-                    View Details
-                  </Button>
-                  {order.status === 'delivered' && (
-                    <Button variant="outline" size="sm">
-                      Reorder
-                    </Button>
-                  )}
-                  {order.status === 'out_for_delivery' && (
-                    <Button size="sm">
-                      Track Order
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
     </div>
   )
 }

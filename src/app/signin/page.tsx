@@ -3,27 +3,32 @@
 import { useState, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ErrorDisplay } from "@/components/ui/error-display";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { loginUser } from "@/lib/client-auth";
 import { setAuthToken } from "@/lib/auth-helpers";
 import { usePasswordToggle } from "@/hooks/use-password-toggle";
 import { useTranslations } from "@/lib/i18n";
+import { useToast } from "@/contexts/toast-context";
 import GoogleAuthButton from "@/components/ui/google-auth-button";
+import { PasswordStrength } from "@/components/ui/password-strength";
+import { useAuthValidation } from "@/hooks/use-auth-validation";
 
 function SigninContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t, isLoading: i18nLoading } = useTranslations();
+  const { showToast } = useToast();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   // const [successMessage, setSuccessMessage] = useState(""); // REMOVED
   const [isLoading, setIsLoading] = useState(false);
   
   // Password toggle hook
   const passwordToggle = usePasswordToggle();
+  
+  // Auth validation hook
+  const { validateSigninForm } = useAuthValidation();
 
   // Check for password reset success message - REMOVED
   // useEffect(() => {
@@ -35,11 +40,10 @@ function SigninContent() {
   //   }
   // }, [searchParams, t]);
 
-  // Clear error when user starts typing
-  const handleFieldFocus = () => {
-    if (error) {
-      setError("");
-    }
+  // Clear form when needed
+  const clearForm = () => {
+    setUsername("");
+    setPassword("");
   };
 
   // Check for registration success message - no longer needed since we use popup
@@ -53,8 +57,15 @@ function SigninContent() {
   // }, [searchParams, t]);
 
   const handleSubmit = async () => {
-    // Reset error state
-    setError("");
+    // Don't proceed if translations are still loading
+    if (i18nLoading) {
+      return;
+    }
+    
+    // Validate form fields using shared validation logic
+    if (!validateSigninForm(username, password, setUsername, setPassword)) {
+      return;
+    }
     
     try {
       setIsLoading(true);
@@ -65,7 +76,7 @@ function SigninContent() {
       });
       
       if (!result.success) {
-        setError(result.error?.message || t("signin.errors.loginFailed"));
+        showToast(result.error?.message || t("signin.errors.loginFailed"), "error");
         // Clear password field for invalid credentials
         setPassword("");
         return;
@@ -73,9 +84,8 @@ function SigninContent() {
       
       // Check if user is customer (only customers can use this login)
       if (result.data?.user?.role !== 'customer') {
-        setError("Access denied. This login is for customers only. Please use the appropriate portal.");
-        setUsername("");
-        setPassword("");
+        showToast("Access denied. This login is for customers only. Please use the appropriate portal.", "error");
+        clearForm();
         return;
       }
       
@@ -85,9 +95,8 @@ function SigninContent() {
       // Login successful - redirect to home page
       router.replace("/");
     } catch (err) {
-      setError(t("signin.errors.unexpectedError"));
-      setUsername("");
-      setPassword("");
+      showToast(t("signin.errors.unexpectedError"), "error");
+      clearForm();
     } finally {
       setIsLoading(false);
     }
@@ -136,7 +145,7 @@ function SigninContent() {
                     placeholder={t("common.usernamePlaceholder")}
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    onFocus={handleFieldFocus}
+                    maxLength={50}
                     className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 transition-all text-sm sm:text-base shadow-sm"
                     required
                   />
@@ -152,7 +161,6 @@ function SigninContent() {
                       placeholder={t("common.passwordPlaceholder")}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      onFocus={handleFieldFocus}
                       className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 transition-all pr-10 sm:pr-12 text-sm sm:text-base shadow-sm"
                       required
                     />
@@ -173,6 +181,8 @@ function SigninContent() {
                       )}
                     </button>
                   </div>
+                  
+                  <PasswordStrength password={password} className="mt-3" />
                 </div>
 
                 <div className="text-right">
@@ -184,13 +194,6 @@ function SigninContent() {
                   </Link>
                 </div>
 
-                {/* Error message */}
-                <ErrorDisplay 
-                  error={error} 
-                  type="error"
-                  onClose={() => setError("")}
-                  className="mb-4"
-                />
 
                 {/* Success message - REMOVED */}
                 {/* {successMessage && (
@@ -218,7 +221,7 @@ function SigninContent() {
 
                   {/* Continue with Google */}
                   <GoogleAuthButton 
-                    onError={(errorMessage) => setError(errorMessage)}
+                    onError={(errorMessage) => showToast(errorMessage, "error")}
                   />
                 </div>
               </form>

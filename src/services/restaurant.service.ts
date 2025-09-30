@@ -1,7 +1,10 @@
 import { apiClient } from './api'
-import { Restaurant } from '@/types'
+import { Restaurant } from '@/types/models'
+import { BaseService } from '@/lib/base-service'
+import { buildQueryString, requestJson, createEmptyPaginatedResponse } from '@/lib/http-client'
+import { createDebouncedApiCall } from '@/lib/debounce'
 
-interface RestaurantFilters {
+export interface RestaurantFilters {
     search?: string
     category?: string
     isOpen?: boolean
@@ -28,20 +31,70 @@ interface PaginatedResponse<T> {
     }
 }
 
-export class RestaurantService {
+export class RestaurantService extends BaseService {
+    constructor() {
+        super('/api/restaurants')
+    }
+
     // Get all restaurants with filters
     static async getRestaurants(filters: RestaurantFilters = {}): Promise<PaginatedResponse<Restaurant>> {
-        return apiClient.get<PaginatedResponse<Restaurant>>('/restaurants', filters)
+        try {
+            const queryString = buildQueryString(filters)
+            const url = `/api/restaurants${queryString ? `?${queryString}` : ''}`
+
+            const response = await requestJson<{ restaurants: Restaurant[], pagination: any }>(url, {
+                method: 'GET',
+                cache: 'no-store'
+            })
+
+            return {
+                restaurants: response.restaurants,
+                pagination: response.pagination
+            }
+        } catch (error) {
+            console.error('Error fetching restaurants:', error)
+            return {
+                restaurants: [],
+                pagination: {
+                    page: 1,
+                    limit: 10,
+                    total: 0,
+                    totalPages: 0
+                }
+            }
+        }
     }
 
     // Get restaurant by ID
     static async getRestaurantById(id: string): Promise<Restaurant> {
-        return apiClient.get<Restaurant>(`/restaurants/${id}`)
+        try {
+            const response = await requestJson<Restaurant>(`/api/restaurants/${id}`, {
+                method: 'GET',
+                cache: 'no-store'
+            })
+            return response
+        } catch (error) {
+            console.error('Error fetching restaurant:', error)
+            throw error
+        }
     }
 
     // Search restaurants
     static async searchRestaurants(params: RestaurantSearchParams): Promise<Restaurant[]> {
-        return apiClient.get<Restaurant[]>('/restaurants/search', params)
+        try {
+            const queryString = buildQueryString(params)
+            const url = `/api/restaurants${queryString ? `?${queryString}` : ''}`
+
+            const response = await requestJson<{ restaurants: Restaurant[] }>(url, {
+                method: 'GET',
+                cache: 'no-store'
+            })
+
+            return response.restaurants || []
+        } catch (error) {
+            console.error('Error searching restaurants:', error)
+            return []
+        }
     }
 
     // Create new restaurant (admin only)
@@ -75,4 +128,10 @@ export class RestaurantService {
         // In a real app, you'd use actual geolocation API
         return apiClient.get<Restaurant[]>('/restaurants', { limit: 10 })
     }
+
+    // Debounced version to prevent multiple calls
+    static getRestaurantsDebounced = createDebouncedApiCall(
+        RestaurantService.getRestaurants,
+        200
+    )
 }

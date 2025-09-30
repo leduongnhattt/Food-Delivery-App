@@ -71,7 +71,8 @@ export function validateAndFormatPhoneNumber(phoneNumber: string): PhoneNumberIn
  * @returns Temporary phone number
  */
 export function generateTemporaryPhoneNumber(accountId: string): string {
-    return '000000000';
+    // Return 11 zeros as temporary phone number
+    return '00000000000'
 }
 
 /**
@@ -142,7 +143,7 @@ export async function findAccountByEmail(email: string): Promise<any | null> {
  * @returns Updated account
  */
 export async function linkGoogleToExistingAccount(accountId: string, googleUser: GoogleUserInfo): Promise<any> {
-    return prisma.account.update({
+    const updated = await prisma.account.update({
         where: { AccountID: accountId },
         data: {
             Provider: 'google',
@@ -155,6 +156,36 @@ export async function linkGoogleToExistingAccount(accountId: string, googleUser:
             role: true
         }
     });
+    // Ensure a Customer exists; create one if missing
+    const existingCustomer = await prisma.customer.findFirst({ where: { AccountID: accountId }, select: { CustomerID: true } })
+    if (!existingCustomer) {
+        const phone = generateTemporaryPhoneNumber(accountId)
+        try {
+            await createCustomer({
+                accountId,
+                fullName: googleUser.name,
+                phoneNumber: phone,
+                address: 'Default Address',
+                preferredPaymentMethod: 'Cash'
+            })
+        } catch (e: any) {
+            // Retry once with a different phone if unique constraint on phone occurs
+            const message = typeof e?.message === 'string' ? e.message : ''
+            if (message.includes('CUSTOMER_PhoneNumber_key')) {
+                const retryPhone = generateTemporaryPhoneNumber(accountId)
+                await createCustomer({
+                    accountId,
+                    fullName: googleUser.name,
+                    phoneNumber: retryPhone,
+                    address: 'Default Address',
+                    preferredPaymentMethod: 'Cash'
+                })
+            } else {
+                throw e
+            }
+        }
+    }
+    return updated
 }
 
 /**
@@ -203,15 +234,31 @@ export async function createGoogleAccount(googleUser: GoogleUserInfo): Promise<a
     });
 
     // Create customer profile with temporary phone number
-    const tempPhoneNumber = generateTemporaryPhoneNumber(newAccount.AccountID);
-
-    await createCustomer({
-        accountId: newAccount.AccountID,
-        fullName: googleUser.name,
-        phoneNumber: tempPhoneNumber,
-        address: 'Default Address',
-        preferredPaymentMethod: 'Cash'
-    });
+    // Create customer; handle rare phone unique collisions with one retry
+    const firstPhone = generateTemporaryPhoneNumber(newAccount.AccountID);
+    try {
+        await createCustomer({
+            accountId: newAccount.AccountID,
+            fullName: googleUser.name,
+            phoneNumber: firstPhone,
+            address: 'Default Address',
+            preferredPaymentMethod: 'Cash'
+        });
+    } catch (e: any) {
+        const message = typeof e?.message === 'string' ? e.message : ''
+        if (message.includes('CUSTOMER_PhoneNumber_key')) {
+            const retryPhone = generateTemporaryPhoneNumber(newAccount.AccountID)
+            await createCustomer({
+                accountId: newAccount.AccountID,
+                fullName: googleUser.name,
+                phoneNumber: retryPhone,
+                address: 'Default Address',
+                preferredPaymentMethod: 'Cash'
+            })
+        } else {
+            throw e
+        }
+    }
 
     return newAccount;
 }

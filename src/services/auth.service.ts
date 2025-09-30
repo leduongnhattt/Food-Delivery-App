@@ -9,6 +9,7 @@ export type JwtPayload = {
     username?: string;
     email?: string;
     status?: string;
+    provider?: string; // 'email' | 'google' | 'facebook' etc.
 };
 
 // Note: Google auth types moved to oauth.service.ts
@@ -21,10 +22,14 @@ const JWT_SECRET = process.env.JWT_SECRET || 'change-me'
 /**
  * Creates a SHA-256 hash for storing tokens securely in DB
  * Note: We only store hashes, never raw tokens
+ * Uses Web Crypto API for Edge Runtime compatibility
  */
-function hashToken(token: string): string {
-    const nodeCrypto = require('crypto') as typeof import('crypto')
-    return nodeCrypto.createHash('sha256').update(token).digest('hex')
+async function hashToken(token: string): Promise<string> {
+    const encoder = new TextEncoder()
+    const data = encoder.encode(token)
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
 /**
@@ -110,7 +115,7 @@ export async function createAccount(params: {
     const customer = await createCustomer({
         accountId: account.AccountID,
         fullName: params.username, // Use username as temporary full name
-        phoneNumber: `temp_${account.AccountID.slice(-8)}`, // Unique temporary phone number
+        phoneNumber: '00000000000', // 11 zeros as temporary phone number
         address: 'Default Address', // Default address
         preferredPaymentMethod: 'Cash' // Default payment method
     });
@@ -174,7 +179,7 @@ export async function createCustomer(params: {
  * @param role The user's role
  * @returns Object containing the tokens and expiration
  */
-export async function issueTokens(accountId: string, role: string): Promise<{
+export async function issueTokens(accountId: string, role: string, provider: string = 'email'): Promise<{
     accessToken: string;
     refreshToken: string;
     expiredAt: Date;
@@ -195,7 +200,8 @@ export async function issueTokens(accountId: string, role: string): Promise<{
         role: account?.role?.RoleName || role,
         username: account?.Username,
         email: account?.Email,
-        status: account?.Status
+        status: account?.Status,
+        provider
     })
 
     // Generate refresh token (random string)
@@ -207,7 +213,7 @@ export async function issueTokens(accountId: string, role: string): Promise<{
         data: {
             AccountID: accountId,
             RefreshToken: raw,
-            AccessToken: hashToken(accessToken),
+            AccessToken: await hashToken(accessToken),
             CreatedAt: now,
             ExpiredAt: expiredAt,
             RevokedAt: null,
@@ -255,7 +261,7 @@ export async function rotateAccessTokenFromRefresh(accountId: string, refreshTok
     // Update the stored access token hash for this refresh token
     await prisma.authToken.updateMany({
         where: { AccountID: accountId, RefreshToken: refreshToken, IsValid: true },
-        data: { AccessToken: hashToken(newAccessToken) }
+        data: { AccessToken: await hashToken(newAccessToken) }
     })
 
     return newAccessToken
@@ -275,18 +281,12 @@ export async function revokeRefreshToken(accountId: string, refreshToken: string
 
 /**
  * Generates a cryptographically secure random string
+ * Uses Web Crypto API for Edge Runtime compatibility
  * @returns Base64URL encoded random string
  */
 function cryptoRandom(): string {
     const bytes = new Uint8Array(32)
-    if (typeof crypto !== 'undefined' && 'getRandomValues' in crypto) {
-        // Browser environment
-        crypto.getRandomValues(bytes)
-    } else {
-        // Node.js environment
-        const nodeCrypto = require('crypto') as typeof import('crypto')
-        nodeCrypto.randomFillSync(bytes)
-    }
+    crypto.getRandomValues(bytes)
     return Buffer.from(bytes).toString('base64url')
 }
 

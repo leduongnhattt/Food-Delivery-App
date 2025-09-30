@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 
         if (!account) {
             return NextResponse.json(
-                { error: 'Invalid credentials' },
+                { error: 'Username does not exist. Please check your username or create a new account.' },
                 { status: 401 }
             )
         }
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
 
         if (!isPasswordValid) {
             return NextResponse.json(
-                { error: 'Invalid credentials' },
+                { error: 'Incorrect password. Please check your password and try again.' },
                 { status: 401 }
             )
         }
@@ -47,7 +47,8 @@ export async function POST(request: NextRequest) {
         // Issue tokens
         const { accessToken, refreshToken, expiredAt } = await issueTokens(
             account.AccountID,
-            account.role?.RoleName || 'customer'
+            account.role?.RoleName || 'customer',
+            'email' // Provider for email/password login
         )
 
         // Create response
