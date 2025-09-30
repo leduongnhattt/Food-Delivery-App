@@ -7,6 +7,7 @@ export interface ProfileData {
     email: string
     phone: string
     address: string
+    avatar?: string
 }
 
 export interface Notification {
@@ -21,7 +22,8 @@ export function useProfileData() {
         fullName: '',
         email: '',
         phone: '',
-        address: ''
+        address: '',
+        avatar: ''
     })
     const [notification, setNotification] = useState<Notification | null>(null)
 
@@ -33,11 +35,21 @@ export function useProfileData() {
             try {
                 const customer = await CustomerService.getByAccount(user.id)
                 if (customer) {
+                    // Fetch account to get avatar via lightweight profile endpoint if available
+                    let avatarUrl = ''
+                    try {
+                        const res = await fetch('/api/account/me', { headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` || '' } })
+                        if (res.ok) {
+                            const data = await res.json()
+                            avatarUrl = data?.avatar || ''
+                        }
+                    } catch { }
                     setProfileData({
                         fullName: customer.FullName || '',
                         email: (user as any)?.email || '',
                         phone: customer.PhoneNumber || '',
-                        address: customer.Address || ''
+                        address: customer.Address || '',
+                        avatar: avatarUrl
                     })
                 }
             } catch (error) {

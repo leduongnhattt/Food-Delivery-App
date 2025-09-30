@@ -93,6 +93,7 @@ export default function ProfilePage() {
                   email={profileData.email}
                   isEditing={isEditing}
                   onEdit={() => setIsEditing(true)}
+                  avatarUrl={profileData.avatar}
                 />
 
                 <ProfileForm 
