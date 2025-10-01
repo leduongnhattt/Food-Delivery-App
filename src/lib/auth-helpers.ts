@@ -273,7 +273,8 @@ export function requireCustomer(request: NextRequest): AuthResult {
         return authResult;
     }
 
-    if (authResult.user?.role !== 'customer') {
+    const userRole = (authResult.user?.role || '').toLowerCase()
+    if (userRole !== 'customer') {
         return {
             success: false,
             error: 'Customer access required'
@@ -293,7 +294,8 @@ export function requireAdmin(request: NextRequest): AuthResult {
         return authResult;
     }
 
-    if (authResult.user?.role !== 'admin') {
+    const userRole = (authResult.user?.role || '').toLowerCase()
+    if (userRole !== 'admin') {
         return {
             success: false,
             error: 'Admin access required'
@@ -313,7 +315,8 @@ export function requireEnterprise(request: NextRequest): AuthResult {
         return authResult;
     }
 
-    if (authResult.user?.role !== 'Enterprise') {
+    const userRole = (authResult.user?.role || '').toLowerCase()
+    if (userRole !== 'enterprise') {
         return {
             success: false,
             error: 'Enterprise access required'

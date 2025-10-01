@@ -7,8 +7,8 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/contexts/toast-context";
 import { Food } from "./FoodList";
-import { Category } from "../add-product/page";
 import { buildAuthHeader } from "@/lib/auth-helpers";
+import { Category } from "@/types/models";
 
 interface EditFoodPopupProps {
   food: Food;
@@ -211,7 +211,7 @@ export default function EditFoodPopup({
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form id="edit-food-form" onSubmit={handleSubmit} className="space-y-4">
             {/* Image Upload */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -382,7 +382,7 @@ export default function EditFoodPopup({
             </Button>
             <Button
               type="submit"
-              onClick={handleSubmit}
+              form="edit-food-form"
               className="flex-1 bg-blue-600 text-white"
               disabled={isSubmitting || isUploading}
             >

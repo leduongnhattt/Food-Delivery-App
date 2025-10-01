@@ -150,3 +150,7 @@ export interface CartSnapshot {
     cartId: string | null
     items: CartSnapshotItem[]
 }
+export interface Category {
+    CategoryID: string
+    CategoryName: string
+}

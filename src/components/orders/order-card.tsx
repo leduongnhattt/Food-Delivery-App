@@ -83,8 +83,8 @@ export function OrderCard({ order, onViewDetails, onReorder, onTrack, onCancel }
   const canReorder = order.status === 'delivered'
 
   return (
-    <Card className="hover:shadow-md transition-all duration-200 border border-gray-200 bg-white">
-      <CardContent className="p-4">
+    <Card className="hover:shadow-md transition-all duration-200 border border-gray-200 bg-white h-full">
+      <CardContent className="p-4 flex flex-col h-full min-h-[200px]">
         {/* Header Row */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-2">
@@ -155,7 +155,7 @@ export function OrderCard({ order, onViewDetails, onReorder, onTrack, onCancel }
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-2 pt-3 border-t border-gray-100">
+        <div className="mt-auto flex gap-2 pt-3 border-t border-gray-100">
           <Button
             variant="outline"
             size="sm"

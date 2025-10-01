@@ -74,11 +74,11 @@ export class OrderService {
     /**
      * Cancel an order
      */
-    static async cancelOrder(orderId: string, reason?: string): Promise<{ success: boolean; message: string }> {
-        return requestJson<{ success: boolean; message: string }>(`/api/orders/${orderId}/cancel`, {
-            method: 'POST',
-            headers: buildHeaders({ 'Content-Type': 'application/json' }),
-            body: JSON.stringify({ reason }),
+    static async cancelOrder(orderId: string, _reason?: string): Promise<{ success: boolean; message?: string }> {
+        // Single unified cancellation via DELETE endpoint
+        return requestJson<{ success: boolean; message?: string }>(`/api/orders/${orderId}`, {
+            method: 'DELETE',
+            headers: buildHeaders(),
         })
     }
 

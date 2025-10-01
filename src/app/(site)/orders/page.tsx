@@ -15,15 +15,47 @@ import {
   CheckCircle
 } from 'lucide-react'
 import { useState } from 'react'
+import { useToast } from '@/contexts/toast-context'
+import { OrderService } from '@/services/order.service'
+import type { Order } from '@/services/order.service'
 import { useRouter } from 'next/navigation'
+import { ConfirmCancelModal } from '@/components/orders/ConfirmCancelModal'
+import { OrderDetailsModal } from '@/components/orders/OrderDetailsModal'
 
 export default function OrdersPage() {
   const router = useRouter()
   const { orders, loading, error, total, hasMore, loadMore, refreshOrders, filterOrders } = useOrders()
   const [filters, setFilters] = useState<OrderFiltersType>({})
+  const { showToast } = useToast()
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [pendingCancelId, setPendingCancelId] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [detailsOpen, setDetailsOpen] = useState(false)
+  const [detailLoading, setDetailLoading] = useState(false)
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
 
-  const handleViewDetails = (orderId: string) => {
-    router.push(`/orders/${orderId}`)
+  const statusClasses = (status?: string) => {
+    const s = (status || '').toLowerCase()
+    if (s.includes('delivered') || s.includes('completed')) return 'bg-green-100 text-green-700 border-green-200'
+    if (s.includes('pending') || s.includes('confirmed') || s.includes('preparing')) return 'bg-amber-100 text-amber-700 border-amber-200'
+    if (s.includes('out_for_delivery')) return 'bg-blue-100 text-blue-700 border-blue-200'
+    if (s.includes('cancel')) return 'bg-red-100 text-red-700 border-red-200'
+    return 'bg-gray-100 text-gray-700 border-gray-200'
+  }
+
+  const handleViewDetails = async (orderId: string) => {
+    setDetailsOpen(true)
+    setDetailLoading(true)
+    setSelectedOrder(null)
+    try {
+      const order = await OrderService.getOrderById(orderId)
+      setSelectedOrder(order as Order)
+    } catch (e) {
+      showToast('Failed to load order details', 'error', 4000)
+      setDetailsOpen(false)
+    } finally {
+      setDetailLoading(false)
+    }
   }
 
   const handleReorder = (orderId: string) => {
@@ -35,7 +67,28 @@ export default function OrdersPage() {
   }
 
   const handleCancel = (orderId: string) => {
-    // TODO: Implement cancel logic
+    setPendingCancelId(orderId)
+    setConfirmOpen(true)
+  }
+
+  const confirmCancel = async () => {
+    if (!pendingCancelId) return
+    setSubmitting(true)
+    try {
+      const result = await OrderService.cancelOrder(pendingCancelId)
+      if ((result as any)?.success) {
+        showToast('Order cancelled successfully', 'success', 3000)
+        await refreshOrders()
+      } else {
+        showToast((result as any)?.error || 'Failed to cancel order', 'error', 4000)
+      }
+    } catch (e) {
+      showToast('Failed to cancel order', 'error', 4000)
+    } finally {
+      setSubmitting(false)
+      setConfirmOpen(false)
+      setPendingCancelId(null)
+    }
   }
 
   const handleFilterChange = (newFilters: OrderFiltersType) => {
@@ -243,7 +296,8 @@ export default function OrdersPage() {
           </div>
         )}
       </div>
-      
+      <ConfirmCancelModal open={confirmOpen} submitting={submitting} onClose={() => { setConfirmOpen(false); setPendingCancelId(null) }} onConfirm={confirmCancel} />
+      <OrderDetailsModal open={detailsOpen} loading={detailLoading} order={selectedOrder} onClose={() => setDetailsOpen(false)} />
     </div>
   )
 }
