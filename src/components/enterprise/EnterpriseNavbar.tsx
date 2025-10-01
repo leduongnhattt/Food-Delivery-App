@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -13,7 +13,8 @@ import {
   Menu
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { log } from "console";
+import { useAccountHeader } from "@/hooks/use-account-header";
+import { buildAuthHeader } from "@/lib/auth-helpers";
 
 const menuItems = [
   { href: "/enterprise/dashboard", label: "Dashboard", icon: BarChart3 },
@@ -27,6 +28,10 @@ const menuItems = [
 export default function EnterpriseNavbar() {
   const pathname = usePathname();
   const { user, logout } = useAuth()
+  const accountHeader = useAccountHeader()
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [enterpriseName, setEnterpriseName] = useState<string>("Enterprise")
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
@@ -35,7 +40,22 @@ export default function EnterpriseNavbar() {
     logout();
   };
 
-  const firsrTwoLetters = user?.username ? user.username.slice(0, 2).toUpperCase() : "";
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadEnterpriseHeader() {
+      try {
+        const res = await fetch('/api/enterprise/profile', { headers: { ...buildAuthHeader() } })
+        if (!res.ok) return
+        const data = await res.json()
+        if (cancelled) return
+        setEnterpriseName(data?.enterprise?.EnterpriseName || 'Enterprise')
+        setLogoUrl(accountHeader.avatar)
+      } catch {}
+    }
+    loadEnterpriseHeader()
+    return () => { cancelled = true }
+  }, [accountHeader.avatar])
 
   return (
     <>
@@ -44,19 +64,36 @@ export default function EnterpriseNavbar() {
         <div className="flex items-center justify-between h-full px-6">
           {/* Logo */}
           <div>
-            <h2 className="text-xl font-bold text-blue-600">Enterprise Name</h2>
+            <h2 className="text-xl font-bold text-blue-600 truncate max-w-[260px]">{enterpriseName}</h2>
           </div>
 
           {/* Enterprise Info */}
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-medium">{ firsrTwoLetters }</span>
-            </div>
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={logoUrl}
+                alt="logo"
+                className="w-8 h-8 rounded-full object-cover cursor-zoom-in"
+                onClick={() => setPreviewOpen(true)}
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-amber-400" />
+            )}
             <div>
               <p className="text-sm font-medium text-gray-800">{ user?.username }</p>
               <p className="text-xs text-gray-500">Enterprise</p>
             </div>
           </div>
+          {previewOpen && logoUrl && (
+            <div
+              className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-4 cursor-zoom-out"
+              onClick={() => setPreviewOpen(false)}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={logoUrl} alt="logo preview" className="max-w-[90vw] max-h-[90vh] rounded-xl shadow-2xl object-contain" />
+            </div>
+          )}
         </div>
       </header>
 

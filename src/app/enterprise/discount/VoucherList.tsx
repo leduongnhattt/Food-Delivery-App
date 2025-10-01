@@ -5,7 +5,11 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 export interface Voucher {
   VoucherID: string;
   Code: string;
-  DiscountPercent: number;
+  DiscountPercent?: number;
+  DiscountAmount?: number;
+  MinOrderValue?: number;
+  MaxUsage?: number;
+  UsedCount: number;
   ExpiryDate: string;
   Status: string;
 }

@@ -68,7 +68,7 @@ export async function refreshAccessToken(): Promise<string | null> {
     const existing = getAuthToken();
     // We can still decode expired token to get accountId
     const payload = existing ? safeDecodeJwt(existing) : null;
-    const accountId = payload?.accountId || payload?.userId || '';
+    const accountId = payload?.accountId || payload?.userId || localStorage.getItem('user_id') || '';
     if (!accountId) return null;
 
     try {

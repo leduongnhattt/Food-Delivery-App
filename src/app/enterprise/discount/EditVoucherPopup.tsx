@@ -18,6 +18,10 @@ export default function EditVoucherPopup({
 }: EditVoucherPopupProps) {
   const [code, setCode] = useState("");
   const [discountPercent, setDiscountPercent] = useState<number>(0);
+  const [discountAmount, setDiscountAmount] = useState<number>(0);
+  const [minOrderValue, setMinOrderValue] = useState<number>(0);
+  const [maxUsage, setMaxUsage] = useState<number>(0);
+  const [discountType, setDiscountType] = useState<"percent" | "amount">("percent");
   const [expiryDate, setExpiryDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +30,10 @@ export default function EditVoucherPopup({
     if (voucher) {
       setCode(voucher.Code || "");
       setDiscountPercent(voucher.DiscountPercent || 0);
+      setDiscountAmount(voucher.DiscountAmount || 0);
+      setMinOrderValue(voucher.MinOrderValue || 0);
+      setMaxUsage(voucher.MaxUsage || 0);
+      setDiscountType(voucher.DiscountPercent ? "percent" : "amount");
       // Format date for input field (YYYY-MM-DD)
       const date = new Date(voucher.ExpiryDate);
       const formattedDate = date.toISOString().split("T")[0];
@@ -46,8 +54,13 @@ export default function EditVoucherPopup({
       return;
     }
 
-    if (discountPercent <= 0 || discountPercent > 100) {
+    if (discountType === "percent" && (discountPercent <= 0 || discountPercent > 100)) {
       setError("Discount percentage must be between 1 and 100");
+      return;
+    }
+
+    if (discountType === "amount" && discountAmount <= 0) {
+      setError("Discount amount must be greater than 0");
       return;
     }
 
@@ -59,12 +72,33 @@ export default function EditVoucherPopup({
     setError(null);
     setLoading(true);
     try {
-      await apiClient.put("/enterprise/voucher", {
+      const payload: any = {
         VoucherID: voucher?.VoucherID,
         Code: code,
-        DiscountPercentage: discountPercent,
         ExpiryDate: expiryDate,
-      });
+      };
+
+      if (discountType === "percent") {
+        payload.DiscountPercent = discountPercent;
+      } else {
+        payload.DiscountAmount = discountAmount;
+      }
+
+      if (minOrderValue > 0) {
+        payload.MinOrderValue = minOrderValue;
+      }
+
+      if (maxUsage > 0) {
+        payload.MaxUsage = maxUsage;
+      }
+
+      const response = await apiClient.put("/enterprise/voucher", payload) as any;
+      
+      if (response.success === false) {
+        setError(response.error || "Failed to update voucher. Please try again.");
+        return;
+      }
+      
       onSuccess();
       onClose();
     } catch (err) {
@@ -93,20 +127,114 @@ export default function EditVoucherPopup({
             />
           </div>
 
+          {/* Discount Type Selection */}
+          <div>
+            <label className="block text-sm font-medium">Discount Type</label>
+            <div className="flex gap-2 mt-1">
+              <button
+                type="button"
+                onClick={() => setDiscountType("percent")}
+                className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
+                  discountType === "percent"
+                    ? "border-blue-500 bg-blue-50 text-blue-700"
+                    : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                Percentage
+              </button>
+              <button
+                type="button"
+                onClick={() => setDiscountType("amount")}
+                className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
+                  discountType === "amount"
+                    ? "border-blue-500 bg-blue-50 text-blue-700"
+                    : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                Fixed Amount
+              </button>
+            </div>
+          </div>
+
+          {/* Discount Value */}
+          {discountType === "percent" ? (
+            <div>
+              <label className="block text-sm font-medium">
+                Discount Percentage *
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="100"
+                value={discountPercent}
+                onChange={(e) => setDiscountPercent(Number(e.target.value))}
+                disabled={loading}
+                className="w-full border rounded-md px-3 py-2 mt-1 focus:outline-none focus:ring focus:ring-blue-300"
+                placeholder="Enter discount percentage (1-100)"
+              />
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium">
+                Discount Amount *
+              </label>
+              <div className="relative mt-1">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                  $
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={discountAmount}
+                  onChange={(e) => setDiscountAmount(Number(e.target.value))}
+                  disabled={loading}
+                  className="w-full border rounded-md px-3 py-2 pl-8 focus:outline-none focus:ring focus:ring-blue-300"
+                  placeholder="Enter discount amount"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Minimum Order Value */}
           <div>
             <label className="block text-sm font-medium">
-              Discount Percentage *
+              Minimum Order Value (Optional)
+            </label>
+            <div className="relative mt-1">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                $
+              </div>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={minOrderValue}
+                onChange={(e) => setMinOrderValue(Number(e.target.value))}
+                disabled={loading}
+                className="w-full border rounded-md px-3 py-2 pl-8 focus:outline-none focus:ring focus:ring-blue-300"
+                placeholder="Enter minimum order value"
+              />
+            </div>
+          </div>
+
+          {/* Max Usage */}
+          <div>
+            <label className="block text-sm font-medium">
+              Max Usage (Optional)
             </label>
             <input
               type="number"
               min="1"
-              max="100"
-              value={discountPercent}
-              onChange={(e) => setDiscountPercent(Number(e.target.value))}
+              value={maxUsage}
+              onChange={(e) => setMaxUsage(Number(e.target.value))}
               disabled={loading}
               className="w-full border rounded-md px-3 py-2 mt-1 focus:outline-none focus:ring focus:ring-blue-300"
-              placeholder="Enter discount percentage (1-100)"
+              placeholder="Enter max usage (leave 0 for unlimited)"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Maximum number of times this voucher can be used. Leave 0 for unlimited usage.
+            </p>
           </div>
 
           <div>

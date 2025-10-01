@@ -1,3 +1,4 @@
+import { buildHeaders } from "@/lib/http-client";
 import { useState } from "react";
 
 interface UploadResponse {
@@ -54,11 +55,13 @@ export const useEnterpriseUpload = () => {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("/api/enterprise/upload", {
+      // Use buildHeaders() but remove JSON Content-Type so FormData boundary is set by the browser
+      const headers = buildHeaders() as Record<string, string>
+      delete headers['Content-Type']
+
+      const response = await fetch("/api/enterprise/food-image", {
         method: "POST",
-        headers: {
-          authorization: `Bearer ${token}`,
-        },
+        headers,
         body: formData,
       });
 
@@ -80,47 +83,10 @@ export const useEnterpriseUpload = () => {
     }
   };
 
-  const deleteImage = async (imageUrl: string): Promise<boolean> => {
-    setIsDeleting(true);
-    setDeleteError(null);
-
-    try {
-      const token = localStorage.getItem("access_token");
-      if (!token) {
-        throw new Error("No auth token found");
-      }
-
-      // Validate URL format
-      if (!imageUrl.startsWith("/images/enterprise/")) {
-        throw new Error("Invalid image URL format");
-      }
-
-      const response = await fetch(
-        `/api/enterprise/upload?url=${encodeURIComponent(imageUrl)}`,
-        {
-          method: "DELETE",
-          headers: {
-            authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        const data: DeleteResponse = await response.json();
-        return true;
-      } else {
-        const errorData: ErrorResponse = await response.json();
-        throw new Error(errorData.error || "Failed to delete image");
-      }
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to delete image";
-      setDeleteError(errorMessage);
-      console.error("Error deleting image:", error);
-      return false;
-    } finally {
-      setIsDeleting(false);
-    }
+  const deleteImage = async (_imageUrl: string): Promise<boolean> => {
+    // Images are stored on Cloudinary; we keep DB as source of truth and do not delete remote asset here.
+    // Always succeed to avoid blocking deletion of food records.
+    return true;
   };
 
   const resetErrors = () => {

@@ -5,8 +5,10 @@ import { useEnterpriseUpload } from "@/hooks/use-enterprise-upload";
 import { apiClient } from "@/services/api";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/contexts/toast-context";
 import { Food } from "./FoodList";
 import { Category } from "../add-product/page";
+import { buildAuthHeader } from "@/lib/auth-helpers";
 
 interface EditFoodPopupProps {
   food: Food;
@@ -21,6 +23,7 @@ export default function EditFoodPopup({
   onClose,
   onSuccess,
 }: EditFoodPopupProps) {
+  const { showToast } = useToast();
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(
     food.ImageURL
@@ -47,7 +50,10 @@ export default function EditFoodPopup({
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch("/api/enterprise/category");
+        const response = await fetch("/api/enterprise/category", {
+          headers: { ...buildAuthHeader() },
+          cache: "no-store",
+        });
         if (response.ok) {
           const data = await response.json();
           setCategories(data.categories);
@@ -168,12 +174,12 @@ export default function EditFoodPopup({
       };
 
       await apiClient.put("/enterprise/food", updateData);
-
-      alert("Food item updated successfully!");
+      showToast('Food item updated successfully', 'success', 3000)
       onSuccess();
     } catch (error) {
       console.error("Error updating food item:", error);
       setError("Failed to update food item. Please try again.");
+      showToast('Failed to update food item', 'error', 4000)
     } finally {
       setIsSubmitting(false);
     }

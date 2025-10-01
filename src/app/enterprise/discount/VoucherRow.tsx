@@ -53,9 +53,20 @@ const VoucherRow: React.FC<VoucherRowProps> = ({
       {/* Voucher Code */}
       <div className="col-span-3 font-medium text-gray-900">{voucher.Code}</div>
 
-      {/* Discount Percentage */}
+      {/* Discount Value */}
       <div className="col-span-2 text-gray-700">
-        {voucher.DiscountPercent}%
+        <div className="font-medium">
+          {voucher.DiscountPercent ? (
+            <span>{voucher.DiscountPercent}%</span>
+          ) : (
+            <span>${voucher.DiscountAmount}</span>
+          )}
+        </div>
+        {voucher.MaxUsage && (
+          <div className="text-xs text-gray-500">
+            {voucher.UsedCount}/{voucher.MaxUsage} used
+          </div>
+        )}
       </div>
 
       {/* Expiry Date */}

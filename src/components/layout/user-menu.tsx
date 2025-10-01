@@ -1,7 +1,7 @@
 'use client'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
-import { buildAuthHeader } from '@/lib/auth-helpers'
+import { useAccountHeader } from '@/hooks/use-account-header'
 
 type UserLike = {
   username?: string | null
@@ -17,8 +17,9 @@ export function UserMenu(props: {
   const { user, onLogout, profileHref = '/profile', settingsHref = '/settings' } = props
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const accountHeader = useAccountHeader()
   const ref = useRef<HTMLDivElement | null>(null)
+  
 
   function handleProfile() {
     setIsOpen(false)
@@ -41,27 +42,7 @@ export function UserMenu(props: {
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [isOpen])
 
-  // Fetch avatar once when component mounts
-  useEffect(() => {
-    let cancelled = false
-    async function loadAvatar() {
-      try {
-        const res = await fetch('/api/account/me', { headers: { ...buildAuthHeader() } })
-        if (!res.ok) return
-        const data = await res.json()
-        if (!cancelled) setAvatarUrl(data?.avatar || null)
-      } catch {}
-    }
-    loadAvatar()
-    const onAvatarUpdated = (e: any) => {
-      if (e?.detail?.url) setAvatarUrl(e.detail.url as string)
-    }
-    window.addEventListener('avatarUpdated', onAvatarUpdated)
-    return () => {
-      cancelled = true
-      window.removeEventListener('avatarUpdated', onAvatarUpdated)
-    }
-  }, [])
+  // No local fetch - rely on shared account header hook
 
   return (
     <div className="relative" ref={ref}>
@@ -73,9 +54,9 @@ export function UserMenu(props: {
         className={`relative flex items-center justify-center w-10 h-10 rounded-full border-2 bg-gradient-to-br from-orange-500 via-amber-400 to-yellow-400 text-white shadow-md transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 hover:brightness-105 hover:shadow-xl ${isOpen ? 'ring-orange-500' : 'ring-transparent'}`}
       >
         <span className="sr-only">Open profile menu</span>
-        {avatarUrl ? (
+        {accountHeader.avatar ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={avatarUrl} alt="avatar" className="w-full h-full rounded-full object-cover" />
+          <img src={accountHeader.avatar} alt="avatar" className="w-full h-full rounded-full object-cover" />
         ) : (
           <span className="text-sm font-bold">
             {(user?.username?.[0] || user?.email?.[0] || 'U').toUpperCase()}
@@ -123,6 +104,7 @@ export function UserMenu(props: {
           </div>
         </div>
       )}
+      
     </div>
   )
 }

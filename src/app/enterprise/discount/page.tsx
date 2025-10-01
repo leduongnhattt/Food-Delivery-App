@@ -4,15 +4,22 @@ import { useEffect, useState } from "react";
 import { Voucher, VoucherList } from "./VoucherList";
 import { Button } from "@/components/ui/button";
 import EditVoucherPopup from "./EditVoucherPopup";
+import { useToast } from "@/contexts/toast-context";
+import { Calendar, Percent, Tag, Plus, Sparkles } from "lucide-react";
 
 export default function AdminDashboardPage() {
   const [entepriseData, setEnterpriseData] = useState<any>(null);
   const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
+  const { showToast } = useToast();
 
   // form states
   const [couponCode, setCouponCode] = useState("");
   const [expire, setExpire] = useState("");
   const [percentDiscount, setPercentDiscount] = useState("");
+  const [discountAmount, setDiscountAmount] = useState("");
+  const [minOrderValue, setMinOrderValue] = useState("");
+  const [maxUsage, setMaxUsage] = useState("");
+  const [discountType, setDiscountType] = useState<"percent" | "amount">("percent");
   const [loading, setLoading] = useState(false);
 
   // validation states
@@ -20,13 +27,23 @@ export default function AdminDashboardPage() {
     couponCode: "",
     expire: "",
     percentDiscount: "",
+    discountAmount: "",
+    minOrderValue: "",
+    maxUsage: "",
   });
 
   async function fetchEnterpriseData() {
     try {
-      const { enterprise } = await apiClient.get<{ enterprise: any }>(
+      const response = await apiClient.get<{ enterprise: any }>(
         "/enterprise/profile?include=vouchers"
-      );
+      ) as any;
+      
+      if (response.success === false) {
+        console.error("Error fetching enterprise data:", response.error);
+        return;
+      }
+      
+      const { enterprise } = response;
       setEnterpriseData(enterprise);
     } catch (error) {
       console.error("Error fetching enterprise data:", error);
@@ -111,11 +128,66 @@ export default function AdminDashboardPage() {
     return "";
   };
 
+  const validateDiscountAmount = (value: string) => {
+    if (!value.trim()) {
+      return "Discount amount is required";
+    }
+
+    const numValue = parseFloat(value);
+    if (isNaN(numValue)) {
+      return "Discount amount must be a valid number";
+    }
+
+    if (numValue <= 0) {
+      return "Discount amount must be greater than 0";
+    }
+
+    // Check for too many decimal places
+    if (value.includes(".") && value.split(".")[1].length > 2) {
+      return "Discount amount can have at most 2 decimal places";
+    }
+
+    return "";
+  };
+
+  const validateMinOrderValue = (value: string) => {
+    if (!value.trim()) return ""; // Optional field
+
+    const numValue = parseFloat(value);
+    if (isNaN(numValue)) {
+      return "Minimum order value must be a valid number";
+    }
+
+    if (numValue < 0) {
+      return "Minimum order value cannot be negative";
+    }
+
+    return "";
+  };
+
+  const validateMaxUsage = (value: string) => {
+    if (!value.trim()) return ""; // Optional field
+
+    const numValue = parseInt(value);
+    if (isNaN(numValue)) {
+      return "Max usage must be a valid number";
+    }
+
+    if (numValue <= 0) {
+      return "Max usage must be greater than 0";
+    }
+
+    return "";
+  };
+
   const validateAllFields = () => {
     const newErrors = {
       couponCode: validateCouponCode(couponCode),
       expire: validateExpireDate(expire),
-      percentDiscount: validatePercentDiscount(percentDiscount),
+      percentDiscount: discountType === "percent" ? validatePercentDiscount(percentDiscount) : "",
+      discountAmount: discountType === "amount" ? validateDiscountAmount(discountAmount) : "",
+      minOrderValue: validateMinOrderValue(minOrderValue),
+      maxUsage: validateMaxUsage(maxUsage),
     };
 
     setErrors(newErrors);
@@ -155,20 +227,38 @@ export default function AdminDashboardPage() {
 
     setLoading(true);
     try {
-      await apiClient.post("/enterprise/voucher", {
+      const payload: any = {
         Code: couponCode.trim(),
         ExpiryDate: expire,
-        DiscountPercent: parseFloat(percentDiscount),
-      });
-      alert("Voucher added successfully");
+      };
+
+      if (discountType === "percent") {
+        payload.DiscountPercent = parseFloat(percentDiscount);
+      } else {
+        payload.DiscountAmount = parseFloat(discountAmount);
+      }
+
+      if (minOrderValue.trim()) {
+        payload.MinOrderValue = parseFloat(minOrderValue);
+      }
+
+      if (maxUsage.trim()) {
+        payload.MaxUsage = parseInt(maxUsage);
+      }
+
+      await apiClient.post("/enterprise/voucher", payload);
       setCouponCode("");
       setExpire("");
       setPercentDiscount("");
-      setErrors({ couponCode: "", expire: "", percentDiscount: "" });
+      setDiscountAmount("");
+      setMinOrderValue("");
+      setMaxUsage("");
+      setErrors({ couponCode: "", expire: "", percentDiscount: "", discountAmount: "", minOrderValue: "", maxUsage: "" });
+      showToast("Voucher created successfully!", "success");
       fetchEnterpriseData();
     } catch (error) {
       console.error("Error adding voucher:", error);
-      alert("Failed to add voucher. Please try again.");
+      showToast("Failed to add voucher. Please try again.", "error");
     } finally {
       setLoading(false);
     }
@@ -185,107 +275,312 @@ export default function AdminDashboardPage() {
     if (!confirmed) return;
     try {
       await apiClient.delete(`/enterprise/voucher?voucherId=${voucherId}`);
-      alert("Voucher deleted successfully");
+      showToast("Voucher deleted successfully!", "success");
       fetchEnterpriseData();
     } catch (error) {
       console.error("Error deleting voucher:", error);
-      alert("Failed to delete voucher. Please try again.");
+      showToast("Failed to delete voucher. Please try again.", "error");
     }
   };
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">Voucher Dashboard</h1>
+    <div className="relative">
+      {/* Decorative Background */}
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute inset-x-0 top-0 h-64 bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50" />
+        <div className="absolute -top-10 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-purple-200/30 blur-3xl" />
+        <div className="absolute top-10 right-10 h-40 w-40 rounded-full bg-orange-200/30 blur-2xl" />
+      </div>
 
-      <VoucherList
-        vouchers={entepriseData?.vouchers ?? []}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
-
-      {/* Add new voucher field */}
-      <div className="grid grid-cols-2 gap-6 mt-6 max-w-1/2">
-        <div className="col-span-2 flex items-center justify-between">
-          <label className="font-medium">Coupon Code:</label>
-          <div className="flex flex-col">
-            <input
-              type="text"
-              placeholder="Enter Your Coupon"
-              value={couponCode}
-              onChange={(e) => handleCouponCodeChange(e.target.value)}
-              className={`border rounded-md px-3 py-2 w-64 ${
-                errors.couponCode ? "border-red-500" : "border-gray-300"
-              }`}
-            />
-            {errors.couponCode && (
-              <span className="text-red-500 text-sm mt-1 w-64">
-                {errors.couponCode}
+      {/* Header */}
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-8 rounded-2xl border border-white/50 bg-white/70 p-6 shadow-md backdrop-blur supports-[backdrop-filter]:bg-white/60">
+          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-gray-900">Voucher Management</h1>
+              <p className="mt-1 text-sm text-gray-600">Create and manage discount vouchers for your customers.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-purple-500" />
+              <span className="text-sm font-medium text-purple-600">
+                {entepriseData?.vouchers?.length || 0} Active Vouchers
               </span>
-            )}
+            </div>
           </div>
         </div>
 
-        <div className="col-span-2 flex items-center justify-between">
-          <label className="font-medium">Expire:</label>
-          <div className="flex flex-col">
-            <input
-              type="date"
-              min={
-                new Date(Date.now() + 24 * 60 * 60 * 1000)
-                  .toISOString()
-                  .split("T")[0]
-              }
-              max={
-                new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-                  .toISOString()
-                  .split("T")[0]
-              }
-              placeholder="Enter expire day"
-              value={expire}
-              onChange={(e) => handleExpireChange(e.target.value)}
-              className={`border rounded-md px-3 py-2 w-64 ${
-                errors.expire ? "border-red-500" : "border-gray-300"
-              }`}
-            />
-            {errors.expire && (
-              <span className="text-red-500 text-sm mt-1 w-64">
-                {errors.expire}
-              </span>
-            )}
-          </div>
-        </div>
+        {/* Content Grid */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          {/* Left: Create Voucher Form */}
+          <div className="lg:col-span-5">
+            <div className="sticky top-4 space-y-6">
+              {/* Create Voucher Card */}
+              <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+                <div className="mb-6 flex items-center gap-3">
+                  <div className="rounded-lg bg-purple-100 p-2">
+                    <Plus className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Create New Voucher</h3>
+                    <p className="text-sm text-gray-500">Set up discount codes for your customers</p>
+                  </div>
+                </div>
 
-        <div className="col-span-2 flex items-center justify-between">
-          <label className="font-medium">Percent Discount:</label>
-          <div className="flex flex-col">
-            <input
-              type="number"
-              min="0.01"
-              max="100"
-              step="0.01"
-              placeholder="Enter Percent Discount (0-100)"
-              value={percentDiscount}
-              onChange={(e) => handlePercentDiscountChange(e.target.value)}
-              className={`border rounded-md px-3 py-2 w-64 ${
-                errors.percentDiscount ? "border-red-500" : "border-gray-300"
-              }`}
-            />
-            {errors.percentDiscount && (
-              <span className="text-red-500 text-sm mt-1 w-64">
-                {errors.percentDiscount}
-              </span>
-            )}
-          </div>
-        </div>
+                <div className="space-y-6">
+                  {/* Coupon Code */}
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-gray-700">
+                      <Tag className="mr-2 inline h-4 w-4" />
+                      Coupon Code
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g., SAVE20, WELCOME10"
+                      value={couponCode}
+                      onChange={(e) => handleCouponCodeChange(e.target.value)}
+                      className={`w-full rounded-lg border px-4 py-3 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                        errors.couponCode ? "border-red-300" : "border-gray-300"
+                      }`}
+                    />
+                    {errors.couponCode && (
+                      <p className="mt-1 text-sm text-red-500">{errors.couponCode}</p>
+                    )}
+                  </div>
 
-        <div className="col-span-2 flex justify-center mt-4">
-          <Button
-            onClick={handleAddVoucher}
-            disabled={loading}
-            className="bg-orange-500 text-white px-6 py-2 rounded-md hover:bg-orange-600 disabled:opacity-50"
-          >
-            {loading ? "Adding..." : "Add"}
-          </Button>
+                  {/* Discount Type Selection */}
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-gray-700">
+                      Discount Type
+                    </label>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setDiscountType("percent")}
+                        className={`flex-1 rounded-lg border px-4 py-3 text-sm font-medium transition-colors ${
+                          discountType === "percent"
+                            ? "border-purple-500 bg-purple-50 text-purple-700"
+                            : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        <Percent className="mr-2 inline h-4 w-4" />
+                        Percentage
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDiscountType("amount")}
+                        className={`flex-1 rounded-lg border px-4 py-3 text-sm font-medium transition-colors ${
+                          discountType === "amount"
+                            ? "border-purple-500 bg-purple-50 text-purple-700"
+                            : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        <Tag className="mr-2 inline h-4 w-4" />
+                        Fixed Amount
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Discount Value */}
+                  {discountType === "percent" ? (
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        <Percent className="mr-2 inline h-4 w-4" />
+                        Discount Percentage
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={percentDiscount}
+                          onChange={(e) => handlePercentDiscountChange(e.target.value)}
+                          className={`w-full rounded-lg border px-4 py-3 pr-8 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                            errors.percentDiscount ? "border-red-300" : "border-gray-300"
+                          }`}
+                        />
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">
+                          %
+                        </div>
+                      </div>
+                      {errors.percentDiscount && (
+                        <p className="mt-1 text-sm text-red-500">{errors.percentDiscount}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        <Tag className="mr-2 inline h-4 w-4" />
+                        Discount Amount
+                      </label>
+                      <div className="relative">
+                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                          $
+                        </div>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={discountAmount}
+                          onChange={(e) => setDiscountAmount(e.target.value)}
+                          className={`w-full rounded-lg border px-4 py-3 pl-8 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                            errors.discountAmount ? "border-red-300" : "border-gray-300"
+                          }`}
+                        />
+                      </div>
+                      {errors.discountAmount && (
+                        <p className="mt-1 text-sm text-red-500">{errors.discountAmount}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Minimum Order Value */}
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-gray-700">
+                      <Tag className="mr-2 inline h-4 w-4" />
+                      Minimum Order Value (Optional)
+                    </label>
+                    <div className="relative">
+                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                        $
+                      </div>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={minOrderValue}
+                        onChange={(e) => setMinOrderValue(e.target.value)}
+                        className={`w-full rounded-lg border px-4 py-3 pl-8 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                          errors.minOrderValue ? "border-red-300" : "border-gray-300"
+                        }`}
+                      />
+                    </div>
+                    {errors.minOrderValue && (
+                      <p className="mt-1 text-sm text-red-500">{errors.minOrderValue}</p>
+                    )}
+                  </div>
+
+                  {/* Max Usage */}
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-gray-700">
+                      <Tag className="mr-2 inline h-4 w-4" />
+                      Max Usage (Optional)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="Unlimited"
+                      value={maxUsage}
+                      onChange={(e) => setMaxUsage(e.target.value)}
+                      className={`w-full rounded-lg border px-4 py-3 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                        errors.maxUsage ? "border-red-300" : "border-gray-300"
+                      }`}
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Maximum number of times this voucher can be used. Leave empty for unlimited usage.
+                    </p>
+                    {errors.maxUsage && (
+                      <p className="mt-1 text-sm text-red-500">{errors.maxUsage}</p>
+                    )}
+                  </div>
+
+                  {/* Expiry Date */}
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-gray-700">
+                      <Calendar className="mr-2 inline h-4 w-4" />
+                      Expiry Date
+                    </label>
+                    <input
+                      type="date"
+                      min={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split("T")[0]}
+                      max={new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]}
+                      value={expire}
+                      onChange={(e) => handleExpireChange(e.target.value)}
+                      className={`w-full rounded-lg border px-4 py-3 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                        errors.expire ? "border-red-300" : "border-gray-300"
+                      }`}
+                    />
+                    {errors.expire && (
+                      <p className="mt-1 text-sm text-red-500">{errors.expire}</p>
+                    )}
+                  </div>
+
+                  {/* Submit Button */}
+                  <Button
+                    onClick={handleAddVoucher}
+                    disabled={loading}
+                    className="w-full bg-purple-600 text-white hover:bg-purple-700 disabled:bg-gray-300"
+                  >
+                    {loading ? (
+                      <div className="flex items-center justify-center">
+                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-white"></div>
+                        Creating...
+                      </div>
+                    ) : (
+                      "Create Voucher"
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Live Preview Card */}
+              <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="text-white">
+                      <div className="text-sm font-medium">Preview Voucher</div>
+                      <div className="text-xs opacity-90">How it will appear to customers</div>
+                    </div>
+                    <div className="rounded-full bg-white/20 p-2">
+                      <Tag className="h-4 w-4 text-white" />
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-semibold text-gray-900">
+                        {couponCode || "COUPON_CODE"}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {discountType === "percent" 
+                          ? (percentDiscount ? `${percentDiscount}% OFF` : "0% OFF")
+                          : (discountAmount ? `$${discountAmount} OFF` : "$0 OFF")
+                        }
+                      </div>
+                    </div>
+                    <div className="rounded-full bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-600">
+                      {expire ? new Date(expire).toLocaleDateString('vi-VN') : "Expires Soon"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Voucher List */}
+          <div className="lg:col-span-7">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+              <div className="mb-6 flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Your Vouchers</h3>
+                  <p className="text-sm text-gray-500">Manage existing discount codes</p>
+                </div>
+                <div className="text-sm text-gray-500">
+                  {entepriseData?.vouchers?.length || 0} total
+                </div>
+              </div>
+              
+              <VoucherList
+                vouchers={entepriseData?.vouchers ?? []}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
+            </div>
+          </div>
         </div>
       </div>
 

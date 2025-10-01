@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     }
     const user = authResult.user!;
     const body = await request.json();
-    const { Code, ExpiryDate, DiscountPercent } = body;
+    const { Code, ExpiryDate, DiscountPercent, DiscountAmount, MinOrderValue, MaxUsage } = body;
     if (!Code) {
       return NextResponse.json(
         { error: "Coupon Code is required" },
@@ -23,9 +23,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    if (!DiscountPercent) {
+    if (!DiscountPercent && !DiscountAmount) {
       return NextResponse.json(
-        { error: "Discount Percent is required" },
+        { error: "Either Discount Percent or Discount Amount is required" },
         { status: 400 }
       );
     }
@@ -43,7 +43,10 @@ export async function POST(request: NextRequest) {
       data: {
         Code,
         ExpiryDate: new Date(ExpiryDate),
-        DiscountPercent,
+        DiscountPercent: DiscountPercent || null,
+        DiscountAmount: DiscountAmount || null,
+        MinOrderValue: MinOrderValue || null,
+        MaxUsage: MaxUsage || null,
         CreatedBy: 'Business',
         EnterpriseID: enterprise.EnterpriseID,
       },
@@ -66,7 +69,7 @@ export async function PUT(request: NextRequest) {
     }
     const user = authResult.user!;
     const body = await request.json();
-    const { VoucherID, Code, ExpiryDate, DiscountPercent } = body;
+    const { VoucherID, Code, ExpiryDate, DiscountPercent, DiscountAmount, MinOrderValue, MaxUsage } = body;
 
     if (!VoucherID) {
       return NextResponse.json(
@@ -89,17 +92,25 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    if (!DiscountPercent) {
+    if (!DiscountPercent && !DiscountAmount) {
       return NextResponse.json(
-        { error: "Discount Percent is required" },
+        { error: "Either Discount Percent or Discount Amount is required" },
         { status: 400 }
       );
     }
 
-    // Validate discount percentage range
-    if (DiscountPercent < 1 || DiscountPercent > 100) {
+    // Validate discount percentage range if provided
+    if (DiscountPercent && (DiscountPercent < 1 || DiscountPercent > 100)) {
       return NextResponse.json(
         { error: "Discount percentage must be between 1 and 100" },
+        { status: 400 }
+      );
+    }
+
+    // Validate discount amount if provided
+    if (DiscountAmount && DiscountAmount <= 0) {
+      return NextResponse.json(
+        { error: "Discount amount must be greater than 0" },
         { status: 400 }
       );
     }
@@ -153,7 +164,10 @@ export async function PUT(request: NextRequest) {
       data: {
         Code,
         ExpiryDate: new Date(ExpiryDate),
-        DiscountPercent,
+        DiscountPercent: DiscountPercent || null,
+        DiscountAmount: DiscountAmount || null,
+        MinOrderValue: MinOrderValue || null,
+        MaxUsage: MaxUsage || null,
       },
     });
 

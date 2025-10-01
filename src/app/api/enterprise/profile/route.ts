@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
       account: {
         select: {
           Email: true,
+          Avatar: true,
         },
       },
     };
@@ -52,7 +53,8 @@ export async function GET(request: NextRequest) {
             select: {
               CategoryID: true,
               CategoryName: true,
-           } },
+            }
+          },
         },
       };
     } else if (include === "vouchers") {
@@ -152,6 +154,7 @@ export async function PUT(request: NextRequest) {
         account: {
           select: {
             Email: true,
+            Avatar: true,
           },
         },
       },

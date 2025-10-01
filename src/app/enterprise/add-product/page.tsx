@@ -1,328 +1,309 @@
 "use client";
-import { useState, useEffect } from "react";
 import { Camera, ChevronDown, X } from "lucide-react";
-import { useEnterpriseUpload } from "@/hooks/use-enterprise-upload";
-import { apiClient } from "@/services/api";
+import { useFoodForm } from "@/hooks/use-food-form";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 
-export interface Category {
-  CategoryID: string;
-  CategoryName: string;
-  Description?: string;
-}
 
 export default function FoodUploadForm() {
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const {
+    // Form data
+    formData,
+    selectedImage,
+    imagePreview,
+    previewOpen,
+    setPreviewOpen,
+    
+    // Categories
+    categories,
+    isLoadingCategories,
+    showDropdown,
+    setShowDropdown,
+    
+    // States
+    isSubmitting,
+    isUploading,
+    uploadError,
+    isFormValid,
+    
+    // Actions
+    handleImageUpload,
+    removeImage,
+    handleInputChange,
+    handleCategorySelect,
+    resetForm,
+    handleSubmit,
+  } = useFoodForm();
 
-  const [formData, setFormData] = useState({
-    foodName: "",
-    category: "",
-    categoryId: "",
-    price: "",
-    quantity: "",
-    description: "",
-  });
-
-  const { uploadImage, isUploading, uploadError } = useEnterpriseUpload();
-
-  // Fetch categories từ API
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await fetch("/api/enterprise/category");
-        if (response.ok) {
-          const data = await response.json();
-          setCategories(data.categories);
-        } else {
-          console.error("Failed to fetch categories");
-        }
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-      } finally {
-        setIsLoadingCategories(false);
-      }
-    };
-
-    fetchCategories();
-  }, []);
-
-  const handleImageUpload = (e: any) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedImage(file);
-
-      // Create preview URL
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (e.target?.result) {
-          setImagePreview(e.target.result as string);
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const removeImage = () => {
-    setSelectedImage(null);
-    setImagePreview(null);
-  };
-
-  const handleInputChange = (field: any, value: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handleCategorySelect = (category: Category) => {
-    setFormData((prev) => ({
-      ...prev,
-      category: category.CategoryName,
-      categoryId: category.CategoryID,
-    }));
-    setShowDropdown(false);
-  };
-
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-
-    try {
-      // 1. Upload image if selected
-      const imageURL = selectedImage ? await uploadImage(selectedImage) : "";
-
-      if (selectedImage && !imageURL) {
-        throw new Error("Failed to upload image");
-      }
-
-      // 2. Build payload
-      const foodData = {
-        DishName: formData.foodName.trim(),
-        Description: formData.description?.trim() || "",
-        Price: Number(formData.price),
-        Stock: Number(formData.quantity),
-        ImageURL: imageURL,
-        FoodCategoryID: formData.categoryId,
-      };
-
-      // 3. Call API
-      await apiClient.post("/enterprise/food", foodData);
-
-      // 4. Success feedback + reset form
-      alert("Food item created successfully");
-      setFormData({
-        foodName: "",
-        category: "",
-        categoryId: "",
-        price: "",
-        quantity: "",
-        description: "",
-      });
-      setSelectedImage(null);
-      setImagePreview(null);
-    } catch (error) {
-      console.error("Error creating food:", error);
-      alert("Failed to create food item. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const isFormValid =
-    formData.foodName &&
-    formData.categoryId &&
-    formData.price &&
-    formData.quantity;
 
   return (
-    <div className="max-w-2/3 mx-auto bg-white p-6 ">
-      <div className="space-y-6">
-        {/* Image Upload Section */}
-        <div className="flex flex-col items-center">
-          <div className="relative">
-            {imagePreview ? (
-              <div className="relative">
-                <Image
-                  width={96}
-                  height={96}
-                  src={imagePreview}
-                  alt="Preview"
-                  className="w-24 h-24 rounded-lg object-cover border-2 border-gray-200"
-                />
-                <button
-                  type="button"
-                  onClick={removeImage}
-                  className="cursor-pointer absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <label className="cursor-pointer">
-                <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center border-2 border-dashed border-gray-300 hover:border-blue-400 hover:bg-gray-50 transition-colors">
-                  {isUploading ? (
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-                  ) : (
-                    <Camera className="w-8 h-8 text-gray-400" />
-                  )}
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                  disabled={isUploading}
-                />
-              </label>
-            )}
-          </div>
-          <span className="text-blue-500 text-sm mt-2 cursor-pointer">
-            Upload Photo
-          </span>
-          {uploadError && (
-            <p className="text-red-500 text-xs mt-1">{uploadError}</p>
-          )}
-        </div>
-
-        {/* Form Fields */}
-        <div className="grid grid-cols-2 gap-4">
-          {/* Food Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Food Name
-            </label>
-            <input
-              type="text"
-              placeholder="Enter food name"
-              value={formData.foodName}
-              onChange={(e) => handleInputChange("foodName", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          {/* Category Dropdown */}
-          <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Category
-            </label>
-            <button
-              type="button"
-              onClick={() => setShowDropdown(!showDropdown)}
-              disabled={isLoadingCategories}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-left flex items-center justify-between"
-            >
-              <span
-                className={
-                  formData.category ? "text-gray-900" : "text-gray-500"
-                }
-              >
-                {isLoadingCategories
-                  ? "Loading..."
-                  : formData.category || "Food"}
-              </span>
-              <ChevronDown className="w-4 h-4 text-gray-400" />
-            </button>
-
-            {showDropdown && !isLoadingCategories && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {categories.map((category) => (
-                  <button
-                    key={category.CategoryID}
-                    type="button"
-                    onClick={() => handleCategorySelect(category)}
-                    className="w-full px-3 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none first:rounded-t-lg last:rounded-b-lg"
-                  >
-                    <div className="font-medium text-gray-900">
-                      {category.CategoryName}
-                    </div>
-                    {category.Description && (
-                      <div className="text-sm text-gray-500">
-                        {category.Description}
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          {/* Price */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Price
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="Enter price food"
-              value={formData.price}
-              onChange={(e) => handleInputChange("price", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          {/* Quantity */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Quantity
-            </label>
-            <input
-              type="number"
-              min="0"
-              placeholder="Enter quantity food"
-              value={formData.quantity}
-              onChange={(e) => handleInputChange("quantity", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-        </div>
-
-        {/* Description (optional) */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Description (Optional)
-          </label>
-          <textarea
-            placeholder="Enter food description"
-            value={formData.description}
-            onChange={(e) => handleInputChange("description", e.target.value)}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-          />
-        </div>
-
-        {/* Submit Button */}
-        <Button
-          type="button"
-          onClick={handleSubmit}
-          disabled={!isFormValid || isSubmitting || isUploading}
-          className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-        >
-          {isSubmitting ? (
-            <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Creating...
-            </div>
-          ) : (
-            "Add Now"
-          )}
-        </Button>
+    <div className="relative">
+      {/* Decorative Background */}
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute inset-x-0 top-0 h-64 bg-gradient-to-br from-blue-50 via-indigo-50 to-fuchsia-50" />
+        <div className="absolute -top-10 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-fuchsia-200/30 blur-3xl" />
+        <div className="absolute top-10 right-10 h-40 w-40 rounded-full bg-indigo-200/30 blur-2xl" />
       </div>
 
-      {/* Click outside to close dropdown */}
+      {/* Header */}
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-8 rounded-2xl border border-white/50 bg-white/70 p-6 shadow-md backdrop-blur supports-[backdrop-filter]:bg-white/60">
+          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-gray-900">Create a Stunning Dish</h1>
+              <p className="mt-1 text-sm text-gray-600">Craft a beautiful product card with image, price and category.</p>
+            </div>
+            <div className="hidden gap-2 sm:flex">
+              <Button type="button" variant="outline" onClick={resetForm}>Reset</Button>
+              <Button
+                type="button"
+                onClick={handleSubmit}
+                disabled={!isFormValid || isSubmitting || isUploading}
+                className="bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300"
+              >
+                {isSubmitting ? (
+                  <div className="flex items-center">
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-white"></div>
+                    Saving
+                  </div>
+                ) : (
+                  "Publish Dish"
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Content Grid */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          {/* Left: Image Upload & Live Preview */}
+          <div className="lg:col-span-5">
+            <div className="sticky top-4 space-y-4">
+              {/* Upload Card */}
+              <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-gray-900">Dish Image</h3>
+                  {imagePreview && (
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="text-xs font-medium text-red-600 hover:text-red-700"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <div className="relative">
+                  {imagePreview ? (
+                    <div className="relative">
+                      <Image
+                        width={420}
+                        height={420}
+                        src={imagePreview}
+                        alt="Preview"
+                        className="h-72 lg:h-96 w-full cursor-zoom-in rounded-xl border object-contain bg-gray-50"
+                        onClick={() => setPreviewOpen(true)}
+                      />
+                    </div>
+                  ) : (
+                    <label className="block cursor-pointer">
+                      <div className="flex h-72 lg:h-96 w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gradient-to-br from-gray-50 to-white text-center transition-all hover:border-blue-400">
+                        {isUploading ? (
+                          <div className="h-9 w-9 animate-spin rounded-full border-b-2 border-blue-500"></div>
+                        ) : (
+                          <>
+                            <Camera className="h-10 w-10 text-gray-400" />
+                            <span className="mt-2 text-sm text-gray-500">Click to upload image</span>
+                            <span className="mt-1 text-xs text-gray-400">JPG, PNG or WEBP up to 5MB</span>
+                          </>
+                        )}
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                        disabled={isUploading}
+                      />
+                    </label>
+                  )}
+                </div>
+                {uploadError && (
+                  <p className="mt-2 text-xs text-red-500">{uploadError}</p>
+                )}
+              </div>
+
+              {/* Live Product Card Preview */}
+              <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                <div className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={imagePreview || "/images/hero-image.png"}
+                    alt="preview"
+                    className="h-44 w-full object-contain bg-gray-100"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                </div>
+                <div className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="text-sm font-semibold text-gray-900">
+                        {formData.foodName || "Untitled Dish"}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {formData.category || "No category"}
+                      </div>
+                    </div>
+                    <div className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600">
+                      {formData.price ? `$${Number(formData.price).toFixed(2)}` : "$0.00"}
+                    </div>
+                  </div>
+                  <p className="mt-2 line-clamp-2 text-xs text-gray-600">
+                    {formData.description || "A short delicious description will appear here."}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Form */}
+          <div className="lg:col-span-7">
+            <div className="space-y-6">
+              {/* Basic Info */}
+              <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+                <h3 className="mb-4 text-sm font-semibold text-gray-900">Basic information</h3>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-xs font-medium text-gray-700">Food name</label>
+                    <input
+                      type="text"
+                      placeholder="e.g., Spicy Tuna Bowl"
+                      value={formData.foodName}
+                      onChange={(e) => handleInputChange("foodName", e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="relative">
+                    <label className="mb-2 block text-xs font-medium text-gray-700">Category</label>
+                    <button
+                      type="button"
+                      onClick={() => setShowDropdown(!showDropdown)}
+                      disabled={isLoadingCategories}
+                      className="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-left focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <span className={formData.category ? "text-gray-900" : "text-gray-500"}>
+                        {isLoadingCategories ? "Loading..." : formData.category || "Select a category"}
+                      </span>
+                      <ChevronDown className="h-4 w-4 text-gray-400" />
+                    </button>
+                    {showDropdown && !isLoadingCategories && (
+                      <div className="absolute z-10 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+                        {categories.map((category) => (
+                          <button
+                            key={category.CategoryID}
+                            type="button"
+                            onClick={() => handleCategorySelect(category)}
+                            className="w-full px-3 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none first:rounded-t-lg last:rounded-b-lg"
+                          >
+                            <div className="text-sm font-medium text-gray-900">{category.CategoryName}</div>
+                            {category.Description && (
+                              <div className="text-xs text-gray-500">{category.Description}</div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Pricing & Stock */}
+              <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+                <h3 className="mb-4 text-sm font-semibold text-gray-900">Pricing & stock</h3>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-xs font-medium text-gray-700">Price</label>
+                    <div className="relative">
+                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">$</div>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={formData.price}
+                        onChange={(e) => handleInputChange("price", e.target.value)}
+                        className="w-full rounded-lg border border-gray-300 pl-7 pr-3 py-2.5 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-xs font-medium text-gray-700">Quantity in stock</label>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="e.g., 30"
+                      value={formData.quantity}
+                      onChange={(e) => handleInputChange("quantity", e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+                <h3 className="mb-4 text-sm font-semibold text-gray-900">Description</h3>
+                <textarea
+                  placeholder="Describe the taste, ingredients, and any special notes"
+                  value={formData.description}
+                  onChange={(e) => handleInputChange("description", e.target.value)}
+                  rows={5}
+                  className="w-full resize-none rounded-lg border border-gray-300 px-4 py-3 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Actions (mobile) */}
+              <div className="flex gap-2 sm:hidden">
+                <Button type="button" variant="outline" onClick={resetForm} className="flex-1">Reset</Button>
+                <Button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={!isFormValid || isSubmitting || isUploading}
+                  className="flex-1 bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300"
+                >
+                  {isSubmitting ? (
+                    <div className="flex items-center justify-center">
+                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-white"></div>
+                      Saving
+                    </div>
+                  ) : (
+                    "Publish Dish"
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Close dropdown on outside click */}
       {showDropdown && (
+        <div className="fixed inset-0 z-0" onClick={() => setShowDropdown(false)} />
+      )}
+
+      {/* Fullscreen preview */}
+      {previewOpen && imagePreview && (
         <div
-          className="fixed inset-0 z-0"
-          onClick={() => setShowDropdown(false)}
-        />
+          className="fixed inset-0 z-[100] cursor-zoom-out bg-black/70 p-4"
+          onClick={() => setPreviewOpen(false)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={imagePreview}
+            alt="preview"
+            className="mx-auto max-h-[95vh] max-w-[95vw] rounded-xl object-contain shadow-2xl"
+          />
+        </div>
       )}
     </div>
   );

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import FoodList, { Food } from "./FoodList";
 import { useEnterpriseUpload } from "@/hooks/use-enterprise-upload";
 import EditFoodPopup from "./EditFoodPopup";
+import { useToast } from "@/contexts/toast-context";
 
 export default function AdminDashboardPage() {
   const [entepriseData, setEnterpriseData] = useState<any>(null);
@@ -13,14 +14,23 @@ export default function AdminDashboardPage() {
   const [isEditPopupOpen, setIsEditPopupOpen] = useState(false);
   
   const { deleteImage, isDeleting, deleteError } = useEnterpriseUpload();
+  const { showToast } = useToast();
 
   async function fetchEnterpriseData() {
     try {
       setIsLoading(true);
       setError(null);
-      const { enterprise } = await apiClient.get<{ enterprise: any }>(
+      const response = await apiClient.get<{ enterprise: any }>(
         "/enterprise/profile?include=foods"
-      );
+      ) as any;
+      
+      if (response.success === false) {
+        console.error("Error fetching enterprise data:", response.error);
+        setError("Failed to fetch enterprise data. Please try again.");
+        return;
+      }
+      
+      const { enterprise } = response;
       setEnterpriseData(enterprise);
     } catch (error) {
       console.error("Error fetching enterprise data:", error);
@@ -51,27 +61,23 @@ export default function AdminDashboardPage() {
   const handleEditSuccess = () => {
     refreshMenus();
     handleEditClose();
+    showToast('Food item updated successfully', 'success', 3000)
   };
 
   const handleDelete = async (food: Food) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this food item?"
-    );
-    if (!confirmed) return;
-
     try {
       // Delete image if exists
       if (food.ImageURL) {
         await deleteImage(food.ImageURL);
       }
-      
       // Delete food item
       await apiClient.delete(`/enterprise/food?foodId=${food.FoodID}`);
-      alert("Food item deleted successfully");
-      refreshMenus();
+      await refreshMenus();
+      showToast('Food item deleted successfully', 'success', 3000)
     } catch (error) {
       console.error("Error deleting food item:", error);
-      alert("Failed to delete food item. Please try again.");
+      setError("Failed to delete food item. Please try again.");
+      showToast('Failed to delete food item', 'error', 4000)
     }
   };
 
