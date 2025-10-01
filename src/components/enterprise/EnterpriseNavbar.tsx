@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useAccountHeader } from "@/hooks/use-account-header";
+import { useAPICache } from "@/hooks/use-api-cache";
 import { buildAuthHeader } from "@/lib/auth-helpers";
 
 const menuItems = [
@@ -41,21 +42,31 @@ export default function EnterpriseNavbar() {
   };
 
 
+  const { data: enterpriseData } = useAPICache({
+    key: 'enterprise-profile',
+    fetcher: async () => {
+      const res = await fetch('/api/enterprise/profile', { 
+        headers: { ...buildAuthHeader() } 
+      });
+      if (!res.ok) throw new Error('Failed to fetch enterprise profile');
+      return await res.json();
+    },
+    ttl: 5 * 60 * 1000, // 5 minutes
+    enabled: !!user
+  });
+
   useEffect(() => {
-    let cancelled = false
-    async function loadEnterpriseHeader() {
-      try {
-        const res = await fetch('/api/enterprise/profile', { headers: { ...buildAuthHeader() } })
-        if (!res.ok) return
-        const data = await res.json()
-        if (cancelled) return
-        setEnterpriseName(data?.enterprise?.EnterpriseName || 'Enterprise')
-        setLogoUrl(accountHeader.avatar)
-      } catch {}
+    if (enterpriseData && typeof enterpriseData === 'object' && enterpriseData !== null && 'enterprise' in enterpriseData) {
+      const enterprise = (enterpriseData as any).enterprise;
+      if (enterprise?.EnterpriseName) {
+        setEnterpriseName(enterprise.EnterpriseName);
+      }
     }
-    loadEnterpriseHeader()
-    return () => { cancelled = true }
-  }, [accountHeader.avatar])
+  }, [enterpriseData]);
+
+  useEffect(() => {
+    setLogoUrl(accountHeader.avatar);
+  }, [accountHeader.avatar]);
 
   return (
     <>
