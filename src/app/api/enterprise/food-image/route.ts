@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUser } from '@/lib/auth-helpers'
 import { uploadBufferToCloudinary } from '@/lib/cloudinary'
+import { withRateLimit, getClientIp } from '@/lib/rate-limit'
 
 // Upload a food image to Cloudinary and return the public URL
-export async function POST(request: NextRequest) {
+export const POST = withRateLimit(async (request: NextRequest) => {
     try {
         const auth = getAuthenticatedUser(request)
         if (!auth.success || !auth.user) {
@@ -28,6 +29,6 @@ export async function POST(request: NextRequest) {
         console.error('Food image upload failed:', err)
         return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
     }
-}
+}, (req) => ({ key: `food_img_up:${getClientIp(req)}`, limit: 15, windowMs: 5 * 60 * 1000 }))
 
 

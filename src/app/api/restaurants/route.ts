@@ -3,8 +3,9 @@ import { prisma } from '@/lib/db'
 import { requireEnterprise } from '@/lib/auth-helpers'
 import { Prisma } from '@/generated/prisma'
 import { retryDatabaseOperation } from '@/lib/retry-utils'
+import { withRateLimit, getClientIp } from '@/lib/rate-limit'
 
-export async function GET(request: NextRequest) {
+export const GET = withRateLimit(async (request: NextRequest) => {
     try {
         const { searchParams } = new URL(request.url)
         const page = parseInt(searchParams.get('page') || '1')
@@ -172,7 +173,7 @@ export async function GET(request: NextRequest) {
             { status: 500 }
         )
     }
-}
+}, (req) => ({ key: `restaurants:${getClientIp(req)}`, limit: 60, windowMs: 60 * 1000 }))
 
 export async function POST(request: NextRequest) {
     try {

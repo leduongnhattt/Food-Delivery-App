@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { loginSchema } from '@/schemas/auth'
 import { findAccountByUsername, verifyPassword, issueTokens } from '@/services/auth.service'
 import { prisma } from '@/lib/db'
+import { withRateLimit, getClientIp } from '@/lib/rate-limit'
 
 function setRefreshCookie(res: NextResponse, token: string, expires: Date) {
     res.cookies.set('refresh_token', token, {
@@ -12,7 +13,7 @@ function setRefreshCookie(res: NextResponse, token: string, expires: Date) {
     })
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withRateLimit(async (request: NextRequest) => {
     try {
         const body = await request.json()
         const { username, password } = body
@@ -83,4 +84,8 @@ export async function POST(request: NextRequest) {
             { status: 500 }
         )
     }
-}
+}, (req) => ({
+    key: `login:${getClientIp(req)}`,
+    limit: 10,
+    windowMs: 60 * 1000
+}))

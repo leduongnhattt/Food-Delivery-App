@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAdmin } from '@/lib/auth-helpers'
+import { withRateLimit, getClientIp } from '@/lib/rate-limit'
 
-export async function GET(request: NextRequest) {
+export const GET = withRateLimit(async (request: NextRequest) => {
     try {
         const { searchParams } = new URL(request.url)
         const enterpriseId = searchParams.get('enterpriseId')
@@ -50,9 +51,9 @@ export async function GET(request: NextRequest) {
             { status: 500 }
         )
     }
-}
+}, (req) => ({ key: `categories:${getClientIp(req)}`, limit: 60, windowMs: 60 * 1000 }))
 
-export async function POST(request: NextRequest) {
+export const POST = withRateLimit(async (request: NextRequest) => {
     try {
         // Require admin authentication (only admin can create categories)
         const authResult = requireAdmin(request)
@@ -127,4 +128,4 @@ export async function POST(request: NextRequest) {
             { status: 500 }
         )
     }
-}
+}, (req) => ({ key: `categories_post:${getClientIp(req)}`, limit: 20, windowMs: 60 * 1000 }))

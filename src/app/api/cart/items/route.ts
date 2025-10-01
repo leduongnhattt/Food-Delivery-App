@@ -3,6 +3,7 @@ import { resolveActiveCartId, createActiveCart, upsertCartItem, snapshotCart } f
 import { prisma } from '@/lib/db'
 import { ONE_DAY_SECONDS } from '@/lib/cart-keys'
 import { verifyTokenEdgeSync } from '@/lib/auth-edge'
+import { withRateLimit, getClientIp } from '@/lib/rate-limit'
 
 function getActor(req: NextRequest): { userId?: string, guestToken?: string } {
     let userId = req.headers.get('x-user-id') || undefined
@@ -35,7 +36,7 @@ function getActor(req: NextRequest): { userId?: string, guestToken?: string } {
     return { userId, guestToken }
 }
 
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async (req: NextRequest) => {
     try {
         const actor = getActor(req)
         console.debug('cart/items.POST actor', actor)
@@ -65,6 +66,6 @@ export async function POST(req: NextRequest) {
         console.error('POST /api/cart/items failed', e)
         return NextResponse.json({ error: 'Failed to add item' }, { status: 500 })
     }
-}
+}, (req) => ({ key: `cart_items:${getClientIp(req)}`, limit: 60, windowMs: 60 * 1000 }))
 
 

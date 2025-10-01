@@ -1,7 +1,8 @@
 import { requireEnterprise } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
-export async function POST(request: NextRequest) {
+import { withRateLimit, getClientIp } from '@/lib/rate-limit'
+export const POST = withRateLimit(async (request: NextRequest) => {
   try {
     const authResult = await requireEnterprise(request);
     if (!authResult.success) {
@@ -45,9 +46,9 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+}, (req) => ({ key: `ent_food_post:${getClientIp(req)}`, limit: 20, windowMs: 60 * 1000 }))
 
-export async function DELETE(request: NextRequest) {
+export const DELETE = withRateLimit(async (request: NextRequest) => {
   try {
     const authResult = await requireEnterprise(request);
     if (!authResult.success) {
@@ -97,9 +98,9 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+}, (req) => ({ key: `ent_food_del:${getClientIp(req)}`, limit: 30, windowMs: 60 * 1000 }))
 
-export async function PUT(request: NextRequest) {
+export const PUT = withRateLimit(async (request: NextRequest) => {
   try {
     const authResult = await requireEnterprise(request);
     if (!authResult.success) {
@@ -167,4 +168,4 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+}, (req) => ({ key: `ent_food_put:${getClientIp(req)}`, limit: 30, windowMs: 60 * 1000 }))

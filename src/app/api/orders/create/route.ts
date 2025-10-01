@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { withRateLimit, getClientIp } from '@/lib/rate-limit'
 import { PrismaClient } from '@/generated/prisma'
 import { getAuthenticatedUser } from '@/lib/auth-helpers'
 
 const prisma = new PrismaClient()
 
-export async function POST(request: NextRequest) {
+export const POST = withRateLimit(async (request: NextRequest) => {
     try {
         const { cartItems, deliveryInfo, voucherCode, paymentIntentId } = await request.json()
 
@@ -219,4 +220,4 @@ export async function POST(request: NextRequest) {
             { status: 500 }
         )
     }
-}
+}, (req) => ({ key: `orders_create:${getClientIp(req)}`, limit: 20, windowMs: 60 * 1000 }))

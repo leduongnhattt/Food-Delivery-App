@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { rotateAccessTokenFromRefresh } from '@/services/auth.service'
+import { withRateLimit, getClientIp } from '@/lib/rate-limit'
 
-export async function POST(request: NextRequest) {
+export const POST = withRateLimit(async (request: NextRequest) => {
     try {
         const refresh = request.cookies.get('refresh_token')?.value
         const accountId = request.headers.get('x-account-id') || ''
@@ -14,7 +15,11 @@ export async function POST(request: NextRequest) {
     } catch {
         return NextResponse.json({ error: 'Refresh failed' }, { status: 500 })
     }
-}
+}, (req) => ({
+    key: `refresh:${getClientIp(req)}:${req.headers.get('x-account-id') || ''}`,
+    limit: 30,
+    windowMs: 5 * 60 * 1000
+}))
 
 
 

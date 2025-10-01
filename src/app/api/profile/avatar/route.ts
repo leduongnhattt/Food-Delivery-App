@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUser } from '@/lib/auth-helpers'
 import { prisma } from '@/lib/db'
 import { uploadBufferToCloudinary } from '@/lib/cloudinary'
+import { withRateLimit, getClientIp } from '@/lib/rate-limit'
 
-export async function POST(request: NextRequest) {
+export const POST = withRateLimit(async (request: NextRequest) => {
     try {
         const auth = getAuthenticatedUser(request)
         if (!auth.success || !auth.user) {
@@ -46,6 +47,6 @@ export async function POST(request: NextRequest) {
         console.error('Avatar upload failed:', err)
         return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
     }
-}
+}, (req) => ({ key: `avatar_up:${getClientIp(req)}`, limit: 10, windowMs: 5 * 60 * 1000 }))
 
 
