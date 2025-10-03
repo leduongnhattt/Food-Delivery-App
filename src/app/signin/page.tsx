@@ -230,7 +230,7 @@ function SigninContent() {
               </form>
 
               {/* Signup removed */}
-              {/* <div className="mt-3 sm:mt-6 text-center space-y-2">
+              <div className="mt-3 sm:mt-6 text-center space-y-2">
                 <p className="text-gray-600 text-xs sm:text-base">
                   {t("signin.dontHaveAccount")} {" "}
                   <Link 
@@ -240,7 +240,7 @@ function SigninContent() {
                     {t("common.signUp")}
                   </Link>
                 </p>
-              </div> */}
+              </div>
             </div>
           </div>
 

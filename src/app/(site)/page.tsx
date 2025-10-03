@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import HeroSection from '@/components/landingpage/HeroSection'
 import FoodsSlideMenu from '@/components/landingpage/FoodsSlideMenu'
 import RestaurantMenu from '@/components/landingpage/RestaurantMenu'
+import HealthChatbot from '@/components/health/HealthChatbot'
 import React from 'react'
 import { CategoryService, type CategoryDto } from '@/services/category.service'
 import { getCategoryIcon, getCategoryTone } from '@/lib/category-icons'
@@ -154,6 +155,8 @@ export default function HomePage() {
         </div>
       </section>
       
+      {/* Health Chatbot */}
+      <HealthChatbot />
     </div>
   )
 }
