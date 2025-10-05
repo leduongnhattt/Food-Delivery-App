@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { loginSchema } from '@/schemas/auth'
 import { findAccountByUsername, verifyPassword, issueTokens } from '@/services/auth.service'
+import { prisma } from '@/lib/db'
+import { withRateLimit, getClientIp } from '@/lib/rate-limit'
 
 function setRefreshCookie(res: NextResponse, token: string, expires: Date) {
     res.cookies.set('refresh_token', token, {
@@ -11,7 +13,7 @@ function setRefreshCookie(res: NextResponse, token: string, expires: Date) {
     })
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withRateLimit(async (request: NextRequest) => {
     try {
         const body = await request.json()
         const { username, password } = body
@@ -44,10 +46,17 @@ export async function POST(request: NextRequest) {
             )
         }
 
+        // Ensure we have the latest role from DB
+        const roleRecord = await prisma.account.findUnique({
+            where: { AccountID: account.AccountID },
+            select: { role: { select: { RoleName: true } } }
+        })
+        const roleName = roleRecord?.role?.RoleName || account.role?.RoleName || 'Customer'
+
         // Issue tokens
         const { accessToken, refreshToken, expiredAt } = await issueTokens(
             account.AccountID,
-            account.role?.RoleName || 'customer',
+            roleName,
             'email' // Provider for email/password login
         )
 
@@ -58,7 +67,7 @@ export async function POST(request: NextRequest) {
                 id: account.AccountID,
                 username: account.Username,
                 email: account.Email,
-                role: account.role?.RoleName || 'customer',
+                role: roleName,
                 status: account.Status
             },
             accessToken
@@ -75,4 +84,8 @@ export async function POST(request: NextRequest) {
             { status: 500 }
         )
     }
-}
+}, (req) => ({
+    key: `login:${getClientIp(req)}`,
+    limit: 10,
+    windowMs: 60 * 1000
+}))

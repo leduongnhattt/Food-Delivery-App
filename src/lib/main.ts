@@ -134,11 +134,26 @@ export class AppSetup {
     // Setup step handlers
     private async initializeLocale(): Promise<void> {
         try {
-            // Force English locale for now
-            resetToDefaultLocale()
+            // Initialize translations system
             await initializeTranslations()
+
+            // Initialize Gemini Health AI locale
+            await this.initializeGeminiHealthLocale()
         } catch (error) {
             throw error
+        }
+    }
+
+    private async initializeGeminiHealthLocale(): Promise<void> {
+        try {
+            // Import and initialize Gemini Health AI service locale
+            const { GeminiHealthAI } = await import('@/services/gemini-health-ai.service')
+
+            // The service will automatically use the current locale from i18n system
+            console.log('Gemini Health AI locale initialized with current system locale')
+        } catch (error) {
+            console.warn('Failed to initialize Gemini Health AI locale:', error)
+            // Don't throw - this is not critical for app startup
         }
     }
 

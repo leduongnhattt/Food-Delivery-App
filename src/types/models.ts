@@ -91,6 +91,7 @@ export interface Food {
     dishName: string;
     price: number;
     stock: number;
+    isAvailable?: boolean;
     description: string;
     imageUrl: string;
     restaurantId: string;
@@ -149,4 +150,8 @@ export interface CartSnapshotItem {
 export interface CartSnapshot {
     cartId: string | null
     items: CartSnapshotItem[]
+}
+export interface Category {
+    CategoryID: string
+    CategoryName: string
 }

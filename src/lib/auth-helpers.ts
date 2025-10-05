@@ -68,13 +68,14 @@ export async function refreshAccessToken(): Promise<string | null> {
     const existing = getAuthToken();
     // We can still decode expired token to get accountId
     const payload = existing ? safeDecodeJwt(existing) : null;
-    const accountId = payload?.accountId || payload?.userId || '';
+    const accountId = payload?.accountId || payload?.userId || localStorage.getItem('user_id') || '';
     if (!accountId) return null;
 
     try {
         const res = await fetch('/api/auth/refresh', {
             method: 'POST',
-            headers: { 'x-account-id': accountId }
+            headers: { 'x-account-id': accountId },
+            credentials: 'include'
         });
         if (!res.ok) return null;
         const data = await res.json();
@@ -273,7 +274,8 @@ export function requireCustomer(request: NextRequest): AuthResult {
         return authResult;
     }
 
-    if (authResult.user?.role !== 'customer') {
+    const userRole = (authResult.user?.role || '').toLowerCase()
+    if (userRole !== 'customer') {
         return {
             success: false,
             error: 'Customer access required'
@@ -293,7 +295,8 @@ export function requireAdmin(request: NextRequest): AuthResult {
         return authResult;
     }
 
-    if (authResult.user?.role !== 'admin') {
+    const userRole = (authResult.user?.role || '').toLowerCase()
+    if (userRole !== 'admin') {
         return {
             success: false,
             error: 'Admin access required'
@@ -313,7 +316,8 @@ export function requireEnterprise(request: NextRequest): AuthResult {
         return authResult;
     }
 
-    if (authResult.user?.role !== 'enterprise') {
+    const userRole = (authResult.user?.role || '').toLowerCase()
+    if (userRole !== 'enterprise') {
         return {
             success: false,
             error: 'Enterprise access required'

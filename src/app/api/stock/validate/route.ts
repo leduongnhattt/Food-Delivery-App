@@ -11,14 +11,10 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
         }
 
+        const MAX_PER_ITEM = 10
         const food = await prisma.food.findUnique({
             where: { FoodID: foodId },
-            select: {
-                FoodID: true,
-                DishName: true,
-                Stock: true,
-                IsAvailable: true
-            }
+            select: { FoodID: true, DishName: true, IsAvailable: true }
         })
 
         if (!food) {
@@ -35,7 +31,7 @@ export async function POST(req: NextRequest) {
         if (!food.IsAvailable) {
             const result: StockValidationResult = {
                 isValid: false,
-                availableStock: food.Stock,
+                availableStock: 0,
                 requestedQuantity,
                 foodName: food.DishName,
                 message: 'This item is currently unavailable'
@@ -43,20 +39,20 @@ export async function POST(req: NextRequest) {
             return NextResponse.json(result)
         }
 
-        if (food.Stock < requestedQuantity) {
+        if (requestedQuantity > MAX_PER_ITEM) {
             const result: StockValidationResult = {
                 isValid: false,
-                availableStock: food.Stock,
+                availableStock: MAX_PER_ITEM,
                 requestedQuantity,
                 foodName: food.DishName,
-                message: `Only ${food.Stock} items available in stock`
+                message: `Maximum ${MAX_PER_ITEM} portions allowed per order`
             }
             return NextResponse.json(result)
         }
 
         const result: StockValidationResult = {
             isValid: true,
-            availableStock: food.Stock,
+            availableStock: MAX_PER_ITEM,
             requestedQuantity,
             foodName: food.DishName
         }

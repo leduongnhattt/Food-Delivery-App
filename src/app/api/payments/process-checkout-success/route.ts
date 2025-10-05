@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { PrismaClient } from '@/generated/prisma'
 import { getAuthenticatedUser } from '@/lib/auth-helpers'
+import { withRateLimit, getClientIp } from '@/lib/rate-limit'
 
 const prisma = new PrismaClient()
 
-export async function POST(request: NextRequest) {
+export const POST = withRateLimit(async (request: NextRequest) => {
     try {
         // Get authenticated user
         const auth = getAuthenticatedUser(request)
@@ -92,13 +93,16 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Check stock availability before processing payment
-        const stockChecks = await Promise.all(
+        // Validate availability and per-item cap (align with non-stock flow)
+        const MAX_PER_ITEM = 10
+        await Promise.all(
             cartItems.map(async (item: any) => {
-                if (item.food.Stock < item.Quantity) {
-                    throw new Error(`Insufficient stock for ${item.food.DishName}. Available: ${item.food.Stock}, Requested: ${item.Quantity}`)
+                if (!item.food.IsAvailable) {
+                    throw new Error(`Item ${item.food.DishName} is currently unavailable`)
                 }
-                return { foodId: item.FoodID, availableStock: item.food.Stock, requestedQuantity: item.Quantity }
+                if (item.Quantity > MAX_PER_ITEM) {
+                    throw new Error(`Item ${item.food.DishName} exceeds per-item limit of ${MAX_PER_ITEM}`)
+                }
             })
         )
 
@@ -143,19 +147,7 @@ export async function POST(request: NextRequest) {
                 }
             })
 
-            // Update stock for all food items in the order
-            await Promise.all(
-                cartItems.map(async (item: any) => {
-                    await prisma.food.update({
-                        where: { FoodID: item.FoodID },
-                        data: {
-                            Stock: {
-                                decrement: item.Quantity
-                            }
-                        }
-                    })
-                })
-            )
+            // No stock decrement in IsAvailable-based flow
         }
 
         // Check if payment already exists to prevent duplicates
@@ -330,4 +322,4 @@ export async function POST(request: NextRequest) {
             { status: 500 }
         )
     }
-}
+}, (req) => ({ key: `payments_success:${getClientIp(req)}`, limit: 20, windowMs: 60 * 1000 }))

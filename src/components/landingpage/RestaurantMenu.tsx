@@ -29,6 +29,8 @@ const RestaurantMenu: React.FC<Props> = ({
   showViewAll = true 
 }) => {
   const router = useRouter();
+  const [displayLimit, setDisplayLimit] = React.useState<number>(limit);
+  const [expanded, setExpanded] = React.useState<boolean>(false);
   
   // Use the restaurants hook with filters
   const { 
@@ -37,14 +39,24 @@ const RestaurantMenu: React.FC<Props> = ({
     error, 
     refetch 
   } = useRestaurantList({
-    limit,
+    limit: Math.min(displayLimit, 100),
     isOpen: true, // Only show open restaurants
     // minRating: 3.0 // Removed this filter since all restaurants have rating 0
   });
 
 
   const handleViewAll = () => {
-    router.push('/restaurants');
+    // Expand inline instead of navigating
+    if (!expanded) {
+      setDisplayLimit(100); // API limit cap
+      setExpanded(true);
+      // Optionally refetch to get more
+      refetch();
+    } else {
+      setDisplayLimit(limit);
+      setExpanded(false);
+      refetch();
+    }
   };
 
   const handleRetry = () => {
@@ -124,16 +136,16 @@ const RestaurantMenu: React.FC<Props> = ({
         ))}
       </div>
       
-      {showViewAll && (
+      {showViewAll && restaurants && restaurants.length > 0 && (
         <div className="flex justify-center mt-8">
           <button
             onClick={handleViewAll} 
             className="group px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-full shadow-lg hover:shadow-xl hover:from-orange-600 hover:to-orange-700 transition-all duration-300 transform hover:-translate-y-1"
           >
             <span className="flex items-center">
-              View all restaurants
+              {expanded ? 'Show less' : 'View all restaurants'}
               <span className="ml-2 inline-block transform transition-transform group-hover:translate-x-1">
-                →
+                {expanded ? '↑' : '→'}
               </span>
             </span>
           </button>

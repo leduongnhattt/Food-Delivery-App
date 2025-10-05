@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { getAuthenticatedUser } from '@/lib/auth-helpers'
 import { prisma } from '@/lib/db'
+import { withRateLimit, getClientIp } from '@/lib/rate-limit'
 
-export async function POST(request: NextRequest) {
+export const POST = withRateLimit(async (request: NextRequest) => {
     try {
         // Get authenticated user
         const auth = getAuthenticatedUser(request)
@@ -120,4 +121,4 @@ export async function POST(request: NextRequest) {
             { status: 500 }
         )
     }
-}
+}, (req) => ({ key: `payments_checkout:${getClientIp(req)}`, limit: 15, windowMs: 60 * 1000 }))

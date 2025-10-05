@@ -105,6 +105,7 @@ export async function GET(request: NextRequest) {
                 dishName: food.DishName,
                 price: Number(food.Price),
                 stock: food.Stock,
+                isAvailable: food.IsAvailable,
                 description: food.Description || '',
                 imageUrl: food.ImageURL || '',
                 restaurantId: food.enterprise.EnterpriseID,

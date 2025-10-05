@@ -2,7 +2,6 @@
 
 @tailwind utilities;
 
-
 /* Reset mặc định */
 @layer base {
   :root {

@@ -172,6 +172,115 @@ export async function createCustomer(params: {
     })
 }
 
+/**
+ * Creates a new account for enterprise and automatically creates enterprise record
+ * @param params Enterprise account creation parameters
+ * @returns The created account data with enterprise info
+ */
+export async function createAccountForEnterprise(params: {
+    username: string;
+    email: string;
+    passwordHash: string;
+    enterpriseName: string;
+    address: string;
+    phoneNumber: string;
+    description?: string;
+    openHours: string;
+    closeHours: string;
+}): Promise<any> {
+    // Find enterprise role
+    const enterpriseRole = await prisma.role.findFirst({
+        where: { RoleName: 'Enterprise' }
+    });
+
+    if (!enterpriseRole) {
+        throw new Error('Enterprise role not found');
+    }
+
+    // Create account first
+    const account = await prisma.account.create({
+        data: {
+            Username: params.username,
+            Email: params.email,
+            PasswordHash: params.passwordHash,
+            Avatar: '',
+            RoleID: enterpriseRole.RoleID,
+            Status: 'Active'
+        },
+        select: { AccountID: true, Username: true, Email: true, role: true, Status: true }
+    });
+
+    // Create enterprise record
+    const enterprise = await createEnterprise({
+        accountId: account.AccountID,
+        enterpriseName: params.enterpriseName,
+        address: params.address,
+        phoneNumber: params.phoneNumber,
+        description: params.description,
+        openHours: params.openHours,
+        closeHours: params.closeHours
+    });
+
+    return {
+        ...account,
+        enterprise: enterprise
+    };
+}
+
+/**
+ * Creates a new enterprise record
+ * @param params Enterprise creation parameters
+ * @returns The created enterprise data
+ */
+export async function createEnterprise(params: {
+    accountId: string;
+    enterpriseName: string;
+    address: string;
+    phoneNumber: string;
+    description?: string;
+    openHours: string;
+    closeHours: string;
+}): Promise<any> {
+    return prisma.enterprise.create({
+        data: {
+            EnterpriseName: params.enterpriseName,
+            Address: params.address,
+            PhoneNumber: params.phoneNumber,
+            Description: params.description || null,
+            OpenHours: params.openHours,
+            CloseHours: params.closeHours,
+            IsActive: true,
+            AccountID: params.accountId
+        },
+        select: {
+            EnterpriseID: true,
+            EnterpriseName: true,
+            Address: true,
+            PhoneNumber: true,
+            Description: true,
+            OpenHours: true,
+            CloseHours: true,
+            IsActive: true,
+            AccountID: true
+        }
+    })
+}
+
+/**
+ * Finds an account with enterprise details
+ * @param username The username to search for
+ * @returns The account with enterprise if found, null otherwise
+ */
+export async function findAccountByUsernameWithEnterprise(username: string): Promise<any | null> {
+    return prisma.account.findFirst({ 
+        where: { Username: username },
+        include: {
+            role: true,
+            enterprise: true
+        }
+    })
+}
+
 // Token management functions
 /**
  * Issues a new access token and refresh token pair

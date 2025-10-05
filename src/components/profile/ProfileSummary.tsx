@@ -17,6 +17,7 @@ export function ProfileSummary({ fullName, email, isEditing, onEdit, avatarUrl: 
   const [uploading, setUploading] = useState(false)
   const { showToast } = useToast()
   const [avatarUrl, setAvatarUrl] = useState<string | null>(avatarFromProps || null)
+  const [previewOpen, setPreviewOpen] = useState(false)
 
   // Keep local preview in sync when profile page provides avatar from DB
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -64,7 +65,7 @@ export function ProfileSummary({ fullName, email, isEditing, onEdit, avatarUrl: 
         <div className="w-24 h-24 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center text-3xl font-bold border border-gray-300 overflow-hidden">
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+            <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover cursor-zoom-in" onClick={() => setPreviewOpen(true)} />
           ) : (
             fullName.charAt(0).toUpperCase()
           )}
@@ -82,6 +83,12 @@ export function ProfileSummary({ fullName, email, isEditing, onEdit, avatarUrl: 
         <Button onClick={onEdit} className="bg-orange-600 hover:bg-orange-700 text-white">
           <Edit className="w-4 h-4 mr-2" />Edit
         </Button>
+      )}
+      {previewOpen && avatarUrl && (
+        <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-4 cursor-zoom-out" onClick={() => setPreviewOpen(false)}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={avatarUrl} alt="avatar preview" className="max-w-[90vw] max-h-[90vh] rounded-xl shadow-2xl object-contain" />
+        </div>
       )}
     </div>
   )

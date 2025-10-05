@@ -82,18 +82,21 @@ function SigninContent() {
         return;
       }
       
-      // Check if user is customer (only customers can use this login)
-      if (result.data?.user?.role !== 'customer') {
-        showToast("Access denied. This login is for customers only. Please use the appropriate portal.", "error");
-        clearForm();
-        return;
+      // Store only the access token and cache user id for refresh
+      setAuthToken(result.data.accessToken);
+      if (typeof window !== 'undefined' && result.data?.user?.id) {
+        localStorage.setItem('user_id', result.data.user.id)
       }
       
-      // Store only the access token
-      setAuthToken(result.data.accessToken);
-      
-      // Login successful - redirect to home page
-      router.replace("/");
+      // Role-based redirect for single sign-in
+      const role = (result.data?.user?.role || '').toString().toLowerCase();
+      if (role === 'enterprise') {
+        router.replace('/enterprise/dashboard');
+      } else if (role === 'admin') {
+        router.replace('/admin');
+      } else {
+        router.replace('/');
+      }
     } catch (err) {
       showToast(t("signin.errors.unexpectedError"), "error");
       clearForm();
@@ -226,10 +229,10 @@ function SigninContent() {
                 </div>
               </form>
 
-              {/* Footer */}
+              {/* Signup removed */}
               <div className="mt-3 sm:mt-6 text-center space-y-2">
                 <p className="text-gray-600 text-xs sm:text-base">
-                  {t("signin.dontHaveAccount")}{" "}
+                  {t("signin.dontHaveAccount")} {" "}
                   <Link 
                     href="/signup" 
                     className="text-red-500 hover:text-red-600 font-medium transition-colors"
