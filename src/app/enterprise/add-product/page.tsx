@@ -28,6 +28,7 @@ export default function FoodUploadForm() {
     
     // Actions
     handleImageUpload,
+    handleImageFile,
     removeImage,
     handleInputChange,
     handleCategorySelect,
@@ -80,7 +81,18 @@ export default function FoodUploadForm() {
           <div className="lg:col-span-5">
             <div className="sticky top-4 space-y-4">
               {/* Upload Card */}
-              <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+              <div
+                className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const file = e.dataTransfer.files?.[0];
+                  if (file && file.type.startsWith('image/')) {
+                    handleImageFile(file);
+                  }
+                }}
+              >
                 <div className="mb-3 flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-gray-900">Dish Image</h3>
                   {imagePreview && (
@@ -106,14 +118,14 @@ export default function FoodUploadForm() {
                       />
                     </div>
                   ) : (
-                    <label className="block cursor-pointer">
+                  <label className="block cursor-pointer">
                       <div className="flex h-72 lg:h-96 w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gradient-to-br from-gray-50 to-white text-center transition-all hover:border-blue-400">
                         {isUploading ? (
                           <div className="h-9 w-9 animate-spin rounded-full border-b-2 border-blue-500"></div>
                         ) : (
                           <>
                             <Camera className="h-10 w-10 text-gray-400" />
-                            <span className="mt-2 text-sm text-gray-500">Click to upload image</span>
+                            <span className="mt-2 text-sm text-gray-500">Click or drag & drop image here</span>
                             <span className="mt-1 text-xs text-gray-400">JPG, PNG or WEBP up to 5MB</span>
                           </>
                         )}
@@ -217,9 +229,9 @@ export default function FoodUploadForm() {
                 </div>
               </div>
 
-              {/* Pricing & Stock */}
+              {/* Pricing & Availability */}
               <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                <h3 className="mb-4 text-sm font-semibold text-gray-900">Pricing & stock</h3>
+                <h3 className="mb-4 text-sm font-semibold text-gray-900">Pricing & availability</h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <label className="mb-2 block text-xs font-medium text-gray-700">Price</label>
@@ -236,17 +248,7 @@ export default function FoodUploadForm() {
                       />
                     </div>
                   </div>
-                  <div>
-                    <label className="mb-2 block text-xs font-medium text-gray-700">Quantity in stock</label>
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="e.g., 30"
-                      value={formData.quantity}
-                      onChange={(e) => handleInputChange("quantity", e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
+                  
                 </div>
               </div>
 

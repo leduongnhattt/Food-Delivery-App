@@ -31,23 +31,23 @@ export const POST = withRateLimit(async (request: NextRequest) => {
             )
         }
 
-        // Check stock availability before creating order
-        const stockChecks = await Promise.all(
+        // Validate availability and per-item cap before creating order
+        const MAX_PER_ITEM = 10
+        await Promise.all(
             cartItems.map(async (item: any) => {
                 const food = await prisma.food.findUnique({
                     where: { FoodID: item.menuItem.id },
-                    select: { Stock: true, DishName: true }
+                    select: { DishName: true, IsAvailable: true }
                 })
-
                 if (!food) {
                     throw new Error(`Food item not found: ${item.menuItem.id}`)
                 }
-
-                if (food.Stock < item.quantity) {
-                    throw new Error(`Insufficient stock for ${food.DishName}. Available: ${food.Stock}, Requested: ${item.quantity}`)
+                if (!food.IsAvailable) {
+                    throw new Error(`Item ${food.DishName} is currently unavailable`)
                 }
-
-                return { foodId: item.menuItem.id, availableStock: food.Stock, requestedQuantity: item.quantity }
+                if (item.quantity > MAX_PER_ITEM) {
+                    throw new Error(`Item ${food.DishName} exceeds per-item limit of ${MAX_PER_ITEM}`)
+                }
             })
         )
 
@@ -84,7 +84,7 @@ export const POST = withRateLimit(async (request: NextRequest) => {
             }
         })
 
-        // Create order details and update stock
+        // Create order details (no stock update)
         const orderDetails = await Promise.all(
             cartItems.map(async (item: any) => {
                 // Create order detail
@@ -96,17 +96,6 @@ export const POST = withRateLimit(async (request: NextRequest) => {
                         Quantity: item.quantity
                     }
                 })
-
-                // Update stock for the food item
-                await prisma.food.update({
-                    where: { FoodID: item.menuItem.id },
-                    data: {
-                        Stock: {
-                            decrement: item.quantity
-                        }
-                    }
-                })
-
                 return orderDetail
             })
         )

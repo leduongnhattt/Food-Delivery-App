@@ -15,7 +15,12 @@ export function mapFoodToMenuItem(food: any): MenuItem {
         price: Math.round(((food.price ?? 0) as number) * 100) / 100,
         image: food.imageUrl || '/api/placeholder/300/200',
         category: food.menu?.category ?? 'Others',
-        isAvailable: (food.stock ?? 0) > 0,
+        // Prefer IsAvailable flag; fallback to stock semantics if API item still provides it
+        isAvailable: Boolean(
+            (food.isAvailable ?? food.IsAvailable) !== undefined
+                ? (food.isAvailable ?? food.IsAvailable)
+                : (food.stock ?? 0) > 0
+        ),
         restaurantId: food.restaurantId,
         restaurantName: (
             food.restaurant?.name ||

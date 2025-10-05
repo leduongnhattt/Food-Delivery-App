@@ -153,6 +153,21 @@ export async function createActiveCart(actor: Actor, enterpriseId: string): Prom
         if (customer) data.CustomerID = customer.CustomerID
     }
     if (actor.guestToken) {
+        // Reuse existing cart by guest token if present (unique constraint on GuestToken)
+        const existingByToken = await prisma.cart.findFirst({
+            where: { GuestToken: actor.guestToken },
+            select: { CartID: true, Status: true }
+        })
+        if (existingByToken) {
+            // Reactivate and reuse the cart
+            const updated = await prisma.cart.update({
+                where: { CartID: existingByToken.CartID },
+                data: { Status: 'Active', EnterpriseID: enterpriseId, ExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
+                select: { CartID: true }
+            })
+            await setActorCartIdCache(actor, updated.CartID, 60 * 60 * 24)
+            return updated.CartID
+        }
         data.GuestToken = actor.guestToken
         data.ExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
     }
@@ -349,7 +364,8 @@ export async function snapshotCart(cartId: string): Promise<CartSnapshot> {
 export async function abandonCart(cartId: string): Promise<void> {
     // Mark DB cart as Abandoned and delete items
     await prisma.$transaction([
-        prisma.cart.update({ where: { CartID: cartId }, data: { Status: 'Abandoned' } }),
+        // Also clear GuestToken to avoid unique constraint conflicts when creating new cart for the same guest
+        prisma.cart.update({ where: { CartID: cartId }, data: { Status: 'Abandoned', GuestToken: null } }),
         prisma.cartItem.deleteMany({ where: { CartID: cartId } }),
     ])
     // Clear Redis
@@ -358,3 +374,65 @@ export async function abandonCart(cartId: string): Promise<void> {
 }
 
 
+/**
+ * Merge a guest cart (identified by guestToken) into the logged-in user's cart (identified by userId).
+ * Strategy:
+ * - If no guest cart: no-op
+ * - If user has no active cart: reassign guest cart to user and clear guest mapping; rehydrate to remove TTL
+ * - If both exist: add guest items into user cart (sum quantities), then abandon guest cart and clear guest mapping
+ * - One-enterprise policy: relies on DB constraints or later enforcement (kept as-is like existing add flow)
+ */
+export async function mergeGuestCartIntoUserCart(userId: string, guestToken: string): Promise<void> {
+    if (!userId || !guestToken) return
+
+    // Resolve carts independently
+    const guestCartId = await resolveActiveCartId({ guestToken })
+    if (!guestCartId) return
+
+    const userCartId = await resolveActiveCartId({ userId })
+
+    // Case 1: user has no cart -> reassign guest cart to user
+    if (!userCartId) {
+        // Attach Cart to user customer, clear GuestToken and expiry
+        const customer = await prisma.customer.findFirst({ where: { AccountID: userId }, select: { CustomerID: true } })
+        if (!customer) {
+            // No customer for this account; leave as guest cart
+            return
+        }
+
+        await prisma.cart.update({
+            where: { CartID: guestCartId },
+            data: {
+                CustomerID: customer.CustomerID,
+                GuestToken: null,
+                ExpiresAt: null,
+                Status: 'Active',
+            },
+        })
+
+        // Update caches: map user -> cart, clear guest mapping; rehydrate to remove TTL
+        await setActorCartIdCache({ userId }, guestCartId)
+        await clearActorCartIdCache({ guestToken })
+        await hydrateRedisFromDb(guestCartId)
+        return
+    }
+
+    // Case 2: both carts exist -> merge items from guest into user
+    // Ensure Redis has guest items snapshot
+    await hydrateRedisFromDb(guestCartId)
+    const guestItems = await getItemsFromRedis(guestCartId)
+
+    for (const it of guestItems) {
+        // Use priceSnapshot if present, otherwise current DB price will be read inside upsert (we still pass snapshot param)
+        const priceSnapshot = typeof it.priceSnapshot === 'number' ? it.priceSnapshot : (it.menuItem?.price ?? 0)
+        const quantityDelta = Math.max(1, Number(it.quantity) || 1)
+        await upsertCartItem(userCartId, it.foodId, quantityDelta, priceSnapshot, it.note)
+    }
+
+    // Abandon guest cart and clear caches
+    await abandonCart(guestCartId)
+    await clearActorCartIdCache({ guestToken })
+
+    // Final rehydrate user cart to ensure consolidated snapshot
+    await hydrateRedisFromDb(userCartId)
+}

@@ -91,6 +91,7 @@ export interface Food {
     dishName: string;
     price: number;
     stock: number;
+    isAvailable?: boolean;
     description: string;
     imageUrl: string;
     restaurantId: string;

@@ -15,6 +15,10 @@ const FoodCard: React.FC<FoodCardProps> = ({ food, onOrderNow, searchQuery = '' 
     onOrderNow(food.foodId);
   };
 
+  // Defensive availability: prefer explicit isAvailable; fallback to true (do not infer from stock)
+  const availableFlag = (food as any)?.isAvailable
+  const available = (availableFlag !== undefined) ? Boolean(availableFlag) : true
+
   return (
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden min-w-[280px] max-w-[300px] flex-shrink-0 hover:shadow-xl transition-shadow duration-300">
       {/* Food Image */}
@@ -31,12 +35,8 @@ const FoodCard: React.FC<FoodCardProps> = ({ food, onOrderNow, searchQuery = '' 
             No Image
           </div>
         )}
-        {food.stock <= 5 && food.stock > 0 && (
-          <div className="absolute top-2 right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full">
-        Only {food.stock} left
-          </div>
-        )}
-        {food.stock === 0 && (
+        {/* No stock hint badge; availability is controlled by flag */}
+        {!available && (
           <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
         Out of Stock
           </div>
@@ -72,14 +72,14 @@ const FoodCard: React.FC<FoodCardProps> = ({ food, onOrderNow, searchQuery = '' 
           </span>
           <button 
             onClick={handleOrderClick}
-            disabled={food.stock === 0}
+            disabled={!available}
             className={`px-6 py-2 rounded-full font-medium text-sm transition-colors duration-200 ${
-              food.stock === 0 
+              !available 
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
                 : 'bg-orange-500 hover:bg-orange-600 text-white'
             }`}
           >
-            {food.stock === 0 ? 'Sold Out' : 'Order Now'}
+            {!available ? 'Sold Out' : 'Order Now'}
           </button>
         </div>
       </div>

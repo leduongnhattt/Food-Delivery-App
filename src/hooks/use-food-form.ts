@@ -8,7 +8,7 @@ export interface FoodFormData {
     category: string;
     categoryId: string;
     price: string;
-    quantity: string;
+    isAvailable?: boolean;
     description: string;
 }
 
@@ -17,7 +17,7 @@ const initialFormData: FoodFormData = {
     category: "",
     categoryId: "",
     price: "",
-    quantity: "",
+    isAvailable: true,
     description: "",
 };
 
@@ -68,6 +68,19 @@ export const useFoodForm = () => {
         }
     };
 
+    // Support direct File (for drag & drop)
+    const handleImageFile = (file: File) => {
+        if (!file) return;
+        setSelectedImage(file);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            if (e.target?.result) {
+                setImagePreview(e.target.result as string);
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+
     // Remove image
     const removeImage = () => {
         setSelectedImage(null);
@@ -116,7 +129,7 @@ export const useFoodForm = () => {
                 DishName: formData.foodName.trim(),
                 Description: formData.description?.trim() || "",
                 Price: Number(formData.price),
-                Stock: Number(formData.quantity),
+                IsAvailable: formData.isAvailable !== false,
                 ImageURL: imageURL || undefined,
                 FoodCategoryID: formData.categoryId,
             };
@@ -139,8 +152,7 @@ export const useFoodForm = () => {
     const isFormValid =
         formData.foodName &&
         formData.categoryId &&
-        formData.price &&
-        formData.quantity;
+        formData.price;
 
     return {
         // Form data
@@ -164,6 +176,7 @@ export const useFoodForm = () => {
 
         // Actions
         handleImageUpload,
+        handleImageFile,
         removeImage,
         handleInputChange,
         handleCategorySelect,

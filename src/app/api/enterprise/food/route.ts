@@ -10,11 +10,11 @@ export const POST = withRateLimit(async (request: NextRequest) => {
     }
     const user = authResult.user!;
     const body = await request.json();
-    const { DishName, Description, Price, Stock, ImageURL, FoodCategoryID } =
+    const { DishName, Description, Price, ImageURL, FoodCategoryID, IsAvailable } =
       body;
-    if (!DishName || Price == null || Stock == null || !FoodCategoryID) {
+    if (!DishName || Price == null || !FoodCategoryID) {
       return NextResponse.json(
-        { error: "Dish name, price, stock, and category are required" },
+        { error: "Dish name, price, and category are required" },
         { status: 400 }
       );
     }
@@ -32,10 +32,10 @@ export const POST = withRateLimit(async (request: NextRequest) => {
         DishName,
         Description,
         Price,
-        Stock,
         ImageURL,
         FoodCategoryID,
         EnterpriseID: enterprise.EnterpriseID,
+        IsAvailable: typeof IsAvailable === 'boolean' ? IsAvailable : true,
       },
     });
     return NextResponse.json({ dish: newDish }, { status: 201 });
@@ -117,9 +117,9 @@ export const PUT = withRateLimit(async (request: NextRequest) => {
       DishName,
       Description,
       Price,
-      Stock,
       ImageURL,
       FoodCategoryID,
+      IsAvailable,
     } = body;
 
     if (!FoodID) {
@@ -129,9 +129,9 @@ export const PUT = withRateLimit(async (request: NextRequest) => {
       );
     }
 
-    if (!DishName || Price == null || Stock == null || !FoodCategoryID) {
+    if (!DishName || Price == null || !FoodCategoryID) {
       return NextResponse.json(
-        { error: "Dish name, price, stock, and category are required" },
+        { error: "Dish name, price, and category are required" },
         { status: 400 }
       );
     }
@@ -153,10 +153,10 @@ export const PUT = withRateLimit(async (request: NextRequest) => {
         DishName,
         Description,
         Price,
-        Stock,
         ImageURL,
         FoodCategoryID,
         EnterpriseID: enterprise.EnterpriseID,
+        IsAvailable: typeof IsAvailable === 'boolean' ? IsAvailable : undefined,
       },
     });
 

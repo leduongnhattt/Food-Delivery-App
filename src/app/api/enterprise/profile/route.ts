@@ -49,6 +49,7 @@ export async function GET(request: NextRequest) {
           Price: true,
           ImageURL: true,
           Stock: true,
+          IsAvailable: true,
           foodCategory: {
             select: {
               CategoryID: true,

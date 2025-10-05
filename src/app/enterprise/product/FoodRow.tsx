@@ -88,19 +88,17 @@ const FoodRow: React.FC<FoodRowProps> = ({ food, onEdit, onDelete }) => {
         </span>
       </div>
 
-      {/* Quantity/Stock */}
+      {/* Availability */}
       <div className="col-span-2">
-        <span
-          className={`font-medium ${
-            food.Stock > 10
-              ? "text-green-600"
-              : food.Stock > 0
-              ? "text-yellow-600"
-              : "text-red-600"
-          }`}
-        >
-          {food.Stock}
-        </span>
+        {food.IsAvailable ? (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            Selling
+          </span>
+        ) : (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-700">
+            Unavailable
+          </span>
+        )}
       </div>
 
       {/* Actions */}

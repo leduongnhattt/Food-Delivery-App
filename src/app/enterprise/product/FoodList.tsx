@@ -8,7 +8,7 @@ export interface Food {
   Description: string;
   Price: number;
   ImageURL: string;
-  Stock: number;
+  IsAvailable?: boolean;
   foodCategory: {
     CategoryID: string;
     CategoryName: string;
@@ -31,7 +31,7 @@ const FoodList: React.FC<FoodListProps> = ({ foods, onEdit, onDelete }) => {
         <div className="col-span-3">Food Name</div>
         <div className="col-span-2">Category</div>
         <div className="col-span-2">Price</div>
-        <div className="col-span-2">Quantity</div>
+        <div className="col-span-2">Status</div>
         <div className="col-span-2">Action</div>
       </div>
 

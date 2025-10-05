@@ -1,7 +1,7 @@
 "use client"
 
 import { useOrders } from '@/hooks/use-orders'
-import { OrderCard } from '@/components/orders/order-card'
+import { OrderRow, OrderCard } from '@/components/orders/order-row'
 import { OrderFilters } from '@/components/orders/order-filters'
 import { OrderFilters as OrderFiltersType } from '@/services/order.service'
 import { Button } from '@/components/ui/button'
@@ -261,17 +261,62 @@ export default function OrdersPage() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {orders.map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                onViewDetails={handleViewDetails}
-                onReorder={handleReorder}
-                onTrack={handleTrack}
-                onCancel={handleCancel}
-              />
-            ))}
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Order
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Items
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Total
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {orders.map((order) => (
+                      <OrderRow
+                        key={order.id}
+                        order={order}
+                        onViewDetails={handleViewDetails}
+                        onReorder={handleReorder}
+                        onTrack={handleTrack}
+                        onCancel={handleCancel}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-3">
+              {orders.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  onViewDetails={handleViewDetails}
+                  onReorder={handleReorder}
+                  onTrack={handleTrack}
+                  onCancel={handleCancel}
+                />
+              ))}
+            </div>
 
             {/* Load More Button */}
             {hasMore && (
@@ -293,7 +338,7 @@ export default function OrdersPage() {
                 </Button>
               </div>
             )}
-          </div>
+          </>
         )}
       </div>
       <ConfirmCancelModal open={confirmOpen} submitting={submitting} onClose={() => { setConfirmOpen(false); setPendingCancelId(null) }} onConfirm={confirmCancel} />

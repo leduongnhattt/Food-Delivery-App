@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/contexts/toast-context";
 import { orderManagementService, Order, OrderFilters as OrderFiltersType } from "@/services/order-management.service";
 import { RefreshCw } from "lucide-react";
-import OrderFilters from "@/components/enterprise/orders/OrderFilters";
-import OrderList from "@/components/enterprise/orders/OrderList";
+import { UnifiedOrderRow } from "@/components/orders/UnifiedOrderRow";
+import { filterOrders, sortOrders, getOrderStats, type OrderFilters } from "@/lib/order-filters";
+import { type Order as UnifiedOrder } from "@/lib/order-utils";
 import DeleteOrderPopup from "@/components/enterprise/orders/DeleteOrderPopup";
 
 export default function EnterpriseOrdersPage() {
@@ -61,14 +62,15 @@ export default function EnterpriseOrdersPage() {
     setOrderToDelete(null);
   };
 
-  const filters: OrderFiltersType = {
+  const filters: OrderFilters = {
     searchTerm,
     statusFilter,
     sortBy
   };
 
-  const filteredOrders = orderManagementService.filterOrders(orders, filters);
-  const sortedOrders = orderManagementService.sortOrders(filteredOrders, sortBy);
+  const filteredOrders = filterOrders(orders as UnifiedOrder[], filters);
+  const sortedOrders = sortOrders(filteredOrders, sortBy);
+  const stats = getOrderStats(sortedOrders);
 
   if (loading) {
     return (
@@ -107,26 +109,106 @@ export default function EnterpriseOrdersPage() {
       </div>
 
       <div className="p-6">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white/70 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+            <div className="text-2xl font-bold text-purple-600">{stats.total}</div>
+            <div className="text-sm text-gray-600">Total Orders</div>
+          </div>
+          <div className="bg-white/70 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+            <div className="text-2xl font-bold text-orange-600">{stats.active}</div>
+            <div className="text-sm text-gray-600">Active Orders</div>
+          </div>
+          <div className="bg-white/70 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+            <div className="text-2xl font-bold text-green-600">{stats.completed}</div>
+            <div className="text-sm text-gray-600">Completed</div>
+          </div>
+          <div className="bg-white/70 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+            <div className="text-2xl font-bold text-blue-600">${stats.totalRevenue.toFixed(2)}</div>
+            <div className="text-sm text-gray-600">Total Revenue</div>
+          </div>
+        </div>
+
         {/* Filters and Search */}
-        <OrderFilters
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          totalOrders={orders.length}
-          filteredOrders={sortedOrders.length}
-        />
+        <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-lg mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Search */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search orders..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+            </div>
+
+            {/* Status Filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            >
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="preparing">Preparing</option>
+              <option value="out_for_delivery">Out for Delivery</option>
+              <option value="delivered">Delivered</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+
+            {/* Sort By */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="amount_high">Amount: High to Low</option>
+              <option value="amount_low">Amount: Low to High</option>
+              <option value="customer_name">Customer Name</option>
+              <option value="status">Status</option>
+            </select>
+
+            {/* Results Count */}
+            <div className="flex items-center justify-center">
+              <span className="text-sm text-gray-600">
+                {sortedOrders.length} of {orders.length} orders
+              </span>
+            </div>
+          </div>
+        </div>
 
         {/* Orders List */}
         <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg">
-          <OrderList
-            orders={sortedOrders}
-            onDelete={handleDeleteOrder}
-            searchTerm={searchTerm}
-            statusFilter={statusFilter}
-          />
+          <div className="divide-y divide-gray-200">
+            {sortedOrders.length > 0 ? (
+              sortedOrders.map((order) => (
+                <UnifiedOrderRow
+                  key={order.id}
+                  order={order as UnifiedOrder}
+                  variant="enterprise"
+                  onDelete={handleDeleteOrder}
+                />
+              ))
+            ) : (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <RefreshCw className="h-8 w-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No orders found</h3>
+                <p className="text-gray-500">
+                  {searchTerm || statusFilter !== "all" 
+                    ? "Try adjusting your search or filter criteria"
+                    : "Orders will appear here once customers start ordering"
+                  }
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

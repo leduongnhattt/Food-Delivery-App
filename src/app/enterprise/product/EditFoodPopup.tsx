@@ -39,7 +39,7 @@ export default function EditFoodPopup({
     category: food.foodCategory.CategoryName,
     categoryId: food.foodCategory.CategoryID,
     price: food.Price.toString(),
-    quantity: food.Stock.toString(),
+    isAvailable: food.IsAvailable ?? true,
     description: food.Description,
   });
 
@@ -123,10 +123,6 @@ export default function EditFoodPopup({
       setError("Valid price is required");
       return false;
     }
-    if (!formData.quantity || parseInt(formData.quantity) < 0) {
-      setError("Valid quantity is required");
-      return false;
-    }
     return true;
   };
 
@@ -168,7 +164,7 @@ export default function EditFoodPopup({
         DishName: formData.foodName,
         Description: formData.description,
         Price: parseFloat(formData.price),
-        Stock: parseInt(formData.quantity),
+        IsAvailable: !!formData.isAvailable,
         FoodCategoryID: formData.categoryId,
         ImageURL: imageUrl,
       };
@@ -334,21 +330,24 @@ export default function EditFoodPopup({
               />
             </div>
 
-            {/* Quantity */}
+            {/* Availability Toggle */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Quantity *
+                Available for sale
               </label>
-              <input
-                type="number"
-                name="quantity"
-                value={formData.quantity}
-                onChange={handleInputChange}
-                min="0"
-                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-                disabled={isSubmitting}
-              />
+              <div className="flex items-center space-x-3">
+                <input
+                  id="isAvailable"
+                  type="checkbox"
+                  checked={!!formData.isAvailable}
+                  onChange={(e) => setFormData(prev => ({ ...prev, isAvailable: e.target.checked }))}
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  disabled={isSubmitting}
+                />
+                <label htmlFor="isAvailable" className="text-sm text-gray-700">
+                  {formData.isAvailable ? 'Currently selling' : 'Temporarily unavailable'}
+                </label>
+              </div>
             </div>
 
             {/* Description */}

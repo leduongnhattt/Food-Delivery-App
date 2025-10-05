@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { resolveActiveCartId, hydrateRedisFromDb, snapshotCart, abandonCart } from './_service/cart.server'
+import { resolveActiveCartId, hydrateRedisFromDb, snapshotCart, abandonCart, mergeGuestCartIntoUserCart } from './_service/cart.server'
 import { ONE_DAY_SECONDS } from '@/lib/cart-keys'
 import { verifyTokenEdgeSync } from '@/lib/auth-edge'
 
@@ -24,6 +24,11 @@ function getActor(req: NextRequest): { userId?: string, guestToken?: string } {
 export async function GET(req: NextRequest) {
     try {
         const actor = getActor(req)
+        // If user is logged in and there is a guest cookie, perform a one-time merge
+        if (actor.userId && req.cookies.get('guest_token')?.value) {
+            const guestToken = req.cookies.get('guest_token')!.value
+            await mergeGuestCartIntoUserCart(actor.userId, guestToken)
+        }
         let cartId = await resolveActiveCartId(actor)
         if (!cartId) {
             // No cart yet; create for guest lazily on first GET only if explicitly requested? Here we keep null.

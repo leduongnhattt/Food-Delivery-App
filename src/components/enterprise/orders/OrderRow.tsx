@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { MapPin, Trash2 } from "lucide-react";
 import { Order } from "@/services/order-management.service";
 import { orderManagementService } from "@/services/order-management.service";
 
@@ -10,6 +10,8 @@ interface OrderRowProps {
 }
 
 export default function OrderRow({ order, onDelete }: OrderRowProps) {
+  const displayAddress = order.deliveryAddress || order.customerAddress;
+
   return (
     <div className="group relative bg-white rounded-lg border border-gray-200 hover:border-purple-300/50 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
       {/* Single Row Layout */}
@@ -53,6 +55,14 @@ export default function OrderRow({ order, onDelete }: OrderRowProps) {
                     <span className="text-xs text-gray-400">+{order.orderDetails.length - 2}</span>
                   )}
                 </div>
+              </div>
+            )}
+            {displayAddress && (
+              <div className="flex items-center space-x-1 mt-1 text-xs text-gray-500">
+                <MapPin className="h-3.5 w-3.5 text-purple-500 flex-shrink-0" />
+                <span className="truncate" title={displayAddress}>
+                  {displayAddress}
+                </span>
               </div>
             )}
           </div>

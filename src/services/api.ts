@@ -44,7 +44,7 @@ class ApiClient {
         }
 
         try {
-            let response = await fetch(url, config)
+            let response = await fetch(url, { ...config, credentials: 'include' })
 
             // Attempt one auto-refresh on 401
             if (response.status === 401) {
@@ -58,6 +58,7 @@ class ApiClient {
                             'Content-Type': 'application/json',
                             Authorization: `Bearer ${newToken}`,
                         },
+                        credentials: 'include'
                     })
                 }
             }
