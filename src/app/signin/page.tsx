@@ -76,6 +76,10 @@ function SigninContent() {
       });
       
       if (!result.success) {
+        if (result.error?.status === 403 || result.error?.code === 'ACCOUNT_LOCKED') {
+          showToast(result.error.message, "error");
+          return;
+        }
         showToast(result.error?.message || t("signin.errors.loginFailed"), "error");
         // Clear password field for invalid credentials
         setPassword("");
@@ -93,7 +97,7 @@ function SigninContent() {
       if (role === 'enterprise') {
         router.replace('/enterprise/dashboard');
       } else if (role === 'admin') {
-        router.replace('/admin');
+        router.replace('/admin/dashboard');
       } else {
         router.replace('/');
       }

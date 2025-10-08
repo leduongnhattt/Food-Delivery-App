@@ -46,7 +46,7 @@ const RestaurantCard: React.FC<Props> = ({
                 : "bg-red-500 text-white"
             }`}
           >
-            {restaurant.status === "open" ? "Mở cửa" : "Đóng cửa"}
+            {restaurant.status === "open" ? "Open" : "Closed"}
           </span>
         </div>
       </div>

@@ -5,7 +5,6 @@ import { OrderRow, OrderCard } from '@/components/orders/order-row'
 import { OrderFilters } from '@/components/orders/order-filters'
 import { OrderFilters as OrderFiltersType } from '@/services/order.service'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { 
   Package, 
   RefreshCw, 
@@ -14,11 +13,12 @@ import {
   Clock,
   CheckCircle
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useToast } from '@/contexts/toast-context'
 import { OrderService } from '@/services/order.service'
 import type { Order } from '@/services/order.service'
 import { useRouter } from 'next/navigation'
+import { addItemToCart } from '@/services/cart.service'
 import { ConfirmCancelModal } from '@/components/orders/ConfirmCancelModal'
 import { OrderDetailsModal } from '@/components/orders/OrderDetailsModal'
 
@@ -58,8 +58,21 @@ export default function OrdersPage() {
     }
   }
 
-  const handleReorder = (orderId: string) => {
-    // TODO: Implement reorder logic
+  const handleReorder = async (orderId: string) => {
+    try {
+      setSubmitting(true)
+      const order = await OrderService.getOrderById(orderId)
+      const items = (order as Order).items || []
+      for (const it of items) {
+        await addItemToCart({ foodId: it.foodId, quantity: it.quantity })
+      }
+      showToast('Items added to cart. Redirecting to checkout...', 'success', 2500)
+      router.push('/checkout')
+    } catch (e) {
+      showToast('Failed to reorder items', 'error', 4000)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const handleTrack = (orderId: string) => {
@@ -107,6 +120,25 @@ export default function OrdersPage() {
   }
 
   const stats = getOrderStats()
+
+  // Auto-refresh when there are in-progress orders
+  useEffect(() => {
+    const inProgressStatuses = ['pending', 'confirmed', 'preparing', 'out_for_delivery']
+    const hasInProgress = orders.some(o => inProgressStatuses.includes(o.status))
+    if (!hasInProgress) return
+
+    const onFocus = () => refreshOrders()
+    window.addEventListener('focus', onFocus)
+
+    const intervalId = window.setInterval(() => {
+      refreshOrders()
+    }, 15000)
+
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      window.clearInterval(intervalId)
+    }
+  }, [orders, refreshOrders])
 
   // Handle authentication errors
   if (error && error.includes('sign in')) {
