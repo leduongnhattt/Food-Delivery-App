@@ -66,19 +66,22 @@ export function sumPrices(prices: number[]): number {
   return Math.round(prices.reduce((sum, price) => sum + price, 0) * 100) / 100
 }
 
-export function formatDate(date: Date | string): string {
-  const dateObj = typeof date === 'string' ? new Date(date) : date
+export function formatDate(dateString: string): string {
+  const date = new Date(dateString)
+  if (isNaN(date.getTime())) return 'Invalid Date'
 
-  // Check if date is valid
-  if (isNaN(dateObj.getTime())) {
-    return 'Invalid Date'
-  }
+  const dd = String(date.getDate()).padStart(2, '0')
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const yyyy = date.getFullYear()
 
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }).format(dateObj)
+  let hours = date.getHours()
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const ampm = hours >= 12 ? 'PM' : 'AM'
+  hours = hours % 12
+  if (hours === 0) hours = 12
+  const hh = String(hours).padStart(2, '0')
+
+  return `${dd}/${mm}/${yyyy}, ${hh}:${minutes} ${ampm}`
 }
 
 /**

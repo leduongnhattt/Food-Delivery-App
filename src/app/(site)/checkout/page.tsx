@@ -1,9 +1,6 @@
 'use client'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { formatPrice, calculatePrice, sumPrices } from '@/lib/utils'
+import { formatPrice, calculatePrice } from '@/lib/utils'
 import { CartItem } from '@/types/models'
 import { useCart } from '@/hooks/use-cart'
 import { useDeliveryData } from '@/hooks/use-delivery-data'
@@ -11,8 +8,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { useRouter } from 'next/navigation'
 import { PaymentService } from '@/services/payment.service'
 import { useSearchParams } from 'next/navigation'
-import { Minus, Plus, Trash2, ArrowLeft, Clock, MapPin, Star, Truck, Gift, CheckCircle, Circle, Info, X } from 'lucide-react'
-import Image from 'next/image'
+import { ArrowLeft, CheckCircle, Circle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { requestJson } from '@/lib/http-client'
 import { RestaurantService } from '@/services/restaurant.service'
@@ -23,8 +19,6 @@ import { DeliveryForm } from '@/components/checkout/DeliveryForm'
 import { PromoOffers } from '@/components/checkout/PromoOffers'
 import { PaymentSelector } from '@/components/checkout/PaymentSelector'
 import { OrderSummary } from '@/components/checkout/OrderSummary'
-import { StripeProvider } from '@/components/payments/StripeProvider'
-import { StripePaymentForm } from '@/components/payments/StripePaymentForm'
 
 // Constants
 const DEFAULT_COMMISSION_FEE = 0.5
@@ -119,11 +113,33 @@ export default function CheckoutPage() {
 
   // Load vouchers from API
   useEffect(() => {
-    VoucherService.list()
-      .then((list) => {
-        setAvailableVouchers(list.map((v: any) => ({ code: v.Code, amount: Number(v.DiscountAmount) || undefined, percent: Number(v.DiscountPercent) || undefined, minOrder: Number(v.MinOrderValue) || undefined })))
-      })
-      .catch(() => {})
+    const load = () =>
+      VoucherService.list()
+        .then((list) => {
+          setAvailableVouchers(
+            list.map((v: any) => ({
+              code: v.Code,
+              amount: Number(v.DiscountAmount) || undefined,
+              percent: Number(v.DiscountPercent) || undefined,
+              minOrder: Number(v.MinOrderValue) || undefined,
+            }))
+          )
+        })
+        .catch(() => {})
+
+    load()
+
+    // Auto-refresh vouchers when page regains focus
+    const onFocus = () => load()
+    window.addEventListener('focus', onFocus)
+
+    // Light polling as fallback for immediate reflection (every 30s)
+    const intervalId = window.setInterval(load, 30000)
+
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      window.clearInterval(intervalId)
+    }
   }, [])
 
   // Show loading while checking authentication

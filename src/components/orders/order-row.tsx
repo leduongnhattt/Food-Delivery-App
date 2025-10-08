@@ -2,8 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { formatPrice } from '@/lib/utils'
-import { formatDate } from '@/lib/order-utils'
+import { formatPrice, formatDate } from '@/lib/utils'
 import { Order } from '@/services/order.service'
 import { 
   Clock, 

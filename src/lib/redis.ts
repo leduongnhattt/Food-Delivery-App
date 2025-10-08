@@ -53,6 +53,18 @@ export async function deleteKey(key: string): Promise<void> {
     await redisClient.del(key)
 }
 
+// Voucher cache helpers
+export const VOUCHERS_APPROVED_CACHE_KEY = 'vouchers:approved:list'
+
+export async function invalidateApprovedVouchersCache(): Promise<void> {
+    // Best-effort deletion; ignore errors to not break request flow
+    try {
+        await deleteKey(VOUCHERS_APPROVED_CACHE_KEY)
+    } catch {
+        // no-op
+    }
+}
+
 export async function expireKey(key: string, ttlSeconds: number): Promise<void> {
     if (!redisClient) return
     if (ttlSeconds > 0) await redisClient.expire(key, ttlSeconds)

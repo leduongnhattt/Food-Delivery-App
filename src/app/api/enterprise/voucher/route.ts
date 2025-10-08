@@ -1,6 +1,14 @@
 import { requireEnterprise } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/db";
+import { invalidateApprovedVouchersCache } from "@/lib/redis";
 import { NextRequest, NextResponse } from "next/server";
+
+// Invalidate customer-visible vouchers cache only when voucher is Approved
+async function invalidateIfApproved(status: string | null | undefined): Promise<void> {
+  if (status === 'Approved') {
+    await invalidateApprovedVouchersCache();
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -51,6 +59,8 @@ export async function POST(request: NextRequest) {
         EnterpriseID: enterprise.EnterpriseID,
       },
     });
+    // If policies auto-approve, refresh customer list cache
+    await invalidateIfApproved(newVoucher.Status);
     return NextResponse.json({ voucher: newVoucher }, { status: 201 });
   } catch (error) {
     console.error("Error creating voucher:", error);
@@ -170,7 +180,8 @@ export async function PUT(request: NextRequest) {
         MaxUsage: MaxUsage || null,
       },
     });
-
+    // If an Approved voucher was edited, refresh customer list cache
+    await invalidateIfApproved(updatedVoucher.Status);
     return NextResponse.json({ voucher: updatedVoucher }, { status: 200 });
   } catch (error) {
     console.error("Error updating voucher:", error);
@@ -216,9 +227,10 @@ export async function DELETE(request: NextRequest) {
         { status: 404 }
       );
     }
-    await prisma.voucher.delete({
+    const deleted = await prisma.voucher.delete({
       where: { VoucherID: voucherId },
     });
+    await invalidateIfApproved(deleted.Status);
     return NextResponse.json({ message: "Voucher deleted successfully" });
   } catch (error) {
     console.error("Error deleting voucher:", error);

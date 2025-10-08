@@ -204,6 +204,7 @@ export async function createAccountForEnterprise(params: {
             Email: params.email,
             PasswordHash: params.passwordHash,
             Avatar: '',
+            Provider: 'email',
             RoleID: enterpriseRole.RoleID,
             Status: 'Active'
         },
@@ -272,7 +273,7 @@ export async function createEnterprise(params: {
  * @returns The account with enterprise if found, null otherwise
  */
 export async function findAccountByUsernameWithEnterprise(username: string): Promise<any | null> {
-    return prisma.account.findFirst({ 
+    return prisma.account.findFirst({
         where: { Username: username },
         include: {
             role: true,

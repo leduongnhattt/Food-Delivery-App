@@ -60,20 +60,19 @@ export const POST = withRateLimit(async (request: NextRequest) => {
             })
         }
 
-        // Create automatic discount if voucher applied
-        let discounts: any[] | undefined
+        // Create automatic discount via a one-time Stripe coupon (no negative unit_amount allowed)
+        let discounts: { coupon: string }[] | undefined
         if (voucherCode) {
             const absDiscount = Math.max(0, subtotal + computedCommissionFee) - total
-            if (absDiscount > 0) {
-                // Use custom negative line item to reflect discount (simplest without Stripe coupons)
-                lineItems.push({
-                    price_data: {
-                        currency: 'usd',
-                        product_data: { name: `Discount (${voucherCode})` },
-                        unit_amount: -Math.round(absDiscount * 100),
-                    },
-                    quantity: 1,
-                } as any)
+            const absDiscountCents = Math.max(0, Math.round(absDiscount * 100))
+            if (absDiscountCents > 0) {
+                const coupon = await stripe.coupons.create({
+                    amount_off: absDiscountCents,
+                    currency: 'usd',
+                    duration: 'once',
+                    name: `Voucher ${voucherCode}`
+                })
+                discounts = [{ coupon: coupon.id }]
             }
         }
 
@@ -84,6 +83,7 @@ export const POST = withRateLimit(async (request: NextRequest) => {
             mode: 'payment',
             success_url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/checkout`,
+            discounts,
             metadata: {
                 // Store minimal data in metadata (under 500 chars)
                 itemCount: cartItems.length.toString(),

@@ -9,6 +9,7 @@ function setRefreshCookie(res: NextResponse, token: string, expires: Date) {
         httpOnly: true,
         sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production',
+        path: '/',
         expires
     })
 }
@@ -52,6 +53,15 @@ export const POST = withRateLimit(async (request: NextRequest) => {
             select: { role: { select: { RoleName: true } } }
         })
         const roleName = roleRecord?.role?.RoleName || account.role?.RoleName || 'Customer'
+
+        // Block login for locked Customer/Enterprise accounts
+        const roleLower = (roleName || '').toLowerCase()
+        if ((roleLower === 'customer' || roleLower === 'enterprise') && account.Status === 'Inactive') {
+            return NextResponse.json(
+                { error: 'Your account is locked. Please contact support.' },
+                { status: 403 }
+            )
+        }
 
         // Issue tokens
         const { accessToken, refreshToken, expiredAt } = await issueTokens(

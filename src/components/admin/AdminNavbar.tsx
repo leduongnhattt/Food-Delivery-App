@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   User,
   LogOut,
@@ -15,21 +15,26 @@ import {
 
 const menuItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: BarChart3 },
-  { href: "/admin/customer", label: "Customer", icon: User },
-  { href: "/admin/enterprise", label: "Enterprise", icon: Briefcase },
+  { href: "/admin/customers", label: "Customers", icon: User },
+  { href: "/admin/enterprises", label: "Enterprises", icon: Briefcase },
   // { href: "/admin/inbox", label: "Inbox", icon: MessageCircle }, // nên loại bỏ phần ni
   { href: "/admin/discount", label: "Discount", icon: TicketPercent },
 ];
 
 export default function AdminNavbar() {
   const pathname = usePathname();
+  const router = useRouter();
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
 
-  const handleLogout = () => {
-    localStorage.removeItem("verified");
-    window.location.href = "/auth/admin";
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+    } catch {}
+    // clear client token/local flags
+    try { localStorage.removeItem('verified') } catch {}
+    router.replace('/signin')
   };
 
   return (
