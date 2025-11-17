@@ -74,7 +74,7 @@ export class OrderService {
     /**
      * Cancel an order
      */
-    static async cancelOrder(orderId: string, _reason?: string): Promise<{ success: boolean; message?: string }> {
+    static async cancelOrder(orderId: string): Promise<{ success: boolean; message?: string }> {
         // Single unified cancellation via DELETE endpoint
         return requestJson<{ success: boolean; message?: string }>(`/api/orders/${orderId}`, {
             method: 'DELETE',

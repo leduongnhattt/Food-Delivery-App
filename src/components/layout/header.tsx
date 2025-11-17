@@ -5,7 +5,6 @@ import { useCart } from '@/hooks/use-cart'
 import { useAuth } from '@/hooks/use-auth'
 import { CartSidebar } from '@/components/cart/cart-sidebar'
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react'
 import { UserMenu } from '@/components/layout/user-menu'
 
 
@@ -13,8 +12,6 @@ export function Header() {
   const router = useRouter();
   const { getTotalItems, openCart, closeCart, isOpen, cartItems, updateQuantity, removeFromCart } = useCart()
   const { isAuthenticated, user, isLoading, logout } = useAuth()
-  const [isProfileOpen, setIsProfileOpen] = useState(false)
-  const profileRef = useRef<HTMLDivElement | null>(null)
 
   const handleSignInSite = () => {
     router.push("/signin")
@@ -25,26 +22,6 @@ export function Header() {
   const handleLogout = () => {
     logout()
   }
-  const handleProfile = () => {
-    setIsProfileOpen(false)
-    router.push('/profile')
-  }
-  const handleSettings = () => {
-    setIsProfileOpen(false)
-    router.push('/settings')
-  }
-
-  // Close profile popup on outside click
-  useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
-      if (!isProfileOpen) return
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
-        setIsProfileOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', onClickOutside)
-    return () => document.removeEventListener('mousedown', onClickOutside)
-  }, [isProfileOpen])
   return (
     <>
       <header className="sticky top-0 z-50 w-full bg-white shadow-sm">

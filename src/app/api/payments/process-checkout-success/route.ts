@@ -43,11 +43,8 @@ export const POST = withRateLimit(async (request: NextRequest) => {
 
         // Extract metadata (minimal data)
         const metadata = session.metadata || {}
-        const itemCount = parseInt(metadata.itemCount || '0')
-        const total = parseFloat(metadata.total || '0')
         const phone = metadata.phone || ''
         const address = metadata.address || ''
-        const voucherCode = metadata.voucherCode || ''
 
         // Get customer info from database
         const customer = await prisma.customer.findFirst({

@@ -1,7 +1,6 @@
 import { requireEnterprise } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
-import { de } from "zod/locales";
 
 export async function GET(request: NextRequest) {
   try {

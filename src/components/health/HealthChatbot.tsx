@@ -8,6 +8,7 @@ import { BASE_IMAGE_URL } from '@/lib/constants'
 import FloatingButton from './FloatingButton'
 import HealthForm from './HealthForm'
 import RecommendationsDisplay from './RecommendationsDisplay'
+import Image from 'next/image'
 
 interface HealthChatbotProps {
   className?: string
@@ -29,10 +30,6 @@ export default function HealthChatbot({ className = '' }: HealthChatbotProps) {
 
   const handleOpen = () => {
     setIsOpen(true)
-  }
-
-  const handleClose = () => {
-    setIsOpen(false)
   }
 
   const handleReset = () => {
@@ -97,10 +94,13 @@ export default function HealthChatbot({ className = '' }: HealthChatbotProps) {
             <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-gradient-to-r from-pink-500 to-purple-600 text-white">
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="w-6 h-6 sm:w-8 sm:h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                  <img 
+                  <Image 
                     src={`${BASE_IMAGE_URL}/logo.png`}
                     alt="Hanala Food Logo" 
+                    width={24}
+                    height={24}
                     className="w-4 h-4 sm:w-6 sm:h-6 object-contain"
+                    priority
                   />
                 </div>
                 <div>

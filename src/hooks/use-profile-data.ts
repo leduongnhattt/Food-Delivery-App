@@ -58,7 +58,7 @@ export function useProfileData() {
         }
 
         loadProfileData()
-    }, [isAuthenticated, user?.id])
+    }, [isAuthenticated, user])
 
     // Auto-hide notification after 3 seconds
     useEffect(() => {
@@ -90,6 +90,7 @@ export function useProfileData() {
                 return false
             }
         } catch (error) {
+            console.error('Failed to update profile:', error)
             setNotification({ type: 'error', message: 'Failed to update profile' })
             return false
         }

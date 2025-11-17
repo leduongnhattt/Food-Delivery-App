@@ -58,7 +58,8 @@ export async function POST(request: NextRequest) {
             description, openHours, closeHours
         })
         return NextResponse.json({ success: true, enterprise: created.enterprise })
-    } catch (e) {
+    } catch (error) {
+        console.error('Failed to create enterprise', error)
         return NextResponse.json({ error: 'Failed to create enterprise' }, { status: 500 })
     }
 }

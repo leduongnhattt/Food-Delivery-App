@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { RestaurantService, RestaurantFilters } from '@/services/restaurant.service'
 import { Restaurant } from '@/types/models'
 
@@ -26,7 +26,7 @@ export function useRestaurantList(filters: RestaurantFilters = {}): UseRestauran
         totalPages: 0
     })
 
-    const fetchRestaurants = async () => {
+    const fetchRestaurants = useCallback(async () => {
         try {
             setLoading(true)
             setError(null)
@@ -42,11 +42,11 @@ export function useRestaurantList(filters: RestaurantFilters = {}): UseRestauran
         } finally {
             setLoading(false)
         }
-    }
+    }, [filters])
 
     useEffect(() => {
         fetchRestaurants()
-    }, [filters.page, filters.limit, filters.search, filters.category, filters.isOpen, filters.minRating])
+    }, [fetchRestaurants])
 
     return {
         restaurants,

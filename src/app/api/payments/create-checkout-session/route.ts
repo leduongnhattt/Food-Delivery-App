@@ -11,7 +11,6 @@ export const POST = withRateLimit(async (request: NextRequest) => {
         if (!auth.success) {
             return NextResponse.json({ error: auth.error || 'Unauthorized' }, { status: 401 })
         }
-        const userId = auth.user!.id
         const userEmail = auth.user!.email
 
         const { cartItems, deliveryInfo, voucherCode, total } = await request.json()

@@ -1,6 +1,4 @@
 'use client'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import HeroSection from '@/components/landingpage/HeroSection'
 import FoodsSlideMenu from '@/components/landingpage/FoodsSlideMenu'

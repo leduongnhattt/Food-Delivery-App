@@ -12,7 +12,7 @@ import { PasswordService } from "@/services/password.service";
 function VerifyCodeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { t, isLoading: i18nLoading } = useTranslations();
+  const { isLoading: i18nLoading } = useTranslations();
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -73,6 +73,7 @@ function VerifyCodeContent() {
         setError(result.error || "Failed to resend code. Please try again.");
       }
     } catch (error) {
+      console.error("Failed to resend reset code:", error);
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsResending(false);
@@ -116,6 +117,7 @@ function VerifyCodeContent() {
       router.push(`/forgot-password/reset?token=${result.tokenId}&email=${encodeURIComponent(email)}`);
       
     } catch (err) {
+      console.error("Failed to verify reset code:", err);
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);

@@ -2,7 +2,7 @@
 import React from 'react'
 import { MessageCircle, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { type GeminiHealthAnalysis, type HealthProfile } from '@/services/gemini-health-ai.service'
+import { type GeminiHealthAnalysis } from '@/services/gemini-health-ai.service'
 import HealthAnalysis from './HealthAnalysis'
 import ExerciseRecommendations from './ExerciseRecommendations'
 import FoodRecommendations from './FoodRecommendations'

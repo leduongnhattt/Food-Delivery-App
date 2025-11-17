@@ -1,4 +1,4 @@
-import { getKeyJson, setKeyJson, deleteKey, expireKey } from './redis';
+import { getKeyJson, setKeyJson, deleteKey } from './redis';
 
 // Cache keys for orders data
 const ORDERS_CACHE_KEYS = {

@@ -70,7 +70,7 @@ export function validateAndFormatPhoneNumber(phoneNumber: string): PhoneNumberIn
  * @param accountId Account ID to generate unique phone number
  * @returns Temporary phone number
  */
-export function generateTemporaryPhoneNumber(accountId: string): string {
+export function generateTemporaryPhoneNumber(): string {
     // Return 11 zeros as temporary phone number
     return '00000000000'
 }
@@ -159,7 +159,7 @@ export async function linkGoogleToExistingAccount(accountId: string, googleUser:
     // Ensure a Customer exists; create one if missing
     const existingCustomer = await prisma.customer.findFirst({ where: { AccountID: accountId }, select: { CustomerID: true } })
     if (!existingCustomer) {
-        const phone = generateTemporaryPhoneNumber(accountId)
+        const phone = generateTemporaryPhoneNumber()
         try {
             await createCustomer({
                 accountId,
@@ -172,7 +172,7 @@ export async function linkGoogleToExistingAccount(accountId: string, googleUser:
             // Retry once with a different phone if unique constraint on phone occurs
             const message = typeof e?.message === 'string' ? e.message : ''
             if (message.includes('CUSTOMER_PhoneNumber_key')) {
-                const retryPhone = generateTemporaryPhoneNumber(accountId)
+                const retryPhone = generateTemporaryPhoneNumber()
                 await createCustomer({
                     accountId,
                     fullName: googleUser.name,
@@ -235,7 +235,7 @@ export async function createGoogleAccount(googleUser: GoogleUserInfo): Promise<a
 
     // Create customer profile with temporary phone number
     // Create customer; handle rare phone unique collisions with one retry
-    const firstPhone = generateTemporaryPhoneNumber(newAccount.AccountID);
+    const firstPhone = generateTemporaryPhoneNumber();
     try {
         await createCustomer({
             accountId: newAccount.AccountID,
@@ -247,7 +247,7 @@ export async function createGoogleAccount(googleUser: GoogleUserInfo): Promise<a
     } catch (e: any) {
         const message = typeof e?.message === 'string' ? e.message : ''
         if (message.includes('CUSTOMER_PhoneNumber_key')) {
-            const retryPhone = generateTemporaryPhoneNumber(newAccount.AccountID)
+            const retryPhone = generateTemporaryPhoneNumber()
             await createCustomer({
                 accountId: newAccount.AccountID,
                 fullName: googleUser.name,

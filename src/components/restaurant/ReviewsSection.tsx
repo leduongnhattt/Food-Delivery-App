@@ -2,6 +2,7 @@
 import React from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import Image from 'next/image'
 
 export type Review = {
   id: string
@@ -91,8 +92,7 @@ function ReviewComposer() {
         <div className="mt-3 grid grid-cols-3 md:grid-cols-6 gap-3">
           {previews.map((src, i) => (
             <div key={i} className="relative group">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={src} alt={`attachment-${i}`} className="h-20 w-full object-cover rounded-lg border border-gray-200" />
+              <Image src={src} alt={`attachment-${i}`} width={200} height={200} className="h-20 w-full object-cover rounded-lg border border-gray-200" />
               <button
                 type="button"
                 onClick={() => removeImage(i)}
@@ -136,7 +136,7 @@ function ReviewsList({ reviews }: { reviews: Review[] }) {
                 {r.images && r.images.length > 0 && (
                   <div className="mt-3 grid grid-cols-3 md:grid-cols-6 gap-2">
                     {r.images.map((src, idx) => (
-                      <img key={idx} src={src} alt="review" className="h-20 w-full object-cover rounded-lg border border-gray-200" />
+                      <Image key={idx} src={src} alt="review" width={200} height={200} className="h-20 w-full object-cover rounded-lg border border-gray-200" />
                     ))}
                   </div>
                 )}

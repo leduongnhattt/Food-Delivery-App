@@ -44,7 +44,6 @@ const FoodsSlideMenu: React.FC<FoodsSlideMenuProps> = ({
   // Use custom hooks for scroll functionality
   const {
     scrollContainerRef,
-    isDragging,
     showLeftArrow,
     showRightArrow,
     handleMouseDown,

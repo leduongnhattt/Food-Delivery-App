@@ -19,9 +19,8 @@ const DEFAULT_LOCALE: Locale = 'en';
 export const getStoredLocale = (): Locale => {
     if (typeof window === 'undefined') return DEFAULT_LOCALE;
 
-    const stored = localStorage.getItem('locale') as Locale;
-    // Force return English for now, ignore localStorage
-    return DEFAULT_LOCALE;
+    const stored = localStorage.getItem('locale') as Locale | null;
+    return stored || DEFAULT_LOCALE;
 };
 
 // Set locale to localStorage

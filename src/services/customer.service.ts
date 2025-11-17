@@ -1,5 +1,5 @@
 import { BaseService } from '@/lib/base-service'
-import { getAccessToken, buildHeaders, requestJson } from '@/lib/http-client'
+import { buildHeaders, requestJson } from '@/lib/http-client'
 
 export type CustomerDTO = {
     CustomerID: string

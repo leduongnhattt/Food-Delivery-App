@@ -33,7 +33,6 @@ export async function POST(req: NextRequest) {
         }))
         return NextResponse.json({ foods: payload })
     } catch (e) {
-        // eslint-disable-next-line no-console
         console.error('POST /api/foods/by-ids failed', e)
         return NextResponse.json({ error: 'Failed to fetch foods' }, { status: 500 })
     }

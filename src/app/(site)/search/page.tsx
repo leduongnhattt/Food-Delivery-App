@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useSearch } from '@/hooks/use-search'
 import { SearchResults } from '@/components/search/search-results'
@@ -27,18 +27,15 @@ export default function SearchPage() {
   const router = useRouter()
   const { searchResults, loading, error, searchFoods, clearResults } = useSearch()
   const { addToCart } = useCart()
-  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     const query = searchParams.get('q') || ''
-    setSearchQuery(query)
     if (query) {
       searchFoods(query)
     }
   }, [searchParams, searchFoods])
 
   const handleSearch = (query: string) => {
-    setSearchQuery(query)
     if (query.trim()) {
       const params = new URLSearchParams()
       params.set('q', query)

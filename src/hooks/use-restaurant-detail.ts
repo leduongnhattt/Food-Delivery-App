@@ -34,6 +34,7 @@ export function useRestaurantDetail(id: string): UseRestaurantResult {
             setRestaurant(mapRestaurantToVM(r))
             setItems((foodsResp.foods || []).map(mapFoodToMenuItem))
         } catch (e) {
+            console.error('Failed to load restaurant detail:', e)
             setError('Failed to load restaurant')
         } finally {
             setLoading(false)

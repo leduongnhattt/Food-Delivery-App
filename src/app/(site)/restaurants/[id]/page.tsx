@@ -23,8 +23,8 @@ export default function RestaurantPage({ params }: RestaurantPageProps) {
   // Unwrap params using React.use()
   const { id } = React.use(params)
 
-  const { restaurant, items: menuItems, loading, error } = useRestaurantDetail(id)
-  const { activeCategory, categoryRefs, categories: catList, handleSelectCategory, getCount } = useRestaurantCategoryNav(menuItems)
+  const { restaurant, items: menuItems, loading } = useRestaurantDetail(id)
+  const { activeCategory, categoryRefs, categories: catList, handleSelectCategory } = useRestaurantCategoryNav(menuItems)
 
   if (!loading && !restaurant) {
     notFound()

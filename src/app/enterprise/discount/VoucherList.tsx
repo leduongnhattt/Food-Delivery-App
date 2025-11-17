@@ -17,13 +17,11 @@ export interface Voucher {
 export interface VoucherListProps {
   vouchers: Voucher[];
   onEdit?: (voucher: Voucher) => void;
-  onDelete?: (voucherId: string) => void;
 }
 
 const VoucherList: React.FC<VoucherListProps> = ({
   vouchers,
   onEdit,
-  onDelete,
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -69,30 +67,68 @@ const VoucherList: React.FC<VoucherListProps> = ({
   };
   return (
     <div className="bg-white rounded-lg shadow">
-      {/* Header */}
-      <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-gray-50 border-b border-gray-200 font-medium text-gray-700">
-        <div className="col-span-3">Voucher Code</div>
-        <div className="col-span-2">Discount</div>
-        <div className="col-span-3">Expiry Date</div>
-        <div className="col-span-3">Status</div>
-        <div className="col-span-1">Action</div>
+      {/* Table Header */}
+      <div className="overflow-x-auto">
+        <table className="min-w-full text-sm">
+          <thead>
+            <tr className="text-left text-slate-500">
+              <th className="py-2 pr-4">Voucher Code</th>
+              <th className="py-2 pr-4">Discount Percent</th>
+              <th className="py-2 pr-4">Discount Amount</th>
+              <th className="py-2 pr-4">Usage Count</th>
+              <th className="py-2 pr-4">Expiry Date</th>
+              <th className="py-2 pr-4">Status</th>
+              <th className="py-2 pr-4 text-center w-24">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {vouchers.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="text-center text-slate-500 py-8">
+                  No vouchers available
+                </td>
+              </tr>
+            ) : (
+              currentVouchers.map((voucher) => (
+                <tr key={voucher.VoucherID} className="hover:bg-slate-50">
+                  <td className="py-3 pr-4 font-medium text-slate-900">{voucher.Code}</td>
+                  <td className="py-3 pr-4 text-slate-700">
+                    {voucher.DiscountPercent ? `${voucher.DiscountPercent}%` : 'N/A'}
+                  </td>
+                  <td className="py-3 pr-4 text-slate-700">
+                    {voucher.DiscountAmount ? `$${voucher.DiscountAmount}` : 'N/A'}
+                  </td>
+                  <td className="py-3 pr-4 text-slate-700">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {voucher.UsedCount || 0} / {voucher.MaxUsage || '∞'}
+                    </span>
+                  </td>
+                  <td className="py-3 pr-4 text-slate-700">
+                    {voucher.ExpiryDate ? new Date(voucher.ExpiryDate).toLocaleDateString('vi-VN') : 'N/A'}
+                  </td>
+                  <td className="py-3 pr-4">
+                    {voucher.Status === 'Approved' ? (
+                      <span className="text-xs px-2 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        Approved
+                      </span>
+                    ) : (
+                      <span className="text-xs px-2 py-1 rounded bg-amber-50 text-amber-700 border border-amber-200">
+                        Pending
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3 pr-4 text-center w-24">
+                    <VoucherRow
+                      voucher={voucher}
+                      onEdit={onEdit}
+                    />
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
-
-      {/* Voucher Rows */}
-      {vouchers.length === 0 ? (
-        <div className="p-6 text-center text-gray-500">
-          No vouchers available.
-        </div>
-      ) : (
-        currentVouchers.map((voucher) => (
-          <VoucherRow
-            key={voucher.VoucherID}
-            voucher={voucher}
-            onEdit={onEdit}
-            onDelete={onDelete}
-          />
-        ))
-      )}
 
       {/* Pagination */}
       {vouchers.length > 0 && totalPages > 1 && (

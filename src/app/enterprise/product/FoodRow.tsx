@@ -24,7 +24,9 @@ const FoodRow: React.FC<FoodRowProps> = ({ food, onEdit, onDelete }) => {
   };
   const confirmDelete = () => {
     setConfirmOpen(false)
-    onDelete && onDelete(food)
+    if (onDelete) {
+      onDelete(food)
+    }
   }
   const cancelDelete = () => setConfirmOpen(false)
 

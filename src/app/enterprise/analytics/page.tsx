@@ -1,15 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/contexts/toast-context";
-import { apiClient } from "@/services/api";
 import { 
   TrendingUp, 
   BarChart3,
-  PieChart,
-  Calendar,
-  DollarSign,
-  ShoppingCart,
   Users,
   Star
 } from "lucide-react";
@@ -18,11 +13,7 @@ export default function EnterpriseAnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const { showToast } = useToast();
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, []);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true);
       // Analytics data will be fetched here
@@ -33,7 +24,11 @@ export default function EnterpriseAnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showToast]);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
 
   if (loading) {
     return (

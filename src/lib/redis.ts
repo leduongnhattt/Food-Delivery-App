@@ -9,7 +9,6 @@ const redisConnectionUrl = process.env.REDIS_URL
 if (!redisConnectionUrl) {
     // Do not throw during build in case env is missing for preview.
     // Consumers should guard their calls if Redis is optional.
-    // eslint-disable-next-line no-console
     console.warn('[redis] REDIS_URL is not set; Redis features will be disabled')
 }
 

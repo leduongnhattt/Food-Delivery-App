@@ -1,6 +1,5 @@
 import React from "react";
 import RestaurantCard from "./RestaurantCard";
-import { useRouter } from 'next/navigation';
 import { useRestaurantList } from '@/hooks/use-restaurant-list';
 import { Loading } from '@/components/ui/loading';
 import { ErrorDisplay } from '@/components/ui/error-display';
@@ -28,7 +27,6 @@ const RestaurantMenu: React.FC<Props> = ({
   limit = 8,
   showViewAll = true 
 }) => {
-  const router = useRouter();
   const [displayLimit, setDisplayLimit] = React.useState<number>(limit);
   const [expanded, setExpanded] = React.useState<boolean>(false);
   

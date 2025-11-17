@@ -114,6 +114,7 @@ export function usePasswordChange(email: string) {
 
             return true
         } catch (error) {
+            console.error('Verification failed:', error)
             updateState({ codeError: 'Verification failed' })
             return false
         }
@@ -182,6 +183,7 @@ export function usePasswordChange(email: string) {
 
             return true
         } catch (error) {
+            console.error('Failed to update password:', error)
             updateState({ pwdError: 'Failed to update password' })
             return false
         }

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/contexts/toast-context";
-import { orderManagementService, Order, OrderFilters as OrderFiltersType } from "@/services/order-management.service";
+import { orderManagementService, Order } from "@/services/order-management.service";
 import { RefreshCw } from "lucide-react";
 import { UnifiedOrderRow } from "@/components/orders/UnifiedOrderRow";
 import { filterOrders, sortOrders, getOrderStats, type OrderFilters } from "@/lib/order-filters";
@@ -19,11 +19,7 @@ export default function EnterpriseOrdersPage() {
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
   const { showToast } = useToast();
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
       const orders = await orderManagementService.fetchOrders();
@@ -34,7 +30,11 @@ export default function EnterpriseOrdersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showToast]);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
 
   const handleDeleteOrder = (orderId: string) => {

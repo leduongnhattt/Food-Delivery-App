@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useToast } from "@/contexts/toast-context";
 import { apiClient } from "@/services/api";
 import { Activity } from "lucide-react";
@@ -35,36 +35,14 @@ interface RecentOrder {
   }[];
 }
 
-interface RevenueData {
-  date: string;
-  revenue: number;
-}
-
 export default function EnterpriseDashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
-  const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
   const [loading, setLoading] = useState(true);
   const { showToast } = useToast();
   const hasFetched = useRef(false);
-  const hasFetchedRevenue = useRef(false);
 
-  useEffect(() => {
-    if (!hasFetched.current) {
-      hasFetched.current = true;
-      fetchDashboardData();
-    }
-  }, []);
-
-  // Separate useEffect for revenue data to ensure it's only called once
-  useEffect(() => {
-    if (!hasFetchedRevenue.current) {
-      hasFetchedRevenue.current = true;
-      fetchRevenueData();
-    }
-  }, []);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -88,20 +66,14 @@ export default function EnterpriseDashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showToast]);
 
-  const fetchRevenueData = async () => {
-    try {
-      const revenueResponse = await apiClient.get("/enterprise/dashboard/revenue") as any;
-      if (revenueResponse.success === false) {
-        throw new Error(revenueResponse.error || "Failed to fetch revenue data");
-      }
-      setRevenueData(revenueResponse.data || []);
-    } catch (error) {
-      console.error("Error fetching revenue data:", error);
-      showToast("Failed to load revenue data", "error");
+  useEffect(() => {
+    if (!hasFetched.current) {
+      hasFetched.current = true;
+      fetchDashboardData();
     }
-  };
+  }, [fetchDashboardData]);
 
 
   if (loading) {

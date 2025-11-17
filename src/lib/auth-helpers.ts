@@ -84,7 +84,7 @@ export async function refreshAccessToken(): Promise<string | null> {
             return data.accessToken as string;
         }
         return null;
-    } catch (err) {
+    } catch (_err) {
         return null;
     }
 }

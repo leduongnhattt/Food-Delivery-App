@@ -55,7 +55,7 @@ export function useAPICache<T>({
         };
 
         loadData();
-    }, [key, enabled, ttl]);
+    }, [key, enabled, ttl, fetcher]);
 
     const refetch = async () => {
         apiCache.clear(key);

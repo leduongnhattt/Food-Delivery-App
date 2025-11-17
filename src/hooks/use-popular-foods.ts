@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Food } from '@/types/models'
 import { FoodService, FoodServiceFilters } from '@/services/food.service'
 
@@ -26,7 +26,7 @@ export function usePopularFoods(filters: FoodServiceFilters = {}): UsePopularFoo
         totalPages: 0
     })
 
-    const fetchFoods = async () => {
+    const fetchFoods = useCallback(async () => {
         try {
             setLoading(true)
             setError(null)
@@ -41,11 +41,11 @@ export function usePopularFoods(filters: FoodServiceFilters = {}): UsePopularFoo
         } finally {
             setLoading(false)
         }
-    }
+    }, [filters])
 
     useEffect(() => {
         fetchFoods()
-    }, [filters.limit, filters.page, filters.restaurantId, filters.category, filters.search, filters.isAvailable])
+    }, [fetchFoods])
 
     return {
         foods,

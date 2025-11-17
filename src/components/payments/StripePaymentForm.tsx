@@ -11,7 +11,6 @@ interface StripePaymentFormProps {
   cartItems: any[]
   deliveryInfo: any
   voucherCode?: string
-  onPaymentSuccess: (paymentIntentId: string) => void
   onPaymentError: (error: string) => void
 }
 
@@ -20,7 +19,6 @@ export function StripePaymentForm({
   cartItems,
   deliveryInfo,
   voucherCode,
-  onPaymentSuccess, 
   onPaymentError 
 }: StripePaymentFormProps) {
   const stripe = useStripe()

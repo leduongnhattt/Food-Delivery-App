@@ -1,4 +1,3 @@
-import { CartItem } from '@/types/models'
 import { CheckoutService } from './checkout.service'
 import { enableCartSilentMode, disableCartSilentMode } from './cart.service'
 

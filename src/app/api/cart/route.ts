@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
             const guestToken = req.cookies.get('guest_token')!.value
             await mergeGuestCartIntoUserCart(actor.userId, guestToken)
         }
-        let cartId = await resolveActiveCartId(actor)
+        const cartId = await resolveActiveCartId(actor)
         if (!cartId) {
             // No cart yet; create for guest lazily on first GET only if explicitly requested? Here we keep null.
             return NextResponse.json({ cartId: null, items: [] })

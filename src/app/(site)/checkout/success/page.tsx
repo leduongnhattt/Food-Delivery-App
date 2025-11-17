@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -18,17 +18,7 @@ export default function PaymentSuccessPage() {
   
   const sessionId = searchParams.get('session_id')
 
-  useEffect(() => {
-    if (!sessionId) return
-    if (processedOnceRef.current) return
-
-    processedOnceRef.current = true
-    processPaymentSuccess(sessionId)
-    // Remove query param to avoid re-trigger on state changes/navigation
-    router.replace('/checkout/success')
-  }, [sessionId, router])
-
-  const processPaymentSuccess = async (sessionId: string) => {
+  const processPaymentSuccess = useCallback(async (sessionId: string) => {
     if (isProcessing) return // Prevent duplicate calls
     
     try {
@@ -62,7 +52,17 @@ export default function PaymentSuccessPage() {
       setIsLoading(false)
       setIsProcessing(false)
     }
-  }
+  }, [clearCart, isProcessing])
+
+  useEffect(() => {
+    if (!sessionId) return
+    if (processedOnceRef.current) return
+
+    processedOnceRef.current = true
+    processPaymentSuccess(sessionId)
+    // Remove query param to avoid re-trigger on state changes/navigation
+    router.replace('/checkout/success')
+  }, [sessionId, router, processPaymentSuccess])
 
   const handleBackToApp = () => {
     // Cart is already cleared above, just redirect to home

@@ -90,7 +90,7 @@ export async function requestJson<T>(
         try {
             const errorData = await response.json()
             errorMessage = errorData.error || errorData.message || errorMessage
-        } catch (parseError) {
+        } catch {
             // If response is not JSON, use status text or default message
             errorMessage = response.statusText || errorMessage
         }

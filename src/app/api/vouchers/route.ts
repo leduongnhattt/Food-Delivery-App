@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
         }
         return NextResponse.json({ success: true, vouchers: list })
     } catch (e) {
+        console.error('Failed to fetch vouchers:', e)
         return NextResponse.json({ success: false, error: 'Failed to fetch vouchers' }, { status: 500 })
     }
 }

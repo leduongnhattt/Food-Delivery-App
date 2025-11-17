@@ -13,7 +13,7 @@ import { PasswordService } from "@/services/password.service";
 function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { t, isLoading: i18nLoading } = useTranslations();
+  const { isLoading: i18nLoading } = useTranslations();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -73,6 +73,7 @@ function ResetPasswordContent() {
       router.push("/signin");
       
     } catch (err) {
+      console.error("Failed to reset password:", err);
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);

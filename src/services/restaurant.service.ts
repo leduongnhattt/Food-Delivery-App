@@ -1,7 +1,7 @@
 import { apiClient } from './api'
 import { Restaurant } from '@/types/models'
 import { BaseService } from '@/lib/base-service'
-import { buildQueryString, requestJson, createEmptyPaginatedResponse } from '@/lib/http-client'
+import { buildQueryString, requestJson } from '@/lib/http-client'
 import { createDebouncedApiCall } from '@/lib/debounce'
 
 export interface RestaurantFilters {
@@ -124,9 +124,9 @@ export class RestaurantService extends BaseService {
     }
 
     // Get nearby restaurants (mock implementation)
-    static async getNearbyRestaurants(lat: number, lng: number, radius: number = 5): Promise<Restaurant[]> {
+    static async getNearbyRestaurants(lat: number, lng: number): Promise<Restaurant[]> {
         // In a real app, you'd use actual geolocation API
-        return apiClient.get<Restaurant[]>('/restaurants', { limit: 10 })
+        return apiClient.get<Restaurant[]>('/restaurants', { limit: 10, lat, lng })
     }
 
     // Debounced version to prevent multiple calls

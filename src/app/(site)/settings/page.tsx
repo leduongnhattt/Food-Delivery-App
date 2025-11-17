@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useAuth } from '@/hooks/use-auth'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Settings, Globe, Bell, Shield, User, Palette, Moon, Sun, Save, Eye, EyeOff } from 'lucide-react'
 import { useState } from 'react'
@@ -13,8 +12,7 @@ import { AuthGuard } from '@/components/auth/auth-guard'
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { user } = useAuth()
-  const [isEditing, setIsEditing] = useState(true)
+  const isEditing = true
   const [showPassword, setShowPassword] = useState(false)
   
   // Settings state

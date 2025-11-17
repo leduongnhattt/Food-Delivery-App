@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useMemo, useRef } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import { CartItem, MenuItem } from '@/types/models'
 import { addItemToCart, updateItemQuantity, clearCart as apiClearCart, fetchCart, fetchCartImmediate } from '@/services/cart.service'
 import { FoodService } from '@/services/food.service'
@@ -30,7 +30,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const isFetchingCart = useRef(false)
 
     // Helper function to safely fetch and update cart data
-    const updateCartFromServer = async (useImmediate = false) => {
+    const updateCartFromServer = useCallback(async (useImmediate = false) => {
         if (isFetchingCart.current) return
         isFetchingCart.current = true
 
@@ -75,7 +75,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         } finally {
             isFetchingCart.current = false
         }
-    }
+    }, [])
 
     // Load from server snapshot (Redis-backed) once
     useEffect(() => {
@@ -103,7 +103,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         }
     }, [])
 
-    const addToCart = (menuItem: MenuItem, quantity: number = 1, specialInstructions?: string) => {
+    const addToCart = useCallback((menuItem: MenuItem, quantity: number = 1, specialInstructions?: string) => {
         // Do not optimistically update; rely on server snapshot (prevents UI if DB fails)
         addItemToCart({ foodId: menuItem.id, quantity, note: specialInstructions })
             .then(async () => {
@@ -111,9 +111,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                 setIsOpen(true)
             })
             .catch(() => { /* keep UI unchanged on failure */ })
-    }
+    }, [updateCartFromServer])
 
-    const updateQuantity = (menuItemId: string, quantity: number) => {
+    const updateQuantity = useCallback((menuItemId: string, quantity: number) => {
         // Immediate optimistic update for instant UI feedback
         setCartItems(prev => prev.map(i => i.menuItem.id === menuItemId ? { ...i, quantity } : i))
 
@@ -127,9 +127,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                 // Revert optimistic update on error
                 updateCartFromServer()
             })
-    }
+    }, [updateCartFromServer])
 
-    const removeFromCart = (menuItemId: string) => {
+    const removeFromCart = useCallback((menuItemId: string) => {
         // Optimistic UI update
         setCartItems(prev => {
             const next = prev.filter(i => i.menuItem.id !== menuItemId)
@@ -141,10 +141,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             .then(async () => {
                 await updateCartFromServer() // Use debounced fetch
             })
-            .catch(() => { })
-    }
+                .catch(() => { })
+    }, [updateCartFromServer])
 
-    const clearCart = () => {
+    const clearCart = useCallback(() => {
         setCartItems([])
         setActiveRestaurantId(null)
         apiClearCart()
@@ -152,10 +152,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                 await updateCartFromServer() // Use debounced fetch
             })
             .catch(() => { })
-    }
+    }, [updateCartFromServer])
 
     // Helper to call on logout to fully resync UI
-    const resetAfterLogout = async () => {
+    const resetAfterLogout = useCallback(async () => {
         try {
             // Clear local auth and notify other tabs
             if (typeof window !== 'undefined') {
@@ -169,11 +169,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setIsOpen(false)
         // Re-fetch cart snapshot as guest
         await updateCartFromServer(true) // Use immediate fetch for logout
-    }
+    }, [updateCartFromServer])
 
     // Count unique items (not total quantities)
-    const getTotalItems = () => cartItems.length
-    const getTotalAmount = () => cartItems.reduce((s, i) => s + calculatePrice(i.menuItem.price, i.quantity), 0)
+    const getTotalItems = useCallback(() => cartItems.length, [cartItems])
+    const getTotalAmount = useCallback(
+        () => cartItems.reduce((s, i) => s + calculatePrice(i.menuItem.price, i.quantity), 0),
+        [cartItems]
+    )
 
     const value: CartContextType = useMemo(() => ({
         cartItems,
@@ -188,7 +191,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         getTotalAmount,
         openCart: () => setIsOpen(true),
         closeCart: () => setIsOpen(false),
-    }), [cartItems, isOpen, activeRestaurantId])
+    }), [
+        cartItems,
+        isOpen,
+        activeRestaurantId,
+        addToCart,
+        updateQuantity,
+        removeFromCart,
+        clearCart,
+        resetAfterLogout,
+        getTotalItems,
+        getTotalAmount
+    ])
 
     return React.createElement(CartContext.Provider, { value }, children)
 }

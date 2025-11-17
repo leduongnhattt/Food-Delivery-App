@@ -6,14 +6,12 @@ import { formatPrice, formatDate } from '@/lib/utils'
 import { Order } from '@/services/order.service'
 import { 
   Clock, 
-  MapPin, 
   Package, 
   Truck, 
   CheckCircle, 
   XCircle, 
   RotateCcw,
   Eye,
-  Phone,
   ChevronDown,
   ChevronRight
 } from 'lucide-react'
@@ -75,7 +73,6 @@ const getStatusConfig = (status: string) => {
 }
 
 export function OrderRow({ order, onViewDetails, onReorder, onTrack, onCancel }: OrderRowProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
   const statusConfig = getStatusConfig(order.status)
   const StatusIcon = statusConfig.icon
 
@@ -241,7 +238,7 @@ export function OrderCard({ order, onViewDetails, onReorder, onTrack, onCancel }
             </div>
             
             <div className="space-y-2">
-              {order.items.slice(0, isExpanded ? order.items.length : 2).map((item, index) => (
+              {order.items.slice(0, isExpanded ? order.items.length : 2).map((item) => (
                 <div key={item.id} className="flex items-center justify-between text-sm">
                   <div className="flex items-center space-x-2">
                     <span className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center text-xs font-medium">

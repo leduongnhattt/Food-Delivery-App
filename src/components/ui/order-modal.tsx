@@ -1,7 +1,6 @@
 'use client'
 import React from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { formatPrice, calculatePrice } from '@/lib/utils'
 import { useCart } from '@/hooks/use-cart'
@@ -41,15 +40,12 @@ export const OrderModal: React.FC<OrderModalProps> = ({
   restaurant
 }) => {
   const router = useRouter()
-  const { addToCart, cartItems } = useCart()
+  const { addToCart } = useCart()
   const { isOpen: isStockPopupOpen, validationResult, showValidation, hideValidation } = useStockValidationPopup()
   const [quantity, setQuantity] = React.useState(1)
   const [isLoading, setIsLoading] = React.useState(false)
 
   // Check if this food is already in cart
-  const existingCartItem = cartItems.find(item => item.menuItem.id === food.foodId)
-  const currentQuantity = existingCartItem?.quantity || 0
-
   const handleAddToCart = async () => {
     setIsLoading(true)
     
@@ -92,13 +88,6 @@ export const OrderModal: React.FC<OrderModalProps> = ({
     router.push(`/restaurants/${food.restaurantId}`)
     onClose()
   }
-
-  const handleContinueToCheckout = () => {
-    router.push('/checkout')
-    onClose()
-  }
-
-  const totalCartItems = cartItems.reduce((total, item) => total + item.quantity, 0)
 
   if (!isOpen) return null
 

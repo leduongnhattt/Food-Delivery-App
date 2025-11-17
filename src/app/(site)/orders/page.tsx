@@ -24,7 +24,7 @@ import { OrderDetailsModal } from '@/components/orders/OrderDetailsModal'
 
 export default function OrdersPage() {
   const router = useRouter()
-  const { orders, loading, error, total, hasMore, loadMore, refreshOrders, filterOrders } = useOrders()
+  const { orders, loading, error, hasMore, loadMore, refreshOrders, filterOrders } = useOrders()
   const [filters, setFilters] = useState<OrderFiltersType>({})
   const { showToast } = useToast()
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -34,15 +34,6 @@ export default function OrdersPage() {
   const [detailLoading, setDetailLoading] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
 
-  const statusClasses = (status?: string) => {
-    const s = (status || '').toLowerCase()
-    if (s.includes('delivered') || s.includes('completed')) return 'bg-green-100 text-green-700 border-green-200'
-    if (s.includes('pending') || s.includes('confirmed') || s.includes('preparing')) return 'bg-amber-100 text-amber-700 border-amber-200'
-    if (s.includes('out_for_delivery')) return 'bg-blue-100 text-blue-700 border-blue-200'
-    if (s.includes('cancel')) return 'bg-red-100 text-red-700 border-red-200'
-    return 'bg-gray-100 text-gray-700 border-gray-200'
-  }
-
   const handleViewDetails = async (orderId: string) => {
     setDetailsOpen(true)
     setDetailLoading(true)
@@ -50,7 +41,8 @@ export default function OrdersPage() {
     try {
       const order = await OrderService.getOrderById(orderId)
       setSelectedOrder(order as Order)
-    } catch (e) {
+    } catch (error) {
+      console.error('Failed to load order details', error)
       showToast('Failed to load order details', 'error', 4000)
       setDetailsOpen(false)
     } finally {
@@ -68,7 +60,8 @@ export default function OrdersPage() {
       }
       showToast('Items added to cart. Redirecting to checkout...', 'success', 2500)
       router.push('/checkout')
-    } catch (e) {
+    } catch (error) {
+      console.error('Failed to reorder items', error)
       showToast('Failed to reorder items', 'error', 4000)
     } finally {
       setSubmitting(false)
@@ -95,7 +88,8 @@ export default function OrdersPage() {
       } else {
         showToast((result as any)?.error || 'Failed to cancel order', 'error', 4000)
       }
-    } catch (e) {
+    } catch (error) {
+      console.error('Failed to cancel order', error)
       showToast('Failed to cancel order', 'error', 4000)
     } finally {
       setSubmitting(false)

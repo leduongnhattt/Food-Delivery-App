@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from 'react'
-import { OrderService, Order, OrderFilters, OrderListResponse } from '@/services/order.service'
+import { OrderService, Order, OrderFilters } from '@/services/order.service'
 import { useAuth } from '@/hooks/use-auth'
 import { useRouter } from 'next/navigation'
 
@@ -11,8 +11,7 @@ export function useOrders() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [total, setTotal] = useState(0)
-    const [page, setPage] = useState(1)
-    const [hasMore, setHasMore] = useState(false)
+    const hasMore = false
     const { isAuthenticated, isLoading: authLoading } = useAuth()
     const router = useRouter()
 
@@ -45,7 +44,7 @@ export function useOrders() {
         }
     }, [])
 
-    const fetchOrders = useCallback(async (filters?: OrderFilters, reset = false) => {
+    const fetchOrders = useCallback(async (filters?: OrderFilters) => {
         try {
             setLoading(true)
             setError(null)
@@ -110,7 +109,7 @@ export function useOrders() {
             if (typeof window !== 'undefined') {
                 localStorage.removeItem('orders_cache')
             }
-            fetchOrders({}, true)
+            fetchOrders({})
         }
     }, [isAuthenticated, fetchOrders])
 
@@ -139,7 +138,7 @@ export function useOrders() {
     useEffect(() => {
         // Only fetch orders if user is authenticated
         if (!authLoading && isAuthenticated) {
-            fetchOrders({}, true)
+            fetchOrders({})
         } else if (!authLoading && !isAuthenticated) {
             setLoading(false)
             setError('Please sign in to view your orders')

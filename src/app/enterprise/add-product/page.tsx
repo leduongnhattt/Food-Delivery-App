@@ -1,5 +1,5 @@
 "use client";
-import { Camera, ChevronDown, X } from "lucide-react";
+import { Camera, ChevronDown } from "lucide-react";
 import { useFoodForm } from "@/hooks/use-food-form";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,6 @@ export default function FoodUploadForm() {
   const {
     // Form data
     formData,
-    selectedImage,
     imagePreview,
     previewOpen,
     setPreviewOpen,

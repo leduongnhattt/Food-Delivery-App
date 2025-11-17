@@ -131,6 +131,7 @@ export async function GET(req: NextRequest) {
       limit
     })
   } catch (error) {
+    console.error('Error fetching customer orders:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

@@ -15,7 +15,8 @@ export async function GET(request: NextRequest) {
         })
 
         return NextResponse.json({ avatar: account?.Avatar || '' })
-    } catch (err) {
+    } catch (error) {
+        console.error('Failed to fetch account', error)
         return NextResponse.json({ error: 'Failed to fetch account' }, { status: 500 })
     }
 }

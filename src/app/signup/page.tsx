@@ -13,6 +13,7 @@ import { useTranslations } from "@/lib/i18n";
 import { useToast } from "@/contexts/toast-context";
 import GoogleAuthButton from "@/components/ui/google-auth-button";
 import { useAuthValidation } from "@/hooks/use-auth-validation";
+import Image from "next/image";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -97,6 +98,7 @@ export default function SignupPage() {
       // Registration successful - show success popup
       setShowSuccessPopup(true);
     } catch (err) {
+      console.error("Failed to sign up:", err);
       showToast(t("signup.errors.unexpectedError"), "error");
       // Clear all fields for unexpected errors
       clearForm();
@@ -123,10 +125,13 @@ export default function SignupPage() {
         <div className="flex flex-col md:flex-row md:min-h-[600px]">
           <div className="md:hidden w-full bg-white flex items-center justify-center py-4">
             <div className="w-20 h-20">
-              <img 
+              <Image 
                 src={`${process.env.BASE_IMAGE_URL}/logo.png`}
                 alt="Hanala Food Logo"
+                width={80}
+                height={80}
                 className="w-full h-full object-contain"
+                priority
               />
             </div>
           </div>
@@ -272,10 +277,13 @@ export default function SignupPage() {
           </div>
 
           <div className="hidden md:flex w-1/2 bg-white items-center justify-center relative p-6">
-            <img 
+            <Image 
               src={`${process.env.BASE_IMAGE_URL}/logo.png`}
               alt="Hanala Food Logo"
+              width={320}
+              height={320}
               className="max-w-full max-h-full object-contain"
+              priority
             />
           </div>
         </div>

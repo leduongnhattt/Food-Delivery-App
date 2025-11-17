@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db'
-import { getAllHashJson, setHashFieldJson, deleteHashField, getKeyJson, setKeyJson, deleteKey, expireKey } from '@/lib/redis'
+import { getAllHashJson, getKeyJson, setKeyJson, deleteKey, expireKey } from '@/lib/redis'
 import { cartByIdKey, cartIdByGuestKey, cartIdByUserKey, cartItemsKey } from '@/lib/cart-keys'
 
 type Actor = { userId?: string; guestToken?: string }

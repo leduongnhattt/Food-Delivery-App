@@ -30,7 +30,6 @@ export interface OrderManagementService {
     formatCurrency(amount: number): string;
     formatDate(dateString: string): string;
     getStatusColor(status: string): string;
-    getStatusIcon(status: string): React.ReactNode;
     filterOrders(orders: Order[], filters: OrderFilters): Order[];
     sortOrders(orders: Order[], sortBy: string): Order[];
 }
@@ -92,11 +91,6 @@ class OrderManagementServiceImpl implements OrderManagementService {
             default:
                 return 'bg-gray-100 text-gray-800 border-gray-200';
         }
-    }
-
-    getStatusIcon(status: string): React.ReactNode {
-        // This will be handled in the component since it needs JSX
-        return null;
     }
 
     filterOrders(orders: Order[], filters: OrderFilters): Order[] {

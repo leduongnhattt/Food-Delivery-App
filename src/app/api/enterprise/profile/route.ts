@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       },
     };
 
-    let select: any = { ...baseSelect };
+    const select: any = { ...baseSelect };
 
     if (include === "menus") {
       select.menus = {

@@ -4,7 +4,7 @@ import { useState, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { loginUser } from "@/lib/client-auth";
 import { setAuthToken } from "@/lib/auth-helpers";
 import { usePasswordToggle } from "@/hooks/use-password-toggle";
@@ -13,10 +13,10 @@ import { useToast } from "@/contexts/toast-context";
 import GoogleAuthButton from "@/components/ui/google-auth-button";
 import { PasswordStrength } from "@/components/ui/password-strength";
 import { useAuthValidation } from "@/hooks/use-auth-validation";
+import Image from "next/image";
 
 function SigninContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { t, isLoading: i18nLoading } = useTranslations();
   const { showToast } = useToast();
   const [username, setUsername] = useState("");
@@ -102,6 +102,7 @@ function SigninContent() {
         router.replace('/');
       }
     } catch (err) {
+      console.error("Failed to sign in:", err);
       showToast(t("signin.errors.unexpectedError"), "error");
       clearForm();
     } finally {
@@ -127,10 +128,13 @@ function SigninContent() {
         <div className="flex flex-col md:flex-row md:min-h-[600px]">
           <div className="md:hidden w-full bg-white flex items-center justify-center py-4">
             <div className="w-20 h-20">
-              <img 
+              <Image 
                 src={`${process.env.BASE_IMAGE_URL}/logo.png`}
                 alt="Hanala Food Logo"
+                width={80}
+                height={80}
                 className="w-full h-full object-contain"
+                priority
               />
             </div>
           </div>
@@ -249,10 +253,13 @@ function SigninContent() {
           </div>
 
           <div className="hidden md:flex w-1/2 bg-white items-center justify-center relative p-6">
-            <img 
+            <Image 
               src={`${process.env.BASE_IMAGE_URL}/logo.png`}
               alt="Hanala Food Logo"
+              width={320}
+              height={320}
               className="max-w-full max-h-full object-contain"
+              priority
             />
           </div>
         </div>

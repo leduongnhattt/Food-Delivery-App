@@ -3,7 +3,8 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { formatDate } from '@/lib/utils'
 import TabsEnterprises from '@/components/admin/TabsEnterprises'
-import { Lock, Unlock, Plus, MapPin, Clock } from 'lucide-react'
+import EnterpriseSearch from '@/components/admin/EnterpriseSearch'
+import { Lock, Unlock, MapPin, Clock } from 'lucide-react'
 import ActionButton from '@/components/admin/ActionButton'
 import AddEnterpriseModal from '@/components/admin/AddEnterpriseModal'
 
@@ -31,9 +32,9 @@ export default async function AdminEnterprisesPage({ searchParams }: { searchPar
 	if (tab === 'locked') where.account = { is: { Status: 'Inactive' } }
 	if (search) {
 		where.OR = [
-			{ EnterpriseName: { contains: search, mode: 'insensitive' } },
-			{ PhoneNumber: { contains: search, mode: 'insensitive' } },
-			{ account: { is: { Email: { contains: search, mode: 'insensitive' } } } },
+			{ EnterpriseName: { contains: search } },
+			{ PhoneNumber: { contains: search } },
+			{ account: { is: { Email: { contains: search } } } },
 		]
 	}
 
@@ -65,11 +66,19 @@ export default async function AdminEnterprisesPage({ searchParams }: { searchPar
 			<div className="rounded-2xl border border-slate-200 bg-white p-4">
 				<div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
 					<TabsEnterprises current={tab} search={search} />
-					<form className="relative w-full md:w-80" action="/admin/enterprises" method="get">
-						<input type="hidden" name="status" value={tab} />
-						<input name="search" defaultValue={search} placeholder="Search name, phone, email" className="pl-3 w-full h-9 rounded-md border border-slate-200" />
-					</form>
+					<EnterpriseSearch currentTab={tab} currentSearch={search} />
 				</div>
+
+				{/* Search Results Info */}
+				{(search || tab !== 'all') && (
+					<div className="mt-4 mb-2 text-sm text-slate-600">
+						{search ? (
+							<span>Found {enterprises.length} enterprise{enterprises.length !== 1 ? 's' : ''} matching "{search}"</span>
+						) : (
+							<span>Showing {enterprises.length} {tab} enterprise{enterprises.length !== 1 ? 's' : ''}</span>
+						)}
+					</div>
+				)}
 
 				<div className="mt-4 overflow-x-auto">
 					<table className="min-w-full text-sm">

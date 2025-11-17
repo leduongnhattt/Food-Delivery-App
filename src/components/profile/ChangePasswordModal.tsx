@@ -24,7 +24,6 @@ interface ChangePasswordModalProps {
   onToggleCurrentVisibility: () => void
   onToggleNewVisibility: () => void
   onToggleConfirmVisibility: () => void
-  onUpdatePassword: () => void
 }
 
 export function ChangePasswordModal({
@@ -43,8 +42,7 @@ export function ChangePasswordModal({
   onConfirmPasswordChange,
   onToggleCurrentVisibility,
   onToggleNewVisibility,
-  onToggleConfirmVisibility,
-  onUpdatePassword
+  onToggleConfirmVisibility
 }: ChangePasswordModalProps) {
   const { showToast } = useToast()
   const { validatePassword, validatePasswordMatch } = useAuthValidation()
@@ -108,6 +106,7 @@ export function ChangePasswordModal({
         showToast(result.error?.message || "Failed to change password", "error")
       }
     } catch (error) {
+      console.error('Failed to change password:', error)
       showToast("An unexpected error occurred", "error")
     } finally {
       setIsLoading(false)

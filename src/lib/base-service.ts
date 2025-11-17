@@ -1,15 +1,12 @@
 // Base service class with common functionality
 
 import {
-    getAccessToken,
-    buildHeaders,
     buildQueryString,
     requestJson,
     handleApiError,
     createEmptyPaginatedResponse,
     type ApiResponse,
-    type PaginatedResponse,
-    type SearchFilters
+    type PaginatedResponse
 } from './http-client'
 
 export abstract class BaseService {

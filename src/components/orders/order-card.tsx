@@ -1,6 +1,6 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { formatPrice, formatDate } from '@/lib/utils'
@@ -13,8 +13,7 @@ import {
   CheckCircle, 
   XCircle, 
   RotateCcw,
-  Eye,
-  Phone
+  Eye
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -134,7 +133,7 @@ export function OrderCard({ order, onViewDetails, onReorder, onTrack, onCancel }
           </div>
           
           <div className="space-y-1">
-            {order.items.slice(0, isExpanded ? order.items.length : 1).map((item, index) => (
+            {order.items.slice(0, isExpanded ? order.items.length : 1).map((item) => (
               <div key={item.id} className="flex items-center justify-between text-xs">
                 <div className="flex items-center space-x-2">
                   <span className="w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center text-xs font-medium">

@@ -2,13 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { apiClient } from "@/services/api";
-import { useEnterpriseUpload } from "@/hooks/use-enterprise-upload";
 import { useToast } from "@/contexts/toast-context";
 import { useAccountHeader } from "@/hooks/use-account-header";
 import { buildAuthHeader } from "@/lib/auth-helpers";
-import { User, Camera, Lock, Save, Upload } from "lucide-react";
+import { User, Camera, Lock, Save } from "lucide-react";
 import Image from "next/image";
 
 export default function EnterpriseProfile() {
@@ -30,7 +29,6 @@ export default function EnterpriseProfile() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-  const { uploadImage, isUploading } = useEnterpriseUpload();
   const { showToast } = useToast();
   const accountHeader = useAccountHeader();
 
@@ -48,36 +46,37 @@ export default function EnterpriseProfile() {
   };
 
   // Get current profile data
-  useEffect(() => {
-    async function fetchProfile() {
-      try {
-        const response = await apiClient.get<{ enterprise: any }>(
-          "/enterprise/profile"
-        ) as any;
+  const fetchProfile = useCallback(async () => {
+    try {
+      const response = await apiClient.get<{ enterprise: any }>(
+        "/enterprise/profile"
+      ) as any;
 
-        if (response.success === false) {
-          showToast(response.error || "Failed to load profile data", "error");
-          return;
-        }
-
-        const { enterprise } = response;
-        setEnterpriseName(enterprise.EnterpriseName || "");
-        setEmail(enterprise.account.Email || "");
-        setAddress(enterprise.Address || "");
-        setPhoneNumber(enterprise.PhoneNumber || "");
-        setDescription(enterprise.Description || "");
-        setOpenHours(enterprise.OpenHours || "");
-        setCloseHours(enterprise.CloseHours || "");
-        // Use database avatar as primary source, accountHeader as fallback
-        const avatarUrl = enterprise.account.Avatar || accountHeader.avatar || "";
-        setAvatar(avatarUrl);
-      } catch (error) {
-        console.error("Error fetching profile:", error);
-        showToast("Failed to load profile data", "error");
+      if (response.success === false) {
+        showToast(response.error || "Failed to load profile data", "error");
+        return;
       }
+
+      const { enterprise } = response;
+      setEnterpriseName(enterprise.EnterpriseName || "");
+      setEmail(enterprise.account.Email || "");
+      setAddress(enterprise.Address || "");
+      setPhoneNumber(enterprise.PhoneNumber || "");
+      setDescription(enterprise.Description || "");
+      setOpenHours(enterprise.OpenHours || "");
+      setCloseHours(enterprise.CloseHours || "");
+      // Use database avatar as primary source, accountHeader as fallback
+      const avatarUrl = enterprise.account.Avatar || accountHeader.avatar || "";
+      setAvatar(avatarUrl);
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      showToast("Failed to load profile data", "error");
     }
+  }, [accountHeader.avatar, showToast]);
+
+  useEffect(() => {
     fetchProfile();
-  }, []);
+  }, [fetchProfile]);
 
   // Sync avatar with accountHeader like navbar
   useEffect(() => {

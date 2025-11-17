@@ -1,5 +1,3 @@
-import { useState, useEffect } from 'react';
-
 interface CardSizeConfig {
     mobile: string;
     small: string;
@@ -16,20 +14,20 @@ interface ScrollAmountConfig {
 }
 
 export const useResponsiveCardSizes = () => {
-    const [cardSizes, setCardSizes] = useState<CardSizeConfig>({
+    const cardSizes: CardSizeConfig = {
         mobile: 'w-[240px]',
         small: 'xs:w-[260px]',
         medium: 'sm:w-[280px]',
         large: 'md:w-[300px]',
         xl: 'lg:w-[320px]'
-    });
+    };
 
-    const [scrollAmounts, setScrollAmounts] = useState<ScrollAmountConfig>({
+    const scrollAmounts: ScrollAmountConfig = {
         mobile: 260,
         tablet: 300,
         desktop: 320,
         large: 340
-    });
+    };
 
     const getCurrentScrollAmount = (): number => {
         if (typeof window === 'undefined') return scrollAmounts.large;

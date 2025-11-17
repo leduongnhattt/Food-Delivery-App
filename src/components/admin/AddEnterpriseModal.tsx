@@ -40,8 +40,12 @@ export default function AddEnterpriseModal({ triggerClassName = '' }: { triggerC
 
   const showError = (key: keyof typeof form) => (submitAttempted || touched[key]) && errors[key]
 
-  useEffect(() => { onChange('openHours', openTime.value) }, [openTime.value])
-  useEffect(() => { onChange('closeHours', closeTime.value) }, [closeTime.value])
+  useEffect(() => {
+    setForm(prev => ({ ...prev, openHours: openTime.value }))
+  }, [openTime.value])
+  useEffect(() => {
+    setForm(prev => ({ ...prev, closeHours: closeTime.value }))
+  }, [closeTime.value])
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {

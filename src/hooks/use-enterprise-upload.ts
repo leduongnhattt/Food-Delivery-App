@@ -7,18 +7,12 @@ interface UploadResponse {
   filename: string;
 }
 
-interface DeleteResponse {
-  message: string;
-  deletedUrl: string;
-}
-
 interface ErrorResponse {
   error: string;
 }
 
 export const useEnterpriseUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -83,7 +77,8 @@ export const useEnterpriseUpload = () => {
     }
   };
 
-  const deleteImage = async (_imageUrl: string): Promise<boolean> => {
+  const deleteImage = async (imageUrlToDelete?: string): Promise<boolean> => {
+    void imageUrlToDelete
     // Images are stored on Cloudinary; we keep DB as source of truth and do not delete remote asset here.
     // Always succeed to avoid blocking deletion of food records.
     return true;
@@ -98,7 +93,6 @@ export const useEnterpriseUpload = () => {
     uploadImage,
     deleteImage,
     isUploading,
-    isDeleting,
     uploadError,
     deleteError,
     resetErrors,

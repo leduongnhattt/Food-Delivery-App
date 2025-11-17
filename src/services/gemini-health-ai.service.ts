@@ -139,7 +139,7 @@ export class GeminiHealthAI {
                 const prompt = this.createHealthAnalysisPrompt(profile);
                 const result = await model.generateContent(prompt);
                 const text = result.response.text();
-                return this.parseGeminiResponse(text, profile);
+                return this.parseGeminiResponse(text);
             } catch (err: any) {
                 console.log(`❌ Model ${modelName} failed:`, err.message);
                 continue;
@@ -476,7 +476,7 @@ Return only this JSON.`;
         return risks.length > 0 ? risks : ['Nguy cơ sức khỏe thấp với BMI hiện tại'];
     }
 
-    private static parseGeminiResponse(text: string, profile: HealthProfile): GeminiHealthAnalysis {
+    private static parseGeminiResponse(text: string): GeminiHealthAnalysis {
         try {
             const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
             return JSON.parse(cleaned);

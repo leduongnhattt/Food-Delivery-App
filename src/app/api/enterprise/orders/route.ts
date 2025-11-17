@@ -3,7 +3,6 @@ import { getAuthenticatedUser } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/db";
 import {
     getCachedOrders,
-    setCachedOrders,
     refreshOrdersCache,
     CachedOrder
 } from "@/lib/orders-cache";

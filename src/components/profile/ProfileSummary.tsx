@@ -19,8 +19,6 @@ export function ProfileSummary({ fullName, email, isEditing, onEdit, avatarUrl: 
   const [avatarUrl, setAvatarUrl] = useState<string | null>(avatarFromProps || null)
   const [previewOpen, setPreviewOpen] = useState(false)
 
-  // Keep local preview in sync when profile page provides avatar from DB
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { setAvatarUrl(avatarFromProps || null) }, [avatarFromProps])
 
   const onPickFile = () => fileInputRef.current?.click()

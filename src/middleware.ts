@@ -100,6 +100,7 @@ export function middleware(request: NextRequest) {
                     return NextResponse.redirect(new URL('/', request.url))
                 }
             } catch (error) {
+                console.error('Failed to verify refresh token in middleware:', error)
                 // Token is invalid, clear the cookie and allow access to auth pages
                 const response = NextResponse.next()
                 response.cookies.delete('refresh_token')

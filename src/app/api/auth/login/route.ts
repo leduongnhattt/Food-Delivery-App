@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { loginSchema } from '@/schemas/auth'
 import { findAccountByUsername, verifyPassword, issueTokens } from '@/services/auth.service'
 import { prisma } from '@/lib/db'
 import { withRateLimit, getClientIp } from '@/lib/rate-limit'

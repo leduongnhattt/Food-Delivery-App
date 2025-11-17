@@ -1,10 +1,9 @@
 'use client'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { CheckCircle, Clock, MapPin, Phone, Home } from 'lucide-react'
-import { formatPrice } from '@/lib/utils'
 import { buildHeaders } from '@/lib/http-client'
 
 export default function OrderSuccessPage() {
@@ -18,7 +17,7 @@ export default function OrderSuccessPage() {
   const address = searchParams.get('address')
 
   // Function to fetch order details from API
-  const fetchOrderDetails = async (orderId: string) => {
+  const fetchOrderDetails = useCallback(async (orderId: string) => {
     try {
       const response = await fetch(`/api/orders/track?orderId=${orderId}`, {
         headers: buildHeaders(),
@@ -49,13 +48,13 @@ export default function OrderSuccessPage() {
       deliveryAddress: address,
       phone: phone
     }
-  }
+  }, [address, paymentMethod, phone])
 
   useEffect(() => {
     if (orderId) {
       fetchOrderDetails(orderId).then(setOrderDetails)
     }
-  }, [orderId, paymentMethod, phone, address])
+  }, [fetchOrderDetails, orderId])
 
   if (!orderId) {
     return (

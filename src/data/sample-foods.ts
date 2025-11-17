@@ -1,5 +1,5 @@
 // Sample food data for development and testing
-import { Food, Menu } from '@/types/models';
+import { Food } from '@/types/models';
 
 export const SAMPLE_FOODS: Food[] = [
     {

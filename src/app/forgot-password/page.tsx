@@ -11,7 +11,7 @@ import { PasswordService } from "@/services/password.service";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
-  const { t, isLoading: i18nLoading } = useTranslations();
+  const { isLoading: i18nLoading } = useTranslations();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -46,6 +46,7 @@ export default function ForgotPasswordPage() {
       router.push(`/forgot-password/verify-code?email=${encodeURIComponent(email)}`);
       
     } catch (err) {
+      console.error("Failed to send reset code:", err);
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);

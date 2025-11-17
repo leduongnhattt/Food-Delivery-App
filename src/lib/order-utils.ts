@@ -1,6 +1,5 @@
 import {
     Clock,
-    MapPin,
     Package,
     Truck,
     CheckCircle,

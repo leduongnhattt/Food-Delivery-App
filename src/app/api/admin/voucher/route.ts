@@ -28,7 +28,8 @@ export async function POST(request: NextRequest) {
         // Creating as Approved should reflect immediately for customers
         await invalidateApprovedVouchersCache()
         return NextResponse.json({ success: true, voucher })
-    } catch (e) {
+    } catch (error) {
+        console.error('Failed to create voucher', error)
         return NextResponse.json({ error: 'Failed to create voucher' }, { status: 500 })
     }
 }

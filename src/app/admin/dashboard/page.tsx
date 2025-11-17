@@ -82,8 +82,6 @@ export default async function AdminDashboardPage({ searchParams }: { searchParam
     const idx = indexByDate.get(key)
     if (idx !== undefined) series[idx].value += Number(o.TotalAmount)
   }
-  const maxValue = Math.max(1, ...series.map(s => s.value))
-
   return (
     <div className="space-y-6">
       {/* Header */}

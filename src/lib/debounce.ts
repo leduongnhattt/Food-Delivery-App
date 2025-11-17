@@ -22,7 +22,6 @@ export function createDebouncedApiCall<T extends (...args: any[]) => Promise<any
     delay: number = 300
 ): T {
     let timeoutId: NodeJS.Timeout | null = null
-    let currentPromise: Promise<any> | null = null
 
     return ((...args: Parameters<T>) => {
         return new Promise((resolve, reject) => {

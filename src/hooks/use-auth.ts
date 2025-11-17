@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useCart } from '@/hooks/use-cart'
 import { useRouter } from 'next/navigation';
 import {
-    getAuthToken,
     getCurrentUser,
     logoutUser,
     isAuthenticated,

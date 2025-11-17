@@ -1,6 +1,6 @@
 import { Food } from '@/types/models'
 import { BaseService } from '@/lib/base-service'
-import { buildQueryString, requestJson, createEmptyPaginatedResponse, type PaginatedResponse } from '@/lib/http-client'
+import { buildQueryString, requestJson } from '@/lib/http-client'
 import { createDebouncedApiCall } from '@/lib/debounce'
 
 export interface PopularFoodsResponse {

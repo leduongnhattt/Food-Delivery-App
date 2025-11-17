@@ -1,14 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/contexts/toast-context";
 import { apiClient } from "@/services/api";
 import { 
   Star,
   MessageSquare,
   ThumbsUp,
-  ThumbsDown,
-  Filter,
   Search,
   RefreshCw
 } from "lucide-react";
@@ -29,11 +27,7 @@ export default function EnterpriseReviewsPage() {
   const [ratingFilter, setRatingFilter] = useState("all");
   const { showToast } = useToast();
 
-  useEffect(() => {
-    fetchReviews();
-  }, []);
-
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
       setLoading(true);
       const response = await apiClient.get("/enterprise/reviews") as any;
@@ -47,7 +41,11 @@ export default function EnterpriseReviewsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showToast]);
+
+  useEffect(() => {
+    fetchReviews();
+  }, [fetchReviews]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('vi-VN', {

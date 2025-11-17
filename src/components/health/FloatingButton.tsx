@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useRef, useEffect } from 'react'
+import Image from 'next/image'
 import { BASE_IMAGE_URL } from '@/lib/constants'
 
 interface FloatingButtonProps {
@@ -233,11 +234,14 @@ export default function FloatingButton({ className = '', onOpen }: FloatingButto
           transition: isDragging ? 'none' : 'all 0.2s ease-out'
         }}
       >
-        <img 
+        <Image 
           src={`${BASE_IMAGE_URL}/logo.png`}
           alt="Health Assistant"
+          width={40}
+          height={40}
           className="w-10 h-10 object-contain pointer-events-none"
           style={{ willChange: 'transform' }}
+          priority
         />
       </div>
       
