@@ -1,10 +1,17 @@
 import Stripe from 'stripe'
 
-// Initialize Stripe with secret key
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2025-08-27.basil',
-    typescript: true,
-})
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY
+
+if (!stripeSecretKey) {
+    console.warn('[stripe] STRIPE_SECRET_KEY is not set; Stripe features will be disabled')
+}
+
+export const stripe = stripeSecretKey
+    ? new Stripe(stripeSecretKey, {
+        apiVersion: '2025-08-27.basil',
+        typescript: true,
+    })
+    : null
 
 // Get publishable key for frontend
 export const getStripePublishableKey = () => {
@@ -20,5 +27,5 @@ export const getStripePublishableKey = () => {
 export const STRIPE_CONFIG = {
     currency: 'usd', // US Dollar
     paymentMethods: ['card'], // Support card payments
-    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
 }

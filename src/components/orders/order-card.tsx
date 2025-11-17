@@ -109,7 +109,7 @@ export function OrderCard({ order, onViewDetails, onReorder, onTrack, onCancel }
           <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-1">
               <Clock className="w-3 h-3" />
-              <span>{formatDate(new Date(order.createdAt))}</span>
+              <span>{formatDate(order.createdAt)}</span>
             </div>
             <div className="flex items-center space-x-1">
               <MapPin className="w-3 h-3" />

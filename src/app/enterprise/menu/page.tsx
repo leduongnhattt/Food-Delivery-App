@@ -1,10 +1,14 @@
 "use client";
-import { apiClient } from "@/services/api";
+import { apiClient, type ApiResponse } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Menu, MenuList } from "./MenuList";
 import { useEffect, useState } from "react";
 import AddNewMenuPopup from "./AddNewMenuPopup";
 import EditMenuPopup from "./EditMenuPopup";
+
+const isApiError = (response: unknown): response is ApiResponse => {
+  return !!response && typeof response === "object" && "success" in response && (response as ApiResponse).success === false;
+};
 
 export default function AdminDashboardPage() {
   const [entepriseData, setEnterpriseData] = useState<any>(null);
@@ -15,7 +19,12 @@ export default function AdminDashboardPage() {
     try {
       const { enterprise } = await apiClient.get<{ enterprise: any }>(
         "/enterprise/profile?include=menus"
-      );
+      ).then((res) => {
+        if (isApiError(res)) {
+          throw new Error(res.error || "Failed to fetch enterprise data");
+        }
+        return res;
+      });
       setEnterpriseData(enterprise);
     } catch (error) {
       console.error("Error fetching enterprise data:", error);

@@ -24,6 +24,7 @@ interface ChangePasswordModalProps {
   onToggleCurrentVisibility: () => void
   onToggleNewVisibility: () => void
   onToggleConfirmVisibility: () => void
+  onUpdatePassword?: () => Promise<void>
 }
 
 export function ChangePasswordModal({
@@ -42,7 +43,8 @@ export function ChangePasswordModal({
   onConfirmPasswordChange,
   onToggleCurrentVisibility,
   onToggleNewVisibility,
-  onToggleConfirmVisibility
+  onToggleConfirmVisibility,
+  onUpdatePassword
 }: ChangePasswordModalProps) {
   const { showToast } = useToast()
   const { validatePassword, validatePasswordMatch } = useAuthValidation()
@@ -91,7 +93,12 @@ export function ChangePasswordModal({
     // If all validations pass, call API to change password
     try {
       setIsLoading(true)
-      
+
+      if (onUpdatePassword) {
+        await onUpdatePassword()
+        return
+      }
+
       const result = await changePassword({
         currentPassword,
         newPassword

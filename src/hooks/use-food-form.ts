@@ -132,6 +132,7 @@ export const useFoodForm = () => {
                 IsAvailable: formData.isAvailable !== false,
                 ImageURL: imageURL || undefined,
                 FoodCategoryID: formData.categoryId,
+                Stock: 0,
             };
 
             // 3. Call API

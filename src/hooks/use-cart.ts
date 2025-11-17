@@ -83,7 +83,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             await updateCartFromServer(true) // Use immediate fetch for initial load
             isMounted.current = true
         })()
-    }, [])
+    }, [updateCartFromServer])
 
     // Remove localStorage persistence; server snapshot is the source of truth
 

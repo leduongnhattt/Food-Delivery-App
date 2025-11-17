@@ -84,7 +84,7 @@ export async function refreshAccessToken(): Promise<string | null> {
             return data.accessToken as string;
         }
         return null;
-    } catch (_err) {
+    } catch {
         return null;
     }
 }
@@ -256,7 +256,7 @@ export function getAuthenticatedUser(request: NextRequest): AuthResult {
                 provider: decoded.provider || 'email'
             }
         };
-    } catch (error) {
+    } catch {
         return {
             success: false,
             error: 'Authentication failed'

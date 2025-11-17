@@ -1,10 +1,14 @@
 'use client'
-import { apiClient } from "@/services/api"
+import { apiClient, type ApiResponse } from "@/services/api"
 import { useEffect, useState } from "react"
 import FoodList, { Food } from "./FoodList";
 import { useEnterpriseUpload } from "@/hooks/use-enterprise-upload";
 import EditFoodPopup from "./EditFoodPopup";
 import { useToast } from "@/contexts/toast-context";
+
+const isApiError = (response: unknown): response is ApiResponse => {
+  return !!response && typeof response === "object" && "success" in response && (response as ApiResponse).success === false;
+};
 
 export default function AdminDashboardPage() {
   const [entepriseData, setEnterpriseData] = useState<any>(null);
@@ -13,7 +17,7 @@ export default function AdminDashboardPage() {
   const [editingFood, setEditingFood] = useState<Food | null>(null);
   const [isEditPopupOpen, setIsEditPopupOpen] = useState(false);
   
-  const { deleteImage, isDeleting, deleteError } = useEnterpriseUpload();
+  const { deleteImage, deleteError } = useEnterpriseUpload();
   const { showToast } = useToast();
 
   async function fetchEnterpriseData() {
@@ -22,14 +26,14 @@ export default function AdminDashboardPage() {
       setError(null);
       const response = await apiClient.get<{ enterprise: any }>(
         "/enterprise/profile?include=foods"
-      ) as any;
-      
-      if (response.success === false) {
+      );
+
+      if (isApiError(response)) {
         console.error("Error fetching enterprise data:", response.error);
         setError("Failed to fetch enterprise data. Please try again.");
         return;
       }
-      
+
       const { enterprise } = response;
       setEnterpriseData(enterprise);
     } catch (error) {
@@ -109,18 +113,6 @@ export default function AdminDashboardPage() {
     <div>
       <h1 className="text-2xl font-bold mb-4">Product</h1>
       
-      {/* Loading overlay when deleting image */}
-      {isDeleting && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg">
-            <div className="flex items-center space-x-3">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-              <span>Deleting image...</span>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Delete error display */}
       {deleteError && (
         <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-4">

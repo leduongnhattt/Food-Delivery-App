@@ -1,4 +1,4 @@
-import { apiClient } from './api'
+import { apiClient, type ApiResponse } from './api'
 import { Restaurant } from '@/types/models'
 import { BaseService } from '@/lib/base-service'
 import { buildQueryString, requestJson } from '@/lib/http-client'
@@ -99,34 +99,46 @@ export class RestaurantService extends BaseService {
 
     // Create new restaurant (admin only)
     static async createRestaurant(data: Omit<Restaurant, 'id' | 'createdAt' | 'updatedAt'>): Promise<Restaurant> {
-        return apiClient.post<Restaurant>('/restaurants', data)
+        const response = await apiClient.post<Restaurant>('/restaurants', data)
+        RestaurantService.ensureSuccess<Restaurant>(response, 'Failed to create restaurant')
+        return response
     }
 
     // Update restaurant (admin only)
     static async updateRestaurant(id: string, data: Partial<Restaurant>): Promise<Restaurant> {
-        return apiClient.put<Restaurant>(`/restaurants/${id}`, data)
+        const response = await apiClient.put<Restaurant>(`/restaurants/${id}`, data)
+        RestaurantService.ensureSuccess<Restaurant>(response, 'Failed to update restaurant')
+        return response
     }
 
     // Delete restaurant (admin only)
     static async deleteRestaurant(id: string): Promise<{ message: string }> {
-        return apiClient.delete<{ message: string }>(`/restaurants/${id}`)
+        const response = await apiClient.delete<{ message: string }>(`/restaurants/${id}`)
+        RestaurantService.ensureSuccess<{ message: string }>(response, 'Failed to delete restaurant')
+        return response
     }
 
     // Get restaurant categories
     static async getCategories(restaurantId?: string): Promise<Array<{ category: string; count: number }>> {
         const params = restaurantId ? { restaurantId } : undefined
-        return apiClient.get<Array<{ category: string; count: number }>>('/categories', params)
+        const response = await apiClient.get<Array<{ category: string; count: number }>>('/categories', params)
+        RestaurantService.ensureSuccess<Array<{ category: string; count: number }>>(response, 'Failed to fetch categories')
+        return response
     }
 
     // Get popular restaurants
     static async getPopularRestaurants(limit: number = 6): Promise<Restaurant[]> {
-        return apiClient.get<Restaurant[]>('/restaurants', { limit, minRating: 4.0 })
+        const response = await apiClient.get<Restaurant[]>('/restaurants', { limit, minRating: 4.0 })
+        RestaurantService.ensureSuccess<Restaurant[]>(response, 'Failed to fetch popular restaurants')
+        return response
     }
 
     // Get nearby restaurants (mock implementation)
     static async getNearbyRestaurants(lat: number, lng: number): Promise<Restaurant[]> {
         // In a real app, you'd use actual geolocation API
-        return apiClient.get<Restaurant[]>('/restaurants', { limit: 10, lat, lng })
+        const response = await apiClient.get<Restaurant[]>('/restaurants', { limit: 10, lat, lng })
+        RestaurantService.ensureSuccess<Restaurant[]>(response, 'Failed to fetch nearby restaurants')
+        return response
     }
 
     // Debounced version to prevent multiple calls
@@ -134,4 +146,14 @@ export class RestaurantService extends BaseService {
         RestaurantService.getRestaurants,
         200
     )
+
+    private static isApiError(response: unknown): response is ApiResponse {
+        return !!response && typeof response === 'object' && 'success' in response && (response as ApiResponse).success === false
+    }
+
+    private static ensureSuccess<T>(response: T | ApiResponse, errorMessage: string): asserts response is T {
+        if (RestaurantService.isApiError(response)) {
+            throw new Error(response.error || errorMessage)
+        }
+    }
 }

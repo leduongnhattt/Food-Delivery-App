@@ -6,6 +6,14 @@ import Stripe from 'stripe'
 const prisma = new PrismaClient()
 
 export async function POST(request: NextRequest) {
+    if (!stripe || !STRIPE_CONFIG.webhookSecret) {
+        console.error('Stripe webhook is not configured. Ensure STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET are set.')
+        return NextResponse.json(
+            { error: 'Stripe is not configured' },
+            { status: 500 }
+        )
+    }
+
     const body = await request.text()
     const signature = request.headers.get('stripe-signature')!
 

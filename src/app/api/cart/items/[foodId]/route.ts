@@ -19,10 +19,10 @@ function getActor(req: NextRequest): { userId?: string, guestToken?: string } {
     return { userId, guestToken }
 }
 
-export async function PATCH(req: NextRequest, ctx: { params: { foodId: string } }) {
+export async function PATCH(req: NextRequest, ctx: { params: Promise<{ foodId: string }> }) {
     try {
         const actor = getActor(req)
-        const { foodId } = ctx.params
+        const { foodId } = await ctx.params
         const body = await req.json()
         const qty: number = Number(body.quantity)
         if (!foodId || Number.isNaN(qty)) return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })

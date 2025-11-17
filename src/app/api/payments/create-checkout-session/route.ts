@@ -6,6 +6,11 @@ import { withRateLimit, getClientIp } from '@/lib/rate-limit'
 
 export const POST = withRateLimit(async (request: NextRequest) => {
     try {
+        if (!stripe) {
+            console.error('Stripe is not configured. Cannot create checkout session.')
+            return NextResponse.json({ error: 'Stripe is not configured' }, { status: 500 })
+        }
+
         // Get authenticated user
         const auth = getAuthenticatedUser(request)
         if (!auth.success) {
