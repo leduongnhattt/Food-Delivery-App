@@ -43,7 +43,8 @@ export function ChangePasswordModal({
   onConfirmPasswordChange,
   onToggleCurrentVisibility,
   onToggleNewVisibility,
-  onToggleConfirmVisibility
+  onToggleConfirmVisibility,
+  onUpdatePassword
 }: ChangePasswordModalProps) {
   const { showToast } = useToast()
   const { validatePassword, validatePasswordMatch } = useAuthValidation()
