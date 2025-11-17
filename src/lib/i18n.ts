@@ -19,9 +19,8 @@ const DEFAULT_LOCALE: Locale = 'en';
 export const getStoredLocale = (): Locale => {
     if (typeof window === 'undefined') return DEFAULT_LOCALE;
 
-    const stored = localStorage.getItem('locale') as Locale;
-    // Force return English for now, ignore localStorage
-    return DEFAULT_LOCALE;
+    const stored = localStorage.getItem('locale') as Locale | null;
+    return stored || DEFAULT_LOCALE;
 };
 
 // Set locale to localStorage
@@ -66,9 +65,19 @@ const loadTranslations = async (locale: Locale): Promise<Translations> => {
 
 // Get nested value from object using dot notation
 const getNestedValue = (obj: any, path: string): string => {
-    return path.split('.').reduce((current, key) => {
-        return current && current[key] !== undefined ? current[key] : path;
-    }, obj);
+    const keys = path.split('.');
+    let current = obj;
+
+    for (const key of keys) {
+        if (current && typeof current === 'object' && key in current) {
+            current = current[key];
+        } else {
+            // If key not found, return the original path
+            return path;
+        }
+    }
+
+    return typeof current === 'string' ? current : path;
 };
 
 // Translation function
@@ -78,10 +87,15 @@ export const t = (key: string, locale?: Locale): string => {
 
     if (!translations || Object.keys(translations).length === 0) {
         // If translations not loaded yet, return the key
+        console.log('Translations not loaded for locale:', currentLocale);
         return key;
     }
 
     const result = getNestedValue(translations, key);
+    if (result === key) {
+        console.log('Translation not found for key:', key, 'in locale:', currentLocale);
+        console.log('Available keys:', Object.keys(translations));
+    }
     return result;
 };
 

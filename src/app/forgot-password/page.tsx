@@ -7,10 +7,11 @@ import { ErrorDisplay } from "@/components/ui/error-display";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "@/lib/i18n";
+import { PasswordService } from "@/services/password.service";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
-  const { t, isLoading: i18nLoading } = useTranslations();
+  const { isLoading: i18nLoading } = useTranslations();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -23,7 +24,6 @@ export default function ForgotPasswordPage() {
   };
 
   const handleSubmit = async () => {
-    // Reset states
     setError("");
     
     // Validate email
@@ -35,18 +35,10 @@ export default function ForgotPasswordPage() {
     try {
       setIsLoading(true);
       
-      const response = await fetch("/api/auth/forgot-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
+      const result = await PasswordService.sendResetCode(email);
       
-      const data = await response.json();
-      
-      if (!response.ok) {
-        setError(data.error || "Failed to send reset code");
+      if (!result.success) {
+        setError(result.error || "Failed to send reset code");
         return;
       }
       
@@ -54,6 +46,7 @@ export default function ForgotPasswordPage() {
       router.push(`/forgot-password/verify-code?email=${encodeURIComponent(email)}`);
       
     } catch (err) {
+      console.error("Failed to send reset code:", err);
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);

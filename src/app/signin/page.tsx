@@ -3,27 +3,32 @@
 import { useState, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ErrorDisplay } from "@/components/ui/error-display";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { loginUser } from "@/lib/client-auth";
 import { setAuthToken } from "@/lib/auth-helpers";
 import { usePasswordToggle } from "@/hooks/use-password-toggle";
 import { useTranslations } from "@/lib/i18n";
+import { useToast } from "@/contexts/toast-context";
 import GoogleAuthButton from "@/components/ui/google-auth-button";
+import { PasswordStrength } from "@/components/ui/password-strength";
+import { useAuthValidation } from "@/hooks/use-auth-validation";
+import Image from "next/image";
 
 function SigninContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { t, isLoading: i18nLoading } = useTranslations();
+  const { showToast } = useToast();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   // const [successMessage, setSuccessMessage] = useState(""); // REMOVED
   const [isLoading, setIsLoading] = useState(false);
   
   // Password toggle hook
   const passwordToggle = usePasswordToggle();
+  
+  // Auth validation hook
+  const { validateSigninForm } = useAuthValidation();
 
   // Check for password reset success message - REMOVED
   // useEffect(() => {
@@ -35,11 +40,10 @@ function SigninContent() {
   //   }
   // }, [searchParams, t]);
 
-  // Clear error when user starts typing
-  const handleFieldFocus = () => {
-    if (error) {
-      setError("");
-    }
+  // Clear form when needed
+  const clearForm = () => {
+    setUsername("");
+    setPassword("");
   };
 
   // Check for registration success message - no longer needed since we use popup
@@ -53,8 +57,15 @@ function SigninContent() {
   // }, [searchParams, t]);
 
   const handleSubmit = async () => {
-    // Reset error state
-    setError("");
+    // Don't proceed if translations are still loading
+    if (i18nLoading) {
+      return;
+    }
+    
+    // Validate form fields using shared validation logic
+    if (!validateSigninForm(username, password, setUsername, setPassword)) {
+      return;
+    }
     
     try {
       setIsLoading(true);
@@ -65,29 +76,35 @@ function SigninContent() {
       });
       
       if (!result.success) {
-        setError(result.error?.message || t("signin.errors.loginFailed"));
+        if (result.error?.status === 403 || result.error?.code === 'ACCOUNT_LOCKED') {
+          showToast(result.error.message, "error");
+          return;
+        }
+        showToast(result.error?.message || t("signin.errors.loginFailed"), "error");
         // Clear password field for invalid credentials
         setPassword("");
         return;
       }
       
-      // Check if user is customer (only customers can use this login)
-      if (result.data?.user?.role !== 'customer') {
-        setError("Access denied. This login is for customers only. Please use the appropriate portal.");
-        setUsername("");
-        setPassword("");
-        return;
+      // Store only the access token and cache user id for refresh
+      setAuthToken(result.data.accessToken);
+      if (typeof window !== 'undefined' && result.data?.user?.id) {
+        localStorage.setItem('user_id', result.data.user.id)
       }
       
-      // Store only the access token
-      setAuthToken(result.data.accessToken);
-      
-      // Login successful - redirect to home page
-      router.replace("/");
+      // Role-based redirect for single sign-in
+      const role = (result.data?.user?.role || '').toString().toLowerCase();
+      if (role === 'enterprise') {
+        router.replace('/enterprise/dashboard');
+      } else if (role === 'admin') {
+        router.replace('/admin/dashboard');
+      } else {
+        router.replace('/');
+      }
     } catch (err) {
-      setError(t("signin.errors.unexpectedError"));
-      setUsername("");
-      setPassword("");
+      console.error("Failed to sign in:", err);
+      showToast(t("signin.errors.unexpectedError"), "error");
+      clearForm();
     } finally {
       setIsLoading(false);
     }
@@ -111,10 +128,13 @@ function SigninContent() {
         <div className="flex flex-col md:flex-row md:min-h-[600px]">
           <div className="md:hidden w-full bg-white flex items-center justify-center py-4">
             <div className="w-20 h-20">
-              <img 
+              <Image 
                 src={`${process.env.BASE_IMAGE_URL}/logo.png`}
                 alt="Hanala Food Logo"
+                width={80}
+                height={80}
                 className="w-full h-full object-contain"
+                priority
               />
             </div>
           </div>
@@ -136,7 +156,7 @@ function SigninContent() {
                     placeholder={t("common.usernamePlaceholder")}
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    onFocus={handleFieldFocus}
+                    maxLength={50}
                     className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 transition-all text-sm sm:text-base shadow-sm"
                     required
                   />
@@ -152,7 +172,6 @@ function SigninContent() {
                       placeholder={t("common.passwordPlaceholder")}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      onFocus={handleFieldFocus}
                       className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 transition-all pr-10 sm:pr-12 text-sm sm:text-base shadow-sm"
                       required
                     />
@@ -173,6 +192,8 @@ function SigninContent() {
                       )}
                     </button>
                   </div>
+                  
+                  <PasswordStrength password={password} className="mt-3" />
                 </div>
 
                 <div className="text-right">
@@ -184,13 +205,6 @@ function SigninContent() {
                   </Link>
                 </div>
 
-                {/* Error message */}
-                <ErrorDisplay 
-                  error={error} 
-                  type="error"
-                  onClose={() => setError("")}
-                  className="mb-4"
-                />
 
                 {/* Success message - REMOVED */}
                 {/* {successMessage && (
@@ -218,15 +232,15 @@ function SigninContent() {
 
                   {/* Continue with Google */}
                   <GoogleAuthButton 
-                    onError={(errorMessage) => setError(errorMessage)}
+                    onError={(errorMessage) => showToast(errorMessage, "error")}
                   />
                 </div>
               </form>
 
-              {/* Footer */}
+              {/* Signup removed */}
               <div className="mt-3 sm:mt-6 text-center space-y-2">
                 <p className="text-gray-600 text-xs sm:text-base">
-                  {t("signin.dontHaveAccount")}{" "}
+                  {t("signin.dontHaveAccount")} {" "}
                   <Link 
                     href="/signup" 
                     className="text-red-500 hover:text-red-600 font-medium transition-colors"
@@ -239,10 +253,13 @@ function SigninContent() {
           </div>
 
           <div className="hidden md:flex w-1/2 bg-white items-center justify-center relative p-6">
-            <img 
+            <Image 
               src={`${process.env.BASE_IMAGE_URL}/logo.png`}
               alt="Hanala Food Logo"
+              width={320}
+              height={320}
               className="max-w-full max-h-full object-contain"
+              priority
             />
           </div>
         </div>
