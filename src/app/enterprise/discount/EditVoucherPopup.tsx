@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { apiClient } from "@/services/api";
 import { Voucher } from "./VoucherList";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/contexts/toast-context";
 
 interface EditVoucherPopupProps {
   open: boolean;
@@ -25,6 +26,7 @@ export default function EditVoucherPopup({
   const [expiryDate, setExpiryDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (voucher) {
@@ -44,11 +46,6 @@ export default function EditVoucherPopup({
   if (!open) return null;
 
   const handleSubmit = async () => {
-    const confirmed = window.confirm(
-      "Are you sure you want to edit this voucher?"
-    );
-    if (!confirmed) return;
-
     if (!code.trim()) {
       setError("Voucher code is required");
       return;
@@ -95,15 +92,15 @@ export default function EditVoucherPopup({
       const response = await apiClient.put("/enterprise/voucher", payload) as any;
       
       if (response.success === false) {
-        setError(response.error || "Failed to update voucher. Please try again.");
+        showToast(response.error || "Failed to update voucher. Please try again.", "error", 5000);
         return;
       }
       
+      showToast("Voucher updated successfully!", "success", 3000);
       onSuccess();
       onClose();
     } catch (err) {
-      console.error("Error updating voucher:", err);
-      setError("Failed to update voucher. Please try again.");
+      showToast("Failed to update voucher. Please try again.", "error", 5000);
     } finally {
       setLoading(false);
     }

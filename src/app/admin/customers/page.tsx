@@ -3,9 +3,10 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { formatDate } from '@/lib/utils'
 import Link from 'next/link'
-import { Lock, Unlock, Search } from 'lucide-react'
+import { Lock, Unlock } from 'lucide-react'
 import ActionButton from '@/components/admin/ActionButton'
 import TabsCustomers from '@/components/admin/TabsCustomers'
+import CustomerSearch from '@/components/admin/CustomerSearch'
 
 async function lockCustomer(customerId: string) {
   'use server'
@@ -35,9 +36,9 @@ export default async function AdminCustomersPage({ searchParams }: { searchParam
   if (tab === 'locked') where.account = { is: { Status: 'Inactive' } }
   if (search) {
     where.OR = [
-      { FullName: { contains: search, mode: 'insensitive' } },
-      { PhoneNumber: { contains: search, mode: 'insensitive' } },
-      { account: { is: { Email: { contains: search, mode: 'insensitive' } } } }
+      { FullName: { contains: search } },
+      { PhoneNumber: { contains: search } },
+      { account: { is: { Email: { contains: search } } } }
     ]
   }
 
@@ -53,12 +54,6 @@ export default async function AdminCustomersPage({ searchParams }: { searchParam
     }
   })
 
-  const buildTabHref = (t: 'all'|'active'|'locked') => {
-    const p = new URLSearchParams()
-    p.set('status', t)
-    if (search) p.set('search', search)
-    return `/admin/customers?${p.toString()}`
-  }
 
   return (
     <div className="space-y-6">
@@ -72,12 +67,19 @@ export default async function AdminCustomersPage({ searchParams }: { searchParam
       <div className="rounded-2xl border border-slate-200 bg-white p-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <TabsCustomers current={tab} search={search} />
-          <form className="relative w-full md:w-80" action="/admin/customers" method="get">
-            <input type="hidden" name="status" value={tab} />
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input name="search" defaultValue={search} placeholder="Search name, phone, email" className="pl-8 w-full h-9 rounded-md border border-slate-200" />
-          </form>
+          <CustomerSearch currentTab={tab} currentSearch={search} />
         </div>
+
+        {/* Search Results Info */}
+        {(search || tab !== 'all') && (
+          <div className="mt-4 mb-2 text-sm text-slate-600">
+            {search ? (
+              <span>Found {customers.length} customer{customers.length !== 1 ? 's' : ''} matching "{search}"</span>
+            ) : (
+              <span>Showing {customers.length} {tab} customer{customers.length !== 1 ? 's' : ''}</span>
+            )}
+          </div>
+        )}
 
         <div className="mt-4 overflow-x-auto">
           <table className="min-w-full text-sm">

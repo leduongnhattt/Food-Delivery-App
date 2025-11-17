@@ -2,8 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { formatPrice } from '@/lib/utils'
-import { formatDate } from '@/lib/order-utils'
+import { formatPrice, formatDate } from '@/lib/utils'
 import { 
   getStatusConfig, 
   formatCurrency, 
@@ -105,7 +104,7 @@ export function UnifiedOrderRow({
                 <div className="flex items-center space-x-1">
                   {items.slice(0, 2).map((item, index) => (
                     <span key={index} className="px-1.5 py-0.5 bg-gray-100 rounded text-xs text-gray-600">
-                      {item.dishName || item.foodName}×{item.quantity}
+                      {'dishName' in item ? item.dishName : item.foodName}×{item.quantity}
                     </span>
                   ))}
                   {items.length > 2 && (

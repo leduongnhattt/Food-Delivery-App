@@ -14,6 +14,7 @@ export const GET = withRateLimit(async (request: NextRequest) => {
                 CategoryID: true,
                 CategoryName: true,
                 Description: true,
+                CreatedAt: true,
                 _count: {
                     select: {
                         foods: {
@@ -37,7 +38,8 @@ export const GET = withRateLimit(async (request: NextRequest) => {
             id: cat.CategoryID,
             name: cat.CategoryName,
             description: cat.Description || '',
-            foodCount: cat._count.foods
+            foodCount: cat._count.foods,
+            createdAt: cat.CreatedAt ? cat.CreatedAt.toISOString() : new Date().toISOString()
         }))
 
         return NextResponse.json({

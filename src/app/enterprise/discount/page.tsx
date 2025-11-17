@@ -6,11 +6,19 @@ import { Button } from "@/components/ui/button";
 import EditVoucherPopup from "./EditVoucherPopup";
 import { useToast } from "@/contexts/toast-context";
 import { Calendar, Percent, Tag, Plus, Sparkles } from "lucide-react";
+import VoucherSearch from "@/components/enterprise/VoucherSearch";
+import TabsVouchers from "@/components/enterprise/TabsVouchers";
+import { useSearchParams } from "next/navigation";
 
 export default function AdminDashboardPage() {
   const [entepriseData, setEnterpriseData] = useState<any>(null);
   const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
   const { showToast } = useToast();
+  const searchParams = useSearchParams();
+  
+  // Get search and filter parameters
+  const status = (searchParams.get('status') || 'all') as 'all' | 'approved' | 'pending';
+  const search = searchParams.get('q') || '';
 
   // form states
   const [couponCode, setCouponCode] = useState("");
@@ -268,20 +276,21 @@ export default function AdminDashboardPage() {
     setSelectedVoucher(voucher);
   };
 
-  const handleDelete = async (voucherId: string) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this voucher?"
-    );
-    if (!confirmed) return;
-    try {
-      await apiClient.delete(`/enterprise/voucher?voucherId=${voucherId}`);
-      showToast("Voucher deleted successfully!", "success");
-      fetchEnterpriseData();
-    } catch (error) {
-      console.error("Error deleting voucher:", error);
-      showToast("Failed to delete voucher. Please try again.", "error");
+
+  // Filter vouchers based on search and status
+  const filteredVouchers = (entepriseData?.vouchers || []).filter((voucher: Voucher) => {
+    // Filter by status
+    if (status === 'approved' && voucher.Status !== 'Approved') return false;
+    if (status === 'pending' && voucher.Status !== 'Pending') return false;
+    
+    // Filter by search
+    if (search) {
+      const searchLower = search.toLowerCase();
+      return voucher.Code.toLowerCase().includes(searchLower);
     }
-  };
+    
+    return true;
+  });
 
   return (
     <div className="relative">
@@ -570,14 +579,32 @@ export default function AdminDashboardPage() {
                   <p className="text-sm text-gray-500">Manage existing discount codes</p>
                 </div>
                 <div className="text-sm text-gray-500">
-                  {entepriseData?.vouchers?.length || 0} total
+                  {filteredVouchers.length} of {entepriseData?.vouchers?.length || 0} total
                 </div>
               </div>
               
+              {/* Search and Tabs Section */}
+              <div className="mb-6 space-y-4">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <TabsVouchers current={status} search={search} />
+                  <VoucherSearch currentStatus={status} currentSearch={search} />
+                </div>
+                
+                {/* Search Results Info */}
+                {(search || status !== 'all') && (
+                  <div className="text-sm text-gray-600">
+                    {search ? (
+                      <span>Found {filteredVouchers.length} voucher{filteredVouchers.length !== 1 ? 's' : ''} matching "{search}"</span>
+                    ) : (
+                      <span>Showing {filteredVouchers.length} {status} voucher{filteredVouchers.length !== 1 ? 's' : ''}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+              
               <VoucherList
-                vouchers={entepriseData?.vouchers ?? []}
+                vouchers={filteredVouchers}
                 onEdit={handleEdit}
-                onDelete={handleDelete}
               />
             </div>
           </div>
@@ -593,3 +620,4 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+

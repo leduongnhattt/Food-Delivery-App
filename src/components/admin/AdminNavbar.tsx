@@ -11,12 +11,14 @@ import {
   MessageCircle,
   TicketPercent,
   BarChart3,
+  Tag,
 } from "lucide-react";
 
 const menuItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: BarChart3 },
   { href: "/admin/customers", label: "Customers", icon: User },
   { href: "/admin/enterprises", label: "Enterprises", icon: Briefcase },
+  { href: "/admin/categories", label: "Categories", icon: Tag },
   // { href: "/admin/inbox", label: "Inbox", icon: MessageCircle }, // nên loại bỏ phần ni
   { href: "/admin/discount", label: "Discount", icon: TicketPercent },
 ];
