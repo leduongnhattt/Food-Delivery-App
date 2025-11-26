@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { usePasswordToggle } from "@/hooks/use-password-toggle";
 import { useTranslations } from "@/lib/i18n";
 import { PasswordService } from "@/services/password.service";
+import { validatePasswordStrength, validatePasswordConfirmation } from "@/lib/auth-validation";
 
 function ResetPasswordContent() {
   const router = useRouter();
@@ -48,14 +49,23 @@ function ResetPasswordContent() {
   const handleSubmit = async () => {
     setError("");
     
-    // Validate passwords
-    if (!newPassword || newPassword.length < 6) {
-      setError("Password must be at least 6 characters long");
+    // Validate password strength using shared auth logic (inline message)
+    const strengthResult = validatePasswordStrength(newPassword);
+    if (!strengthResult.isValid) {
+      setError(strengthResult.errorMessage || "Password must meet the requirements.");
+      if (strengthResult.fieldToClear === "password") {
+        setNewPassword("");
+      }
       return;
     }
-    
-    if (newPassword !== confirmPassword) {
-      setError("Passwords do not match");
+
+    const matchResult = validatePasswordConfirmation(newPassword, confirmPassword);
+    if (!matchResult.isValid) {
+      setError(matchResult.errorMessage || "Passwords do not match.");
+      if (matchResult.fieldToClear === "both") {
+        setNewPassword("");
+        setConfirmPassword("");
+      }
       return;
     }
     

@@ -8,12 +8,15 @@ import { ProfileForm } from '@/components/profile/ProfileForm'
 import { ChangePasswordCard } from '@/components/profile/ChangePasswordCard'
 import { VerifyCodeModal } from '@/components/profile/VerifyCodeModal'
 import { ChangePasswordModal } from '@/components/profile/ChangePasswordModal'
+import { EmailSelectionModal, ForgotPasswordNewPasswordModal } from '@/components/profile/ForgotPasswordModals'
 import { NotificationToast } from '@/components/profile/NotificationToast'
 import { useProfileData } from '@/hooks/use-profile-data'
 import { usePasswordChange } from '@/hooks/use-password-change'
+import { useToast } from '@/contexts/toast-context'
 
 export default function ProfilePage() {
   const router = useRouter()
+  const { showToast } = useToast()
   
   // Custom hooks for state management
   const {
@@ -23,7 +26,8 @@ export default function ProfilePage() {
     setIsEditing,
     updateField,
     saveProfile,
-    clearNotification
+    clearNotification,
+    resetProfileChanges
   } = useProfileData()
 
   const {
@@ -38,7 +42,14 @@ export default function ProfilePage() {
     toggleCurrentVisibility,
     toggleNewVisibility,
     toggleConfirmVisibility,
-    updateState
+    updateState,
+    // Forgot password flow
+    startForgotPassword,
+    selectEmail,
+    sendForgotPasswordCode,
+    verifyForgotPasswordCode,
+    updateForgotPassword,
+    closeForgotPasswordModals
   } = usePasswordChange(profileData.email)
 
   // Handler functions using hooks
@@ -55,7 +66,12 @@ export default function ProfilePage() {
   }
 
   const handleVerifyCode = async () => {
-    await verifyCode()
+    // Check if this is forgot password flow
+    if (passwordState.forgotPasswordEmail) {
+      await handleVerifyForgotPasswordCode()
+    } else {
+      await verifyCode()
+    }
   }
 
   const handleResendCode = async () => {
@@ -65,10 +81,47 @@ export default function ProfilePage() {
   const handleUpdatePassword = async () => {
     const success = await updatePassword()
     if (success) {
-      // Handle success notification
-      console.log('Password updated successfully')
+      showToast('Password changed successfully! Please log in again.', 'success')
+      setTimeout(() => {
+        window.location.reload()
+      }, 1500)
     }
   }
+
+  // Forgot password flow handlers
+  const handleForgotPasswordClick = () => {
+    startForgotPassword()
+  }
+
+  const handleSelectEmail = (email: string) => {
+    selectEmail(email)
+  }
+
+  const handleSendForgotPasswordCode = async () => {
+    await sendForgotPasswordCode()
+  }
+
+  const handleVerifyForgotPasswordCode = async () => {
+    const success = await verifyForgotPasswordCode()
+    if (!success) {
+      // Error is already handled in hook
+      return
+    }
+  }
+
+  const handleUpdateForgotPassword = async () => {
+    const success = await updateForgotPassword()
+    if (success) {
+      showToast('Password changed successfully! Please log in again.', 'success')
+      closeForgotPasswordModals()
+      setTimeout(() => {
+        window.location.reload()
+      }, 1500)
+    }
+  }
+
+  // Get available emails (currently only user's email, but can be extended)
+  const availableEmails = [profileData.email]
 
   return (
     <AuthGuard>
@@ -101,7 +154,7 @@ export default function ProfilePage() {
                   isEditing={isEditing}
                   onFieldChange={handleFieldChange}
                   onSave={handleSaveProfile}
-                  onCancel={() => setIsEditing(false)}
+                  onCancel={resetProfileChanges}
                 />
               </CardContent>
             </Card>
@@ -110,14 +163,15 @@ export default function ProfilePage() {
               onChangePassword={handleChangePassword}
             />
 
+            {/* Code verification modal (used for both normal and forgot password flow) */}
             <VerifyCodeModal
               isOpen={passwordState.isCodeModalOpen}
-              email={profileData.email}
+              email={passwordState.forgotPasswordEmail || profileData.email}
               code={passwordState.code}
               codeError={passwordState.codeError}
               sending={passwordState.sending}
               resendIn={passwordState.resendIn}
-              onClose={closeCodeModal}
+              onClose={passwordState.forgotPasswordEmail ? closeForgotPasswordModals : closeCodeModal}
               onCodeChange={handleCodeChange}
               onVerify={handleVerifyCode}
               onResend={handleResendCode}
@@ -141,6 +195,34 @@ export default function ProfilePage() {
               onToggleNewVisibility={toggleNewVisibility}
               onToggleConfirmVisibility={toggleConfirmVisibility}
               onUpdatePassword={handleUpdatePassword}
+              onForgotPasswordClick={handleForgotPasswordClick}
+            />
+
+            {/* Forgot password flow modals */}
+            <EmailSelectionModal
+              isOpen={passwordState.isEmailSelectionModalOpen}
+              emails={availableEmails}
+              selectedEmail={passwordState.selectedEmail}
+              sending={passwordState.sending}
+              onSelectEmail={handleSelectEmail}
+              onSendCode={handleSendForgotPasswordCode}
+              onClose={closeForgotPasswordModals}
+            />
+
+            <ForgotPasswordNewPasswordModal
+              isOpen={passwordState.isForgotPasswordNewPwdModalOpen}
+              newPassword={passwordState.newPassword}
+              confirmPassword={passwordState.confirmPassword}
+              showNew={passwordState.showNew}
+              showConfirm={passwordState.showConfirm}
+              pwdError={passwordState.pwdError}
+              isLoading={false}
+              onNewPasswordChange={(value) => updateState({ newPassword: value })}
+              onConfirmPasswordChange={(value) => updateState({ confirmPassword: value })}
+              onToggleNewVisibility={toggleNewVisibility}
+              onToggleConfirmVisibility={toggleConfirmVisibility}
+              onUpdatePassword={handleUpdateForgotPassword}
+              onClose={closeForgotPasswordModals}
             />
         </div>
       </div>

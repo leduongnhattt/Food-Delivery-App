@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { RestaurantService, RestaurantFilters } from '@/services/restaurant.service'
 import { Restaurant } from '@/types/models'
 
@@ -26,12 +26,24 @@ export function useRestaurantList(filters: RestaurantFilters = {}): UseRestauran
         totalPages: 0
     })
 
+    // Memoize filters to prevent unnecessary re-renders when object reference changes but values don't
+    const stableFilters = useMemo(() => {
+        return filters
+    }, [
+        filters.search,
+        filters.category,
+        filters.isOpen,
+        filters.minRating,
+        filters.page,
+        filters.limit
+    ])
+
     const fetchRestaurants = useCallback(async () => {
         try {
             setLoading(true)
             setError(null)
 
-            const response = await RestaurantService.getRestaurantsDebounced(filters)
+            const response = await RestaurantService.getRestaurantsDebounced(stableFilters)
 
             setRestaurants(response.restaurants)
             setPagination(response.pagination)
@@ -42,7 +54,7 @@ export function useRestaurantList(filters: RestaurantFilters = {}): UseRestauran
         } finally {
             setLoading(false)
         }
-    }, [filters])
+    }, [stableFilters])
 
     useEffect(() => {
         fetchRestaurants()

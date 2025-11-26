@@ -13,7 +13,9 @@ import { useTranslations } from "@/lib/i18n";
 import { useToast } from "@/contexts/toast-context";
 import GoogleAuthButton from "@/components/ui/google-auth-button";
 import { useAuthValidation } from "@/hooks/use-auth-validation";
+import { useEmailField } from "@/hooks/use-email-field";
 import Image from "next/image";
+import type { EmailInvalidReason } from "@/hooks/use-email-field";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -32,6 +34,23 @@ export default function SignupPage() {
   
   // Auth validation hook
   const { validateSignupForm } = useAuthValidation();
+
+  const handleEmailInvalidToast = (reason: EmailInvalidReason) => {
+    if (reason === "missing") {
+      showToast(t("signup.errors.allFieldsRequired"), "error");
+    } else {
+      showToast(t("signup.errors.invalidEmail"), "error");
+    }
+  };
+
+  const {
+    handleChange: handleEmailChange,
+    handleInvalid: handleEmailInvalid,
+    validateEmailValue,
+  } = useEmailField({
+    setValue: setEmail,
+    onInvalid: handleEmailInvalidToast,
+  });
 
   // Clear form fields when needed
   const clearForm = () => {
@@ -55,6 +74,14 @@ export default function SignupPage() {
       return;
     }
     
+    // Validate email format
+    const { sanitized, isValid } = validateEmailValue(email);
+    if (!isValid) {
+      showToast(t("signup.errors.invalidEmail"), "error")
+      return
+    }
+    const sanitizedEmail = sanitized
+
     // Validate form fields using shared validation logic
     if (!validateSignupForm(username, password, confirmPassword, setUsername, setPassword, setConfirmPassword)) {
       return;
@@ -65,7 +92,7 @@ export default function SignupPage() {
       
       const result = await registerUser({
         username,
-        email,
+        email: sanitizedEmail,
         password,
         confirmPassword
       });
@@ -149,12 +176,36 @@ export default function SignupPage() {
                   <Input
                     type="text"
                     placeholder={t("common.usernamePlaceholder")}
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                maxLength={50}
-                className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 transition-all text-sm sm:text-base shadow-sm"
-                required
-              />
+                    value={username}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setUsername(value)
+
+                      if (value.length >= 30) {
+                        const message = t("signin.errors.usernameTooLong")
+                        e.target.setCustomValidity(message)
+                        if (value.length === 30) {
+                          setTimeout(() => {
+                            e.target.reportValidity()
+                          }, 0)
+                        }
+                      } else {
+                        e.target.setCustomValidity("")
+                      }
+                    }}
+                    onInvalid={(e) => {
+                      if (username.length >= 30) {
+                        const message = t("signin.errors.usernameTooLong")
+                        e.currentTarget.setCustomValidity(message)
+                      } else {
+                        const message = t("signin.errors.usernameRequired")
+                        e.currentTarget.setCustomValidity(message)
+                      }
+                    }}
+                    maxLength={30}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 transition-all text-sm sm:text-base shadow-sm"
+                    required
+                  />
             </div>
 
             <div>
@@ -165,7 +216,8 @@ export default function SignupPage() {
                 type="email"
                 placeholder={t("signup.emailPlaceholder")}
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={handleEmailChange}
+                onInvalid={handleEmailInvalid}
                 className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 transition-all text-sm sm:text-base shadow-sm"
                 required
               />

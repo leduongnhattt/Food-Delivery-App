@@ -25,6 +25,7 @@ interface ChangePasswordModalProps {
   onToggleNewVisibility: () => void
   onToggleConfirmVisibility: () => void
   onUpdatePassword?: () => Promise<void>
+  onForgotPasswordClick?: () => void
 }
 
 export function ChangePasswordModal({
@@ -44,7 +45,8 @@ export function ChangePasswordModal({
   onToggleCurrentVisibility,
   onToggleNewVisibility,
   onToggleConfirmVisibility,
-  onUpdatePassword
+  onUpdatePassword,
+  onForgotPasswordClick
 }: ChangePasswordModalProps) {
   const { showToast } = useToast()
   const { validatePassword, validatePasswordMatch } = useAuthValidation()
@@ -105,7 +107,7 @@ export function ChangePasswordModal({
       })
 
       if (result.success) {
-        showToast("Password changed successfully! Please log in again.", "success")
+        showToast("Password changed successfully!", "success")
         onClose() // Close modal
         // Optionally redirect to login or refresh the page
         window.location.reload()
@@ -165,17 +167,6 @@ export function ChangePasswordModal({
             <PasswordStrength password={newPassword} className="mt-2" />
           )}
           
-          {/* Warning if new password is same as current password */}
-          {newPassword && currentPassword && newPassword === currentPassword && (
-            <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-center">
-                <div className="w-4 h-4 text-red-500 mr-2">⚠️</div>
-                <span className="text-red-700 text-sm">
-                  New password must be different from current password
-                </span>
-              </div>
-            </div>
-          )}
           <div className="relative">
             <label className="block text-sm font-medium mb-2 text-gray-700">Confirm New Password</label>
             <Input
@@ -187,6 +178,19 @@ export function ChangePasswordModal({
             />
             <button type="button" className="absolute right-3 top-[38px] text-gray-500" onClick={onToggleConfirmVisibility}>
               {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+          <div className="mt-2 flex items-center gap-2 justify-start">
+            <button
+              type="button"
+              className="inline-flex items-center px-3 py-1 bg-orange-50 text-orange-700 rounded-lg text-sm font-medium hover:bg-orange-100 focus:outline-none"
+              onClick={onForgotPasswordClick}
+              disabled={!onForgotPasswordClick}
+            >
+              <svg className="w-4 h-4 mr-1 text-orange-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 20h.01M4 4h16v16H4V4z" />
+              </svg>
+              Forgot Password?
             </button>
           </div>
           {pwdError && <div className="text-sm text-red-600">{pwdError}</div>}
@@ -218,4 +222,5 @@ export function ChangePasswordModal({
     </div>
   )
 }
+
 

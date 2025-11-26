@@ -18,13 +18,15 @@ export interface Notification {
 export function useProfileData() {
     const { user, isAuthenticated } = useAuth()
     const [isEditing, setIsEditing] = useState(false)
-    const [profileData, setProfileData] = useState<ProfileData>({
+    const emptyProfile: ProfileData = {
         fullName: '',
         email: '',
         phone: '',
         address: '',
         avatar: ''
-    })
+    }
+    const [profileData, setProfileData] = useState<ProfileData>(emptyProfile)
+    const [originalProfileData, setOriginalProfileData] = useState<ProfileData>(emptyProfile)
     const [notification, setNotification] = useState<Notification | null>(null)
 
     // Fetch customer data on mount/auth ready
@@ -44,13 +46,15 @@ export function useProfileData() {
                             avatarUrl = data?.avatar || ''
                         }
                     } catch { }
-                    setProfileData({
+                    const hydratedProfile: ProfileData = {
                         fullName: customer.FullName || '',
                         email: (user as any)?.email || '',
                         phone: customer.PhoneNumber || '',
                         address: customer.Address || '',
                         avatar: avatarUrl
-                    })
+                    }
+                    setProfileData(hydratedProfile)
+                    setOriginalProfileData({ ...hydratedProfile })
                 }
             } catch (error) {
                 console.error('Failed to load profile data:', error)
@@ -84,6 +88,7 @@ export function useProfileData() {
             if (result.success) {
                 setNotification({ type: 'success', message: 'Profile updated successfully!' })
                 setIsEditing(false)
+                setOriginalProfileData({ ...profileData })
                 return true
             } else {
                 setNotification({ type: 'error', message: result.error || 'Failed to update profile' })
@@ -101,6 +106,11 @@ export function useProfileData() {
         setNotification(null)
     }
 
+    const resetProfileChanges = () => {
+        setProfileData({ ...originalProfileData })
+        setIsEditing(false)
+    }
+
     return {
         profileData,
         isEditing,
@@ -108,6 +118,7 @@ export function useProfileData() {
         setIsEditing,
         updateField,
         saveProfile,
-        clearNotification
+        clearNotification,
+        resetProfileChanges
     }
 }
