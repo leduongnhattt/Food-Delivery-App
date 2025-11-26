@@ -30,8 +30,8 @@ function checkRateLimit(email: string): boolean {
         return true;
     }
 
-    if (limit.count >= 10) {
-        return false; // Max 10 attempts per hour
+    if (limit.count >= 100) {
+        return false; // Max 100 attempts per hour
     }
 
     limit.count++;

@@ -5,10 +5,12 @@ import { Badge } from '@/components/ui/badge'
 import { formatPrice, calculatePrice } from '@/lib/utils'
 import { useCart } from '@/hooks/use-cart'
 import { useRouter } from 'next/navigation'
-import { ShoppingCart, Store, Plus, Minus, X } from 'lucide-react'
+import { ShoppingCart, Store, Plus, Minus, X, AlertTriangle } from 'lucide-react'
 import Image from 'next/image'
 import { StockValidationPopup, useStockValidationPopup } from '@/components/ui/stock-validation-popup'
 import { validateFoodStock } from '@/lib/stock-validation'
+import { useTranslations } from '@/lib/i18n'
+import { exceedsItemValueLimit, getOrderLimitLabel } from '@/lib/order-limit'
 
 interface OrderModalProps {
   isOpen: boolean
@@ -40,13 +42,29 @@ export const OrderModal: React.FC<OrderModalProps> = ({
   restaurant
 }) => {
   const router = useRouter()
-  const { addToCart } = useCart()
+  const { addToCart, cartItems } = useCart()
   const { isOpen: isStockPopupOpen, validationResult, showValidation, hideValidation } = useStockValidationPopup()
   const [quantity, setQuantity] = React.useState(1)
   const [isLoading, setIsLoading] = React.useState(false)
+  const { t, locale } = useTranslations()
+  const [showLimitWarning, setShowLimitWarning] = React.useState(false)
+
+  const currentCartQuantity = React.useMemo(() => {
+    const existing = cartItems.find((item) => item.menuItem.id === food.foodId)
+    return existing?.quantity ?? 0
+  }, [cartItems, food.foodId])
+
+  const exceedsWithAdditional = (additionalQuantity: number) =>
+    exceedsItemValueLimit(food.price, currentCartQuantity + additionalQuantity)
 
   // Check if this food is already in cart
   const handleAddToCart = async () => {
+    if (exceedsWithAdditional(quantity)) {
+      setShowLimitWarning(true)
+      return
+    }
+    setShowLimitWarning(false)
+
     setIsLoading(true)
     
     try {
@@ -163,30 +181,54 @@ export const OrderModal: React.FC<OrderModalProps> = ({
               Quantity
             </label>
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-9 h-9 sm:w-10 sm:h-10 p-0"
-                >
-                  <Minus className="w-3 h-3" />
-                </Button>
-                <span className="w-8 sm:w-10 text-center font-medium tabular-nums">{quantity}</span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="w-9 h-9 sm:w-10 sm:h-10 p-0"
-                >
-                  <Plus className="w-3 h-3" />
-                </Button>
-              </div>
-              <div className="text-sm text-gray-600">
-                Total: <span className="font-semibold text-orange-600">
-                  {formatPrice(calculatePrice(food.price, quantity))}
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setShowLimitWarning(false)
+                  setQuantity(Math.max(1, quantity - 1))
+                }}
+                className="w-9 h-9 sm:w-10 sm:h-10 p-0"
+              >
+                <Minus className="w-3 h-3" />
+              </Button>
+              <span className="w-8 sm:w-10 text-center font-medium tabular-nums">{quantity}</span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  if (exceedsWithAdditional(quantity + 1)) {
+                    setShowLimitWarning(true)
+                    return
+                  }
+                  setShowLimitWarning(false)
+                  setQuantity(quantity + 1)
+                }}
+                className="w-9 h-9 sm:w-10 sm:h-10 p-0"
+              >
+                <Plus className="w-3 h-3" />
+              </Button>
+            </div>
+            <div className="text-sm text-gray-600">
+              Total: <span className="font-semibold text-orange-600">
+                {formatPrice(calculatePrice(food.price, quantity))}
+              </span>
+            </div>
+
+            {showLimitWarning && (
+              <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                <span>
+                  {t('cart.orderLimitExceeded').replace(
+                    '{amount}',
+                    getOrderLimitLabel(locale, formatPrice)
+                  )}
                 </span>
               </div>
+            )}
+          </div>
             </div>
           </div>
 

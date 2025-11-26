@@ -6,6 +6,9 @@ import { CartItem as CartItemType } from '@/types/models'
 import { CartItem } from './cart-item'
 import { useAuth } from '@/hooks/use-auth'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from '@/lib/i18n'
+import { exceedsItemValueLimit, getOrderLimitLabel } from '@/lib/order-limit'
+import { AlertTriangle } from 'lucide-react'
 
 interface CartSidebarProps {
   isOpen: boolean
@@ -27,6 +30,8 @@ export function CartSidebar({
   const { isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
+  const { t, locale } = useTranslations()
+  const [groupLimitWarnings, setGroupLimitWarnings] = useState<Record<string, boolean>>({})
   // Unique items count (not quantities)
   const totalItems = cartItems.length
   const totalAmount = cartItems.reduce(
@@ -50,6 +55,18 @@ export function CartSidebar({
   }, [cartItems])
 
   const handleCheckoutGroup = (restaurantId: string) => {
+    const group = groups.find(g => g.id === restaurantId)
+    if (group) {
+      const hasLimitViolation = group.items.some(item =>
+        exceedsItemValueLimit(item.menuItem.price, item.quantity)
+      )
+      if (hasLimitViolation) {
+        setGroupLimitWarnings(prev => ({ ...prev, [restaurantId]: true }))
+        return
+      }
+      setGroupLimitWarnings(prev => ({ ...prev, [restaurantId]: false }))
+    }
+
     try { localStorage.setItem('cartSelectedRestaurantId', restaurantId) } catch {}
     // If user is not authenticated, prompt login modal instead of proceeding
     if (!isLoading && !isAuthenticated) {
@@ -115,6 +132,18 @@ export function CartSidebar({
                         />
                       ))}
                     </div>
+                    {(groupLimitWarnings[group.id] ||
+                      group.items.some(item => exceedsItemValueLimit(item.menuItem.price, item.quantity))) && (
+                      <div className="mx-4 mt-3 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                        <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                        <span>
+                          {t('cart.orderLimitExceeded').replace(
+                            '{amount}',
+                            getOrderLimitLabel(locale, formatPrice)
+                          )}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between px-4 py-3 text-sm">
                       <span className="text-gray-600">Subtotal</span>
                       <span className="font-semibold">{formatPrice(group.subtotal)}</span>

@@ -1,18 +1,23 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 interface ToastProps {
   message: string;
   type?: "success" | "error" | "warning" | "info";
   duration?: number;
+  actionLabel?: string;
+  actionHref?: string;
   onClose?: () => void;
 }
 
 export function Toast({ 
   message, 
   type = "error", 
-  duration = 5000, 
+  duration = 5000,
+  actionLabel,
+  actionHref,
   onClose 
 }: ToastProps) {
   const [isVisible, setIsVisible] = useState(true);
@@ -109,6 +114,18 @@ export function Toast({
             <p className={`text-sm font-medium ${styles.text}`}>
               {message}
             </p>
+            {actionLabel && actionHref && (
+              <Link
+                href={actionHref}
+                onClick={handleClose}
+                className="inline-flex mt-3 items-center gap-1 text-xs font-semibold text-white bg-orange-500 hover:bg-orange-600 transition-colors px-3 py-1.5 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+                {actionLabel}
+              </Link>
+            )}
           </div>
 
           {/* Close Button */}

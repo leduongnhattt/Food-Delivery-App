@@ -3,6 +3,7 @@ import { stripe } from '@/lib/stripe'
 import { PrismaClient } from '@/generated/prisma'
 import { getAuthenticatedUser } from '@/lib/auth-helpers'
 import { withRateLimit, getClientIp } from '@/lib/rate-limit'
+import { ITEM_ORDER_VALUE_LIMIT } from '@/lib/order-limit'
 
 const prisma = new PrismaClient()
 
@@ -96,14 +97,14 @@ export const POST = withRateLimit(async (request: NextRequest) => {
         }
 
         // Validate availability and per-item cap (align with non-stock flow)
-        const MAX_PER_ITEM = 10
+        // Monetary limits enforced elsewhere; no per-item quantity cap
         await Promise.all(
             cartItems.map(async (item: any) => {
                 if (!item.food.IsAvailable) {
                     throw new Error(`Item ${item.food.DishName} is currently unavailable`)
                 }
-                if (item.Quantity > MAX_PER_ITEM) {
-                    throw new Error(`Item ${item.food.DishName} exceeds per-item limit of ${MAX_PER_ITEM}`)
+                if (item.SubTotal > ITEM_ORDER_VALUE_LIMIT) {
+                    throw new Error(`Item ${item.food.DishName} exceeds per-item order limit.`)
                 }
             })
         )

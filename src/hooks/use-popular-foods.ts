@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Food } from '@/types/models'
 import { FoodService, FoodServiceFilters } from '@/services/food.service'
 
@@ -26,12 +26,24 @@ export function usePopularFoods(filters: FoodServiceFilters = {}): UsePopularFoo
         totalPages: 0
     })
 
+    // Memoize filters to prevent unnecessary re-renders when object reference changes but values don't
+    const stableFilters = useMemo(() => {
+        return filters
+    }, [
+        filters.limit,
+        filters.page,
+        filters.restaurantId,
+        filters.category,
+        filters.search,
+        filters.isAvailable
+    ])
+
     const fetchFoods = useCallback(async () => {
         try {
             setLoading(true)
             setError(null)
 
-            const response = await FoodService.getPopularFoodsDebounced(filters)
+            const response = await FoodService.getPopularFoodsDebounced(stableFilters)
             setFoods(response.foods)
             setPagination(response.pagination)
         } catch (err) {
@@ -41,7 +53,7 @@ export function usePopularFoods(filters: FoodServiceFilters = {}): UsePopularFoo
         } finally {
             setLoading(false)
         }
-    }, [filters])
+    }, [stableFilters])
 
     useEffect(() => {
         fetchFoods()

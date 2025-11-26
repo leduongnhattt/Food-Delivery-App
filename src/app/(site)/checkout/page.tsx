@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation'
 import { PaymentService } from '@/services/payment.service'
 import { useSearchParams } from 'next/navigation'
 import { ArrowLeft, CheckCircle, Circle } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { requestJson } from '@/lib/http-client'
 import { RestaurantService } from '@/services/restaurant.service'
 import { VoucherService } from '@/services/voucher.service'
@@ -19,6 +19,9 @@ import { DeliveryForm } from '@/components/checkout/DeliveryForm'
 import { PromoOffers } from '@/components/checkout/PromoOffers'
 import { PaymentSelector } from '@/components/checkout/PaymentSelector'
 import { OrderSummary } from '@/components/checkout/OrderSummary'
+import { useToast } from '@/contexts/toast-context'
+import { useTranslations } from '@/lib/i18n'
+import { exceedsItemValueLimit, getOrderLimitLabel } from '@/lib/order-limit'
 
 // Constants
 const DEFAULT_COMMISSION_FEE = 0.5
@@ -46,6 +49,8 @@ export default function CheckoutPage() {
   const { cartItems, updateQuantity, removeFromCart, clearCart } = useCart()
   const { deliveryData, isLoading: isDeliveryLoading } = useDeliveryData()
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth()
+  const { showToast } = useToast()
+  const { t, locale } = useTranslations()
   
   // State management
   const [appliedVoucher, setAppliedVoucher] = useState<AppliedVoucher>(null)
@@ -55,6 +60,7 @@ export default function CheckoutPage() {
   const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null)
   const [availableVouchers, setAvailableVouchers] = useState<{ code: string, amount?: number, percent?: number, minOrder?: number }[]>([])
   const [commissionFee, setCommissionFee] = useState<number>(DEFAULT_COMMISSION_FEE)
+  const hasLoadedVouchersRef = useRef(false)
 
   // Auto-apply promo from query (?promo=CODE) using API validation
   useEffect(() => {
@@ -111,34 +117,36 @@ export default function CheckoutPage() {
       .catch(() => {})
   }, [cartItems])
 
-  // Load vouchers from API
+  // Load vouchers exactly once per mount – avoids StrictMode double fetch & polling noise
   useEffect(() => {
-    const load = () =>
-      VoucherService.list()
-        .then((list) => {
-          setAvailableVouchers(
-            list.map((v: any) => ({
-              code: v.Code,
-              amount: Number(v.DiscountAmount) || undefined,
-              percent: Number(v.DiscountPercent) || undefined,
-              minOrder: Number(v.MinOrderValue) || undefined,
-            }))
-          )
-        })
-        .catch(() => {})
+    let isActive = true
 
-    load()
+    const loadVouchers = async () => {
+      if (hasLoadedVouchersRef.current) return
 
-    // Auto-refresh vouchers when page regains focus
-    const onFocus = () => load()
-    window.addEventListener('focus', onFocus)
+      try {
+        const list = await VoucherService.list()
+        if (!isActive) return
 
-    // Light polling as fallback for immediate reflection (every 30s)
-    const intervalId = window.setInterval(load, 30000)
+        setAvailableVouchers(
+          list.map((v: any) => ({
+            code: v.Code,
+            amount: Number(v.DiscountAmount) || undefined,
+            percent: Number(v.DiscountPercent) || undefined,
+            minOrder: Number(v.MinOrderValue) || undefined,
+          }))
+        )
+
+        hasLoadedVouchersRef.current = true
+      } catch (error) {
+        console.error('Failed to load vouchers', error)
+      }
+    }
+
+    loadVouchers()
 
     return () => {
-      window.removeEventListener('focus', onFocus)
-      window.clearInterval(intervalId)
+      isActive = false
     }
   }, [])
 
@@ -228,11 +236,39 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = async () => {
     try {
+      const violatingItem = cartItems.find((item) =>
+        exceedsItemValueLimit(item.menuItem.price, item.quantity)
+      )
+      if (violatingItem) {
+        showToast(
+          t('cart.orderLimitExceeded').replace(
+            '{amount}',
+            getOrderLimitLabel(locale, formatPrice)
+          ),
+          'warning',
+          8000
+        )
+        return
+      }
+
+      const trimmedPhone = deliveryData.phone?.trim()
+      const trimmedAddress = deliveryData.address?.trim()
+
+      if (!trimmedPhone || !trimmedAddress) {
+        showToast(
+          t('checkout.deliveryInfo.missingMessage'),
+          'warning',
+          12000,
+          { label: t('checkout.deliveryInfo.profileAction'), href: '/profile' }
+        )
+        return
+      }
+
       const checkoutData: CheckoutData = {
         cartItems,
         deliveryInfo: {
-          phone: deliveryData.phone,
-          address: deliveryData.address
+          phone: trimmedPhone,
+          address: trimmedAddress
         },
         voucherCode: appliedVoucher?.code,
         total: total

@@ -13,10 +13,10 @@ export interface ValidationResult {
  * Validate username length
  */
 export function validateUsernameLength(username: string): ValidationResult {
-    if (username.length > 50) {
+    if (username.length > 30) {
         return {
             isValid: false,
-            errorMessage: "Username must be less than 50 characters.",
+            errorMessage: "Username must not exceed 30 characters.",
             fieldToClear: "username"
         };
     }
@@ -27,6 +27,13 @@ export function validateUsernameLength(username: string): ValidationResult {
  * Validate password strength requirements
  */
 export function validatePasswordStrength(password: string): ValidationResult {
+    if (!password.trim()) {
+        return {
+            isValid: false,
+            errorMessage: "Password is required.",
+            fieldToClear: "password"
+        };
+    }
     if (password.length < 6) {
         return {
             isValid: false,
@@ -81,8 +88,8 @@ export function validatePasswordConfirmation(password: string, confirmPassword: 
  */
 export const authValidationPatterns = {
     username: {
-        maxLength: 50,
-        errorMessage: "Username must be less than 50 characters."
+        maxLength: 30,
+        errorMessage: "Username must not exceed 30 characters."
     },
     password: {
         minLength: 6,

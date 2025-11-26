@@ -5,6 +5,9 @@ import { CartItem as CartItemType } from '@/types/models'
 import { StockValidationPopup, useStockValidationPopup } from '@/components/ui/stock-validation-popup'
 import { validateFoodStock } from '@/lib/stock-validation'
 import { useState, useEffect } from 'react'
+import { Trash2, AlertTriangle } from 'lucide-react'
+import { exceedsItemValueLimit, getOrderLimitLabel } from '@/lib/order-limit'
+import { useTranslations } from '@/lib/i18n'
 
 interface CartItemProps {
   item: CartItemType
@@ -16,6 +19,8 @@ export function CartItem({ item, onUpdateQuantity, onRemove }: CartItemProps) {
   const { isOpen, validationResult, showValidation, hideValidation } = useStockValidationPopup()
   const [isUpdating, setIsUpdating] = useState(false)
   const [currentQuantity, setCurrentQuantity] = useState(item.quantity)
+  const [showLimitWarning, setShowLimitWarning] = useState(false)
+  const { t, locale } = useTranslations()
 
   // Sync with props when server data changes
   useEffect(() => {
@@ -27,6 +32,12 @@ export function CartItem({ item, onUpdateQuantity, onRemove }: CartItemProps) {
       onRemove(item.menuItem.id)
       return
     }
+
+    if (exceedsItemValueLimit(item.menuItem.price, newQuantity)) {
+      setShowLimitWarning(true)
+      return
+    }
+    setShowLimitWarning(false)
 
     setIsUpdating(true)
     
@@ -113,7 +124,27 @@ export function CartItem({ item, onUpdateQuantity, onRemove }: CartItemProps) {
             +
           </Button>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onRemove(item.menuItem.id)}
+          className="text-muted-foreground hover:text-red-600 hover:bg-red-50 ml-auto"
+          aria-label="Remove item"
+        >
+          <Trash2 className="w-4 h-4" />
+        </Button>
       </div>
+      {showLimitWarning && (
+        <div className="mt-3 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+          <span>
+            {t('cart.orderLimitExceeded').replace(
+              '{amount}',
+              getOrderLimitLabel(locale, formatPrice)
+            )}
+          </span>
+        </div>
+      )}
 
       <StockValidationPopup
         isOpen={isOpen}
