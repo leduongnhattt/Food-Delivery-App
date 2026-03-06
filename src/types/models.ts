@@ -23,6 +23,7 @@ export interface Restaurant {
     closeHours?: string
     createdAt: Date
     updatedAt: Date
+    totalReviews?: number
 }
 
 export interface MenuItem {
@@ -78,6 +79,8 @@ export interface RestaurantCardData {
     description: string;
     avatarUrl?: string;
     status: "open" | "closed";
+    rating?: number;
+    totalReviews?: number;
 }
 
 // Food interfaces

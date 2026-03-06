@@ -10,7 +10,7 @@ import { StockValidationPopup, useStockValidationPopup } from '@/components/ui/s
 import { validateFoodStock } from '@/lib/stock-validation'
 import { exceedsItemValueLimit, getOrderLimitLabel } from '@/lib/order-limit'
 import { useTranslations } from '@/lib/i18n'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
 interface CartItemsProps {
   items: CartItem[]
@@ -23,9 +23,87 @@ export function CartItems({ items, totalItems, onChangeQuantity, onRemove }: Car
   const { isOpen, validationResult, showValidation, hideValidation } = useStockValidationPopup()
   const { t, locale } = useTranslations()
   const [limitWarnings, setLimitWarnings] = useState<Record<string, boolean>>({})
+  
+  // Track local quantities for each item to handle rapid clicks
+  const [localQuantities, setLocalQuantities] = useState<Record<string, number>>(() => {
+    const initial: Record<string, number> = {}
+    items.forEach(item => {
+      initial[item.menuItem.id] = item.quantity
+    })
+    return initial
+  })
+  
+  // Use refs to track latest quantities and pending updates with sequence numbers
+  const quantityRefs = useRef<Record<string, number>>({})
+  const pendingUpdates = useRef<Record<string, { quantity: number; sequence: number } | null>>({})
+  const sequenceRefs = useRef<Record<string, number>>({})
+  const itemsRef = useRef(items)
 
-  const handleQuantityChange = async (cartItem: CartItem, newQuantity: number) => {
-    const menuItemId = cartItem.menuItem.id
+  // Sync local quantities with props when they change from server
+  useEffect(() => {
+    // Update refs and local quantities for all items
+    const currentItemIds = new Set(items.map(item => item.menuItem.id))
+    
+    setLocalQuantities(prev => {
+      const newLocalQuantities: Record<string, number> = {}
+      let hasChanges = false
+      
+      items.forEach(item => {
+        const menuItemId = item.menuItem.id
+        
+        // Initialize refs if needed
+        if (!quantityRefs.current[menuItemId]) {
+          quantityRefs.current[menuItemId] = item.quantity
+        }
+        if (!sequenceRefs.current[menuItemId]) {
+          sequenceRefs.current[menuItemId] = 0
+        }
+        if (pendingUpdates.current[menuItemId] === undefined) {
+          pendingUpdates.current[menuItemId] = null
+        }
+        
+        // Only sync if there's no pending update for this item
+        if (pendingUpdates.current[menuItemId] === null) {
+          quantityRefs.current[menuItemId] = item.quantity
+          newLocalQuantities[menuItemId] = item.quantity
+          if (prev[menuItemId] !== item.quantity) {
+            hasChanges = true
+          }
+        } else if (pendingUpdates.current[menuItemId]?.quantity === item.quantity) {
+          // Server caught up with our pending update
+          pendingUpdates.current[menuItemId] = null
+          quantityRefs.current[menuItemId] = item.quantity
+          newLocalQuantities[menuItemId] = item.quantity
+          if (prev[menuItemId] !== item.quantity) {
+            hasChanges = true
+          }
+        } else {
+          // Keep current local quantity if there's a pending update
+          newLocalQuantities[menuItemId] = prev[menuItemId] ?? item.quantity
+        }
+      })
+      
+      // Check if any items were removed
+      Object.keys(prev).forEach(id => {
+        if (!currentItemIds.has(id)) {
+          hasChanges = true
+          delete quantityRefs.current[id]
+          delete pendingUpdates.current[id]
+          delete sequenceRefs.current[id]
+        }
+      })
+      
+      return hasChanges ? newLocalQuantities : prev
+    })
+    
+    itemsRef.current = items
+  }, [items])
+
+  const applyQuantityChange = (menuItemId: string, newQuantity: number, previousQuantity: number, price: number, sequence: number) => {
+    // Only process if this is still the latest update
+    if (pendingUpdates.current[menuItemId] && pendingUpdates.current[menuItemId]!.sequence > sequence) {
+      return // A newer update has already been processed
+    }
 
     if (newQuantity <= 0) {
       onRemove(menuItemId)
@@ -33,28 +111,85 @@ export function CartItems({ items, totalItems, onChangeQuantity, onRemove }: Car
     }
 
     // Enforce monetary limit per item total
-    if (exceedsItemValueLimit(cartItem.menuItem.price, newQuantity)) {
+    if (exceedsItemValueLimit(price, newQuantity)) {
       setLimitWarnings((prev) => ({ ...prev, [menuItemId]: true }))
       return
     }
     setLimitWarnings((prev) => ({ ...prev, [menuItemId]: false }))
 
-    // Check stock before updating quantity
-    try {
-      const stockValidation = await validateFoodStock(menuItemId, newQuantity)
-      
-      if (!stockValidation.isValid) {
-        showValidation(stockValidation)
-        return
-      }
-      
-      // If stock is valid, proceed with update
-          onChangeQuantity(menuItemId, newQuantity)
-    } catch (error) {
-      console.error('Error checking stock:', error)
-      // Fallback to original method if stock check fails
-      onChangeQuantity(menuItemId, newQuantity)
+    // Track the pending update with sequence number
+    pendingUpdates.current[menuItemId] = { quantity: newQuantity, sequence }
+
+    // Optimistic update - send to server immediately (called after setState)
+    onChangeQuantity(menuItemId, newQuantity)
+
+    // Check stock in background (only for increases) - don't block UI
+    if (newQuantity > previousQuantity) {
+      validateFoodStock(menuItemId, newQuantity)
+        .then(stockValidation => {
+          // Only revert if this is still the latest update
+          if (pendingUpdates.current[menuItemId]?.sequence === sequence && !stockValidation.isValid) {
+            showValidation(stockValidation)
+            // Revert the optimistic update
+            const revertSequence = ++sequenceRefs.current[menuItemId]
+            pendingUpdates.current[menuItemId] = { quantity: previousQuantity, sequence: revertSequence }
+            setLocalQuantities(prev => ({ ...prev, [menuItemId]: previousQuantity }))
+            quantityRefs.current[menuItemId] = previousQuantity
+            onChangeQuantity(menuItemId, previousQuantity)
+          }
+        })
+        .catch(() => {
+          // Ignore stock check errors for better UX
+        })
     }
+  }
+
+  const handleIncrement = (menuItemId: string, price: number) => {
+    setLocalQuantities(prev => {
+      const currentQty = prev[menuItemId] ?? quantityRefs.current[menuItemId] ?? 0
+      const newQuantity = currentQty + 1
+      const previousQuantity = currentQty
+      
+      // Initialize sequence if needed
+      if (!sequenceRefs.current[menuItemId]) {
+        sequenceRefs.current[menuItemId] = 0
+      }
+      const sequence = ++sequenceRefs.current[menuItemId]
+      
+      // Update ref immediately
+      quantityRefs.current[menuItemId] = newQuantity
+      
+      // Schedule the change to run after state update (not during render)
+      setTimeout(() => {
+        applyQuantityChange(menuItemId, newQuantity, previousQuantity, price, sequence)
+      }, 0)
+      
+      return { ...prev, [menuItemId]: newQuantity }
+    })
+  }
+
+  const handleDecrement = (menuItemId: string, price: number) => {
+    setLocalQuantities(prev => {
+      const currentQty = prev[menuItemId] ?? quantityRefs.current[menuItemId] ?? 0
+      const newQuantity = currentQty - 1
+      const previousQuantity = currentQty
+      
+      // Initialize sequence if needed
+      if (!sequenceRefs.current[menuItemId]) {
+        sequenceRefs.current[menuItemId] = 0
+      }
+      const sequence = ++sequenceRefs.current[menuItemId]
+      
+      // Update ref immediately
+      quantityRefs.current[menuItemId] = newQuantity
+      
+      // Schedule the change to run after state update (not during render)
+      setTimeout(() => {
+        applyQuantityChange(menuItemId, newQuantity, previousQuantity, price, sequence)
+      }, 0)
+      
+      return { ...prev, [menuItemId]: newQuantity }
+    })
   }
 
   return (
@@ -82,11 +217,13 @@ export function CartItems({ items, totalItems, onChangeQuantity, onRemove }: Car
                       <div className="text-xs text-gray-500">{formatPrice(item.menuItem.price)} each</div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button size="sm" variant="outline" onClick={() => handleQuantityChange(item, item.quantity - 1)} className="w-7 h-7 p-0 border-orange-200 hover:bg-orange-50">
+                      <Button size="sm" variant="outline" onClick={() => handleDecrement(item.menuItem.id, item.menuItem.price)} className="w-7 h-7 p-0 border-orange-200 hover:bg-orange-50">
                         <Minus className="w-3 h-3" />
                       </Button>
-                      <span className="w-7 text-center font-medium text-sm tabular-nums">{item.quantity}</span>
-                      <Button size="sm" variant="outline" onClick={() => handleQuantityChange(item, item.quantity + 1)} className="w-7 h-7 p-0 border-orange-200 hover:bg-orange-50">
+                      <span className="w-7 text-center font-medium text-sm tabular-nums">
+                        {localQuantities[item.menuItem.id] ?? item.quantity}
+                      </span>
+                      <Button size="sm" variant="outline" onClick={() => handleIncrement(item.menuItem.id, item.menuItem.price)} className="w-7 h-7 p-0 border-orange-200 hover:bg-orange-50">
                         <Plus className="w-3 h-3" />
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => onRemove(item.menuItem.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50" aria-label="Remove item">
@@ -96,7 +233,9 @@ export function CartItems({ items, totalItems, onChangeQuantity, onRemove }: Car
                   </div>
                 </div>
                 <div className="ml-auto text-right">
-                  <p className="font-bold text-sm text-gray-900">{formatPrice(calculatePrice(item.menuItem.price, item.quantity))}</p>
+                  <p className="font-bold text-sm text-gray-900">
+                    {formatPrice(calculatePrice(item.menuItem.price, localQuantities[item.menuItem.id] ?? item.quantity))}
+                  </p>
                 </div>
               </div>
               {limitWarnings[item.menuItem.id] && (

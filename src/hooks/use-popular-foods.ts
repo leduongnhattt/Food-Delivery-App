@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Food } from '@/types/models'
 import { FoodService, FoodServiceFilters } from '@/services/food.service'
 
@@ -15,6 +15,18 @@ interface UsePopularFoodsReturn {
     refetch: () => Promise<void>
 }
 
+// Serialize filter values so we only refetch when they change, not when the object reference changes
+function getFilterKey(filters: FoodServiceFilters): string {
+    return JSON.stringify({
+        limit: filters.limit,
+        page: filters.page,
+        restaurantId: filters.restaurantId,
+        category: filters.category,
+        search: filters.search,
+        isAvailable: filters.isAvailable
+    })
+}
+
 export function usePopularFoods(filters: FoodServiceFilters = {}): UsePopularFoodsReturn {
     const [foods, setFoods] = useState<Food[]>([])
     const [loading, setLoading] = useState(true)
@@ -26,24 +38,18 @@ export function usePopularFoods(filters: FoodServiceFilters = {}): UsePopularFoo
         totalPages: 0
     })
 
-    // Memoize filters to prevent unnecessary re-renders when object reference changes but values don't
-    const stableFilters = useMemo(() => {
-        return filters
-    }, [
-        filters.limit,
-        filters.page,
-        filters.restaurantId,
-        filters.category,
-        filters.search,
-        filters.isAvailable
-    ])
+    const filtersRef = useRef(filters)
+    filtersRef.current = filters
+
+    const filterKey = getFilterKey(filters)
 
     const fetchFoods = useCallback(async () => {
+        const currentFilters = filtersRef.current
         try {
             setLoading(true)
             setError(null)
 
-            const response = await FoodService.getPopularFoodsDebounced(stableFilters)
+            const response = await FoodService.getPopularFoodsDebounced(currentFilters)
             setFoods(response.foods)
             setPagination(response.pagination)
         } catch (err) {
@@ -53,11 +59,11 @@ export function usePopularFoods(filters: FoodServiceFilters = {}): UsePopularFoo
         } finally {
             setLoading(false)
         }
-    }, [stableFilters])
+    }, [])
 
     useEffect(() => {
         fetchFoods()
-    }, [fetchFoods])
+    }, [filterKey, fetchFoods])
 
     return {
         foods,

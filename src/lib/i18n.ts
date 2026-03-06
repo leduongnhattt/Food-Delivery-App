@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import enFallback from '../../public/locales/en.json';
+import { useState, useEffect, useCallback } from 'react';
+import enFallback from '@/locales/en.json';
 
 export type Locale = 'en' | 'vi';
 

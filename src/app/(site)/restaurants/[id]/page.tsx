@@ -6,9 +6,10 @@ import { MenuItem } from '@/types/models'
 import { useCart } from '@/hooks/use-cart'
 import { useRestaurantDetail, useRestaurantCategoryNav } from '@/hooks/use-restaurant-detail'
 import EnterpriseHero from '@/components/restaurant/EnterpriseHero'
-import ReviewsSection from '@/components/restaurant/ReviewsSection'
+import ReviewsSection, { Review } from '@/components/restaurant/ReviewsSection'
 import CategoryPills from '@/components/restaurant/CategoryPills'
 import RestaurantMenuSection from '@/components/restaurant/RestaurantMenuSection'
+import { buildHeaders } from '@/lib/http-client'
 
 
 interface RestaurantPageProps {
@@ -25,6 +26,90 @@ export default function RestaurantPage({ params }: RestaurantPageProps) {
 
   const { restaurant, items: menuItems, loading } = useRestaurantDetail(id)
   const { activeCategory, categoryRefs, categories: catList, handleSelectCategory } = useRestaurantCategoryNav(menuItems)
+
+  // Reviews state
+  const [reviews, setReviews] = React.useState<Review[]>([])
+  const [reviewsLoading, setReviewsLoading] = React.useState(true)
+  const [averageRating, setAverageRating] = React.useState(0)
+  const [sortBy, setSortBy] = React.useState<'newest' | 'oldest'>('newest')
+
+  // Fetch reviews from API
+  const fetchReviews = React.useCallback(async (sort: 'newest' | 'oldest' = 'newest') => {
+    if (!id) return
+
+    setReviewsLoading(true)
+    try {
+      const url = `/api/restaurants/${id}/reviews?sort=${sort}&limit=50`
+      console.log('[Client] Fetching reviews from:', url)
+      
+      const response = await fetch(url, {
+        headers: buildHeaders(),
+        credentials: 'include'
+      })
+
+      console.log('[Client] Response status:', response.status, response.statusText)
+
+      if (!response.ok) {
+        let errorData
+        try {
+          errorData = await response.json()
+        } catch (parseError) {
+          console.error('[Client] Failed to parse error response:', parseError)
+          errorData = { error: `HTTP ${response.status}: ${response.statusText}` }
+        }
+        
+        const errorMessage = errorData.error || `Failed to fetch reviews (${response.status})`
+        console.error('[Client] Failed to fetch reviews:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorMessage,
+          errorData
+        })
+        
+        // Don't throw, just set empty state to allow page to render
+        setReviews([])
+        setAverageRating(0)
+        return
+      }
+
+      const data = await response.json()
+      console.log('[Client] Reviews data received:', {
+        reviewsCount: data.reviews?.length || 0,
+        averageRating: data.averageRating,
+        totalReviews: data.totalReviews
+      })
+      
+      setReviews(data.reviews || [])
+      setAverageRating(data.averageRating || 0)
+    } catch (error) {
+      console.error('[Client] Error fetching reviews:', error)
+      if (error instanceof Error) {
+        console.error('[Client] Error details:', {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        })
+      }
+      // Don't throw, just set empty state to allow page to render
+      setReviews([])
+      setAverageRating(0)
+    } finally {
+      setReviewsLoading(false)
+    }
+  }, [id])
+
+  // Handle sort change
+  const handleSortChange = React.useCallback((sort: 'newest' | 'oldest') => {
+    setSortBy(sort)
+    fetchReviews(sort)
+  }, [fetchReviews])
+
+  // Fetch reviews on mount and when restaurant ID changes
+  React.useEffect(() => {
+    if (id) {
+      fetchReviews()
+    }
+  }, [id, fetchReviews])
 
   if (!loading && !restaurant) {
     notFound()
@@ -47,6 +132,9 @@ export default function RestaurantPage({ params }: RestaurantPageProps) {
     )
   }
 
+  // Use average rating from reviews API if available, otherwise fallback to restaurant rating
+  const displayRating = reviews.length > 0 ? averageRating : restaurant.rating
+
   return (
     <div className="min-h-screen bg-gray-50">
       
@@ -54,7 +142,7 @@ export default function RestaurantPage({ params }: RestaurantPageProps) {
         name={restaurant!.name}
         description={restaurant!.description}
         avatarUrl={restaurant!.avatarUrl}
-        rating={restaurant!.rating}
+        rating={displayRating}
         isOpen={restaurant!.isOpen}
         phone={restaurant!.phone}
         address={restaurant!.address}
@@ -95,14 +183,20 @@ export default function RestaurantPage({ params }: RestaurantPageProps) {
           ))}
         </div>
 
-        <ReviewsSection 
-          rating={restaurant!.rating}
-          reviews={[
-            { id: '1', author: 'Anonymous', rating: 4, content: 'Great desserts and quick delivery. Will order again!', images: ['/static/rev1.jpg','/static/rev2.jpg'] },
-            { id: '2', author: 'Nguyen', rating: 3, content: 'Tasty, but the salad could be fresher.', images: ['/static/rev3.jpg'] },
-            { id: '3', author: 'Linh', rating: 5, content: 'Excellent service and the pasta was amazing! Highly recommended.', images: ['/static/rev4.jpg'] },
-          ]}
-        />
+        {reviewsLoading ? (
+          <div className="mt-14 flex items-center justify-center py-12">
+            <p className="text-gray-500">Loading reviews...</p>
+          </div>
+        ) : (
+          <ReviewsSection 
+            enterpriseId={id}
+            rating={displayRating}
+            reviews={reviews}
+            sortBy={sortBy}
+            onSortChange={handleSortChange}
+            onReviewsUpdate={() => fetchReviews(sortBy)}
+          />
+        )}
       </div>
     </div>
   )

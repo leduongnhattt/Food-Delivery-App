@@ -36,7 +36,6 @@ function SigninContent() {
   const {
     isLocked,
     remainingSeconds,
-    failedAttempts,
     recordFailedAttempt,
     resetFailedAttempts,
   } = useAccountLockout();

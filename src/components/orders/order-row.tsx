@@ -76,7 +76,7 @@ export function OrderRow({ order, onViewDetails, onReorder, onTrack, onCancel }:
   const statusConfig = getStatusConfig(order.status)
   const StatusIcon = statusConfig.icon
 
-  const canCancel = ['pending', 'confirmed'].includes(order.status)
+  const canCancel = order.status === 'pending'
   const canTrack = ['preparing', 'out_for_delivery'].includes(order.status)
   const canReorder = order.status === 'delivered'
 
@@ -184,7 +184,7 @@ export function OrderCard({ order, onViewDetails, onReorder, onTrack, onCancel }
   const statusConfig = getStatusConfig(order.status)
   const StatusIcon = statusConfig.icon
 
-  const canCancel = ['pending', 'confirmed'].includes(order.status)
+  const canCancel = order.status === 'pending'
   const canTrack = ['preparing', 'out_for_delivery'].includes(order.status)
   const canReorder = order.status === 'delivered'
 

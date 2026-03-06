@@ -1,10 +1,13 @@
 "use client"
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Tag, Percent, Calendar, Sparkles } from 'lucide-react'
 import { useToast } from '@/contexts/toast-context'
+import { getAuthToken } from '@/lib/auth-helpers'
 
 export default function AdminCreateVoucherForm({ onCreated }: { onCreated?: () => void }) {
+  const router = useRouter()
   const { showToast } = useToast()
   const [couponCode, setCouponCode] = useState('')
   const [expire, setExpire] = useState('')
@@ -33,15 +36,39 @@ export default function AdminCreateVoucherForm({ onCreated }: { onCreated?: () =
     if (!validate()) return
     setLoading(true)
     try {
+      const token = getAuthToken()
+      if (!token) {
+        showToast('Please login first', 'error')
+        return
+      }
+
       const payload: any = { Code: couponCode.trim(), ExpiryDate: expire }
       if (discountType === 'percent') payload.DiscountPercent = parseFloat(percentDiscount)
       else payload.DiscountAmount = parseFloat(discountAmount)
       if (minOrderValue.trim()) payload.MinOrderValue = parseFloat(minOrderValue)
       if (maxUsage.trim()) payload.MaxUsage = parseInt(maxUsage)
-      const res = await fetch('/api/admin/voucher', { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify(payload) })
-      if (!res.ok) throw new Error('Failed to create voucher')
+      
+      const res = await fetch('/api/admin/voucher', { 
+        method: 'POST', 
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }, 
+        credentials: 'include', 
+        body: JSON.stringify(payload) 
+      })
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Failed to create voucher' }))
+        throw new Error(errorData.error || 'Failed to create voucher')
+      }
+      
       showToast('Voucher created successfully', 'success')
       setCouponCode(''); setExpire(''); setPercentDiscount(''); setDiscountAmount(''); setMinOrderValue(''); setMaxUsage('')
+      
+      // Refresh page to show new voucher
+      router.refresh()
+      
       onCreated?.()
     } catch (e:any) {
       showToast(e?.message || 'Failed to create voucher', 'error')
