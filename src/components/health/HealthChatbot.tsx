@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { X } from 'lucide-react'
 import { type GeminiHealthAnalysis, type HealthProfile } from '@/services/gemini-health-ai.service'
 import { BASE_IMAGE_URL } from '@/lib/constants'
+import { useToast } from '@/contexts/toast-context'
 import FloatingButton from './FloatingButton'
 import HealthForm from './HealthForm'
 import RecommendationsDisplay from './RecommendationsDisplay'
@@ -14,10 +15,18 @@ interface HealthChatbotProps {
   className?: string
 }
 
+interface FormErrors {
+  age?: string
+  height?: string
+  weight?: string
+}
+
 export default function HealthChatbot({ className = '' }: HealthChatbotProps) {
+  const { showToast } = useToast()
   const [isOpen, setIsOpen] = useState(false)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [geminiAnalysis, setGeminiAnalysis] = useState<GeminiHealthAnalysis | null>(null)
+  const [errors, setErrors] = useState<FormErrors>({})
   const [formData, setFormData] = useState<HealthProfile>({
     age: 0,
     gender: 'male',
@@ -34,6 +43,7 @@ export default function HealthChatbot({ className = '' }: HealthChatbotProps) {
 
   const handleReset = () => {
     setGeminiAnalysis(null)
+    setErrors({})
     setFormData({
       age: 0,
       gender: 'male',
@@ -45,9 +55,50 @@ export default function HealthChatbot({ className = '' }: HealthChatbotProps) {
     })
   }
 
+  const validateField = (field: 'age' | 'height' | 'weight', value: number): string | undefined => {
+    // Check range first (this will catch negative numbers and out-of-range values)
+    if (field === 'age' && (value < 1 || value > 120)) {
+      // If value is 0 or negative, show range error, not required
+      return 'Age must be between 1 and 120'
+    }
+    if (field === 'height' && (value < 50 || value > 250)) {
+      return 'Height must be between 50 and 250 cm'
+    }
+    if (field === 'weight' && (value < 20 || value > 300)) {
+      return 'Weight must be between 20 and 300 kg'
+    }
+    
+    // Check if value is empty or zero (only after range check passes)
+    if (!value || value === 0) {
+      if (field === 'age') return 'Age is required'
+      if (field === 'height') return 'Height is required'
+      if (field === 'weight') return 'Weight is required'
+    }
+    
+    return undefined
+  }
+
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {}
+
+    // Validate age
+    const ageError = validateField('age', formData.age)
+    if (ageError) newErrors.age = ageError
+
+    // Validate height
+    const heightError = validateField('height', formData.height)
+    if (heightError) newErrors.height = heightError
+
+    // Validate weight
+    const weightError = validateField('weight', formData.weight)
+    if (weightError) newErrors.weight = weightError
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
   const handleAnalyze = async () => {
-    if (!formData.age || !formData.height || !formData.weight) {
-      alert('Please fill in all required fields')
+    if (!validateForm()) {
       return
     }
 
@@ -65,12 +116,13 @@ export default function HealthChatbot({ className = '' }: HealthChatbotProps) {
       
       if (result.success) {
         setGeminiAnalysis(result.data)
+        showToast('Health analysis completed successfully!', 'success')
       } else {
-        alert('Error analyzing health data: ' + result.error)
+        showToast(result.error || 'Error analyzing health data', 'error')
       }
     } catch (error) {
       console.error('Error:', error)
-      alert('Error analyzing health data')
+      showToast('Error analyzing health data. Please try again.', 'error')
     } finally {
       setIsAnalyzing(false)
     }
@@ -81,6 +133,29 @@ export default function HealthChatbot({ className = '' }: HealthChatbotProps) {
       ...prev,
       [field]: value
     }))
+    
+    // Validate field in real-time if it's age, height, or weight
+    if (field === 'age' || field === 'height' || field === 'weight') {
+      const error = validateField(field, value)
+      setErrors(prev => {
+        if (error) {
+          return { ...prev, [field]: error }
+        } else {
+          const newErrors = { ...prev }
+          delete newErrors[field]
+          return newErrors
+        }
+      })
+    } else {
+      // Clear error for other fields when user starts typing
+      if (errors[field as keyof FormErrors]) {
+        setErrors(prev => {
+          const newErrors = { ...prev }
+          delete newErrors[field as keyof FormErrors]
+          return newErrors
+        })
+      }
+    }
   }
 
   return (
@@ -123,6 +198,7 @@ export default function HealthChatbot({ className = '' }: HealthChatbotProps) {
                 <HealthForm 
                   formData={formData}
                   isAnalyzing={isAnalyzing}
+                  errors={errors}
                   onInputChange={handleInputChange}
                   onAnalyze={handleAnalyze}
                 />

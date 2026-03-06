@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { withRateLimit, getClientIp } from '@/lib/rate-limit'
 import { PrismaClient } from '@/generated/prisma'
 import { getAuthenticatedUser } from '@/lib/auth-helpers'
+import { ITEM_ORDER_VALUE_LIMIT } from '@/lib/order-limit'
 
 const prisma = new PrismaClient()
 
@@ -31,13 +32,12 @@ export const POST = withRateLimit(async (request: NextRequest) => {
             )
         }
 
-        // Validate availability and per-item cap before creating order
-        const MAX_PER_ITEM = 10
+        // Validate availability before creating order
         await Promise.all(
             cartItems.map(async (item: any) => {
                 const food = await prisma.food.findUnique({
                     where: { FoodID: item.menuItem.id },
-                    select: { DishName: true, IsAvailable: true }
+                    select: { DishName: true, IsAvailable: true, Price: true }
                 })
                 if (!food) {
                     throw new Error(`Food item not found: ${item.menuItem.id}`)
@@ -45,8 +45,9 @@ export const POST = withRateLimit(async (request: NextRequest) => {
                 if (!food.IsAvailable) {
                     throw new Error(`Item ${food.DishName} is currently unavailable`)
                 }
-                if (item.quantity > MAX_PER_ITEM) {
-                    throw new Error(`Item ${food.DishName} exceeds per-item limit of ${MAX_PER_ITEM}`)
+                const unitPrice = Number(item.menuItem?.price ?? food?.Price ?? 0)
+                if (unitPrice * item.quantity > ITEM_ORDER_VALUE_LIMIT) {
+                    throw new Error(`Item ${food?.DishName ?? item.menuItem.id} exceeds the order limit. Please place a separate order for additional quantity.`)
                 }
             })
         )

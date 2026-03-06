@@ -255,6 +255,10 @@ export default function AdminDashboardPage() {
       }
 
       await apiClient.post("/enterprise/voucher", payload);
+      
+      showToast("Voucher created successfully!", "success");
+      
+      // Clear form
       setCouponCode("");
       setExpire("");
       setPercentDiscount("");
@@ -262,8 +266,9 @@ export default function AdminDashboardPage() {
       setMinOrderValue("");
       setMaxUsage("");
       setErrors({ couponCode: "", expire: "", percentDiscount: "", discountAmount: "", minOrderValue: "", maxUsage: "" });
-      showToast("Voucher created successfully!", "success");
-      fetchEnterpriseData();
+      
+      // Refresh voucher list
+      await fetchEnterpriseData();
     } catch (error) {
       console.error("Error adding voucher:", error);
       showToast("Failed to add voucher. Please try again.", "error");

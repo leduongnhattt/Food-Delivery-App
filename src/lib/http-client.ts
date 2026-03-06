@@ -1,3 +1,5 @@
+import { refreshAccessToken } from '@/lib/auth-helpers'
+
 // Common HTTP client utilities for all services
 
 export interface ApiResponse<T = any> {
@@ -78,11 +80,21 @@ export async function requestJson<T>(
     url: string,
     options: RequestInit = {}
 ): Promise<T> {
-    const response = await fetch(url, {
-        cache: 'no-store',
-        ...options,
-        headers: buildHeaders(options.headers as Record<string, string>)
-    })
+    const performFetch = () =>
+        fetch(url, {
+            cache: 'no-store',
+            ...options,
+            headers: buildHeaders(options.headers as Record<string, string>)
+        })
+
+    let response = await performFetch()
+
+    if (response.status === 401) {
+        const refreshed = await refreshAccessToken()
+        if (refreshed) {
+            response = await performFetch()
+        }
+    }
 
     if (!response.ok) {
         let errorMessage = `Request failed with status ${response.status}`

@@ -84,13 +84,14 @@ export default function OrdersPage() {
       const result = await OrderService.cancelOrder(pendingCancelId)
       if ((result as any)?.success) {
         showToast('Order cancelled successfully', 'success', 3000)
-        await refreshOrders()
+        await refreshOrders({ force: true })
       } else {
         showToast((result as any)?.error || 'Failed to cancel order', 'error', 4000)
       }
     } catch (error) {
       console.error('Failed to cancel order', error)
-      showToast('Failed to cancel order', 'error', 4000)
+      const message = error instanceof Error ? error.message : 'Failed to cancel order'
+      showToast(message, 'error', 4000)
     } finally {
       setSubmitting(false)
       setConfirmOpen(false)
@@ -121,11 +122,13 @@ export default function OrdersPage() {
     const hasInProgress = orders.some(o => inProgressStatuses.includes(o.status))
     if (!hasInProgress) return
 
-    const onFocus = () => refreshOrders()
+    const onFocus = () => {
+      void refreshOrders()
+    }
     window.addEventListener('focus', onFocus)
 
     const intervalId = window.setInterval(() => {
-      refreshOrders()
+      void refreshOrders()
     }, 15000)
 
     return () => {
@@ -167,7 +170,12 @@ export default function OrdersPage() {
             <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Something went wrong</h2>
             <p className="text-gray-600 mb-6">{error}</p>
-            <Button onClick={refreshOrders} className="flex items-center space-x-2">
+            <Button
+              onClick={() => {
+                void refreshOrders({ force: true })
+              }}
+              className="flex items-center space-x-2"
+            >
               <RefreshCw className="w-4 h-4" />
               <span>Try Again</span>
             </Button>
@@ -190,7 +198,9 @@ export default function OrdersPage() {
               </p>
             </div>
             <Button
-              onClick={refreshOrders}
+              onClick={() => {
+                void refreshOrders({ force: true })
+              }}
               disabled={loading}
               className="flex items-center space-x-2"
             >

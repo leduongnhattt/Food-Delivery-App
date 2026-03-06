@@ -13,6 +13,8 @@ import { useToast } from "@/contexts/toast-context";
 import GoogleAuthButton from "@/components/ui/google-auth-button";
 import { PasswordStrength } from "@/components/ui/password-strength";
 import { useAuthValidation } from "@/hooks/use-auth-validation";
+import { useAccountLockout } from "@/hooks/use-account-lockout";
+import { AccountLockoutPopup } from "@/components/ui/account-lockout-popup";
 import Image from "next/image";
 
 function SigninContent() {
@@ -29,6 +31,14 @@ function SigninContent() {
   
   // Auth validation hook
   const { validateSigninForm } = useAuthValidation();
+  
+  // Account lockout hook
+  const {
+    isLocked,
+    remainingSeconds,
+    recordFailedAttempt,
+    resetFailedAttempts,
+  } = useAccountLockout();
 
   // Check for password reset success message - REMOVED
   // useEffect(() => {
@@ -62,6 +72,11 @@ function SigninContent() {
       return;
     }
     
+    // Don't proceed if account is locked
+    if (isLocked) {
+      return;
+    }
+    
     // Validate form fields using shared validation logic
     if (!validateSigninForm(username, password, setUsername, setPassword)) {
       return;
@@ -80,11 +95,18 @@ function SigninContent() {
           showToast(result.error.message, "error");
           return;
         }
+        
+        // Record failed attempt for invalid credentials
+        recordFailedAttempt();
+        
         showToast(result.error?.message || t("signin.errors.loginFailed"), "error");
         // Clear password field for invalid credentials
         setPassword("");
         return;
       }
+      
+      // Login successful - reset failed attempts
+      resetFailedAttempts();
       
       // Store only the access token and cache user id for refresh
       setAuthToken(result.data.accessToken);
@@ -103,6 +125,8 @@ function SigninContent() {
       }
     } catch (err) {
       console.error("Failed to sign in:", err);
+      // Record failed attempt for unexpected errors
+      recordFailedAttempt();
       showToast(t("signin.errors.unexpectedError"), "error");
       clearForm();
     } finally {
@@ -123,7 +147,11 @@ function SigninContent() {
   }
 
   return (
-    <div className="h-screen bg-gray-50 flex items-center justify-center p-2 sm:p-4 overflow-hidden">
+    <>
+      {/* Account Lockout Popup */}
+      <AccountLockoutPopup isOpen={isLocked} remainingSeconds={remainingSeconds} />
+      
+      <div className={`h-screen bg-gray-50 flex items-center justify-center p-2 sm:p-4 overflow-hidden ${isLocked ? 'pointer-events-none opacity-50' : ''}`}>
       <div className="w-full max-w-md sm:max-w-lg md:max-w-3xl lg:max-w-4xl bg-white rounded-lg sm:rounded-2xl shadow-xl overflow-hidden">
         <div className="flex flex-col md:flex-row md:min-h-[600px]">
           <div className="md:hidden w-full bg-white flex items-center justify-center py-4">
@@ -155,8 +183,40 @@ function SigninContent() {
                     type="text"
                     placeholder={t("common.usernamePlaceholder")}
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    maxLength={50}
+                    disabled={isLocked}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      
+                      // Update state
+                      setUsername(value);
+                      
+                      // Show error message when reaching 30 characters
+                      if (value.length >= 30) {
+                        const message = t("signin.errors.usernameTooLong");
+                        e.target.setCustomValidity(message);
+                        // Show validation message immediately when at limit
+                        if (value.length === 30) {
+                          // Use setTimeout to show message after input is processed
+                          setTimeout(() => {
+                            e.target.reportValidity();
+                          }, 0);
+                        }
+                      } else {
+                        // Clear validation when under limit
+                        e.target.setCustomValidity("");
+                      }
+                    }}
+                    onInvalid={(e) => {
+                      // Check if it's a length validation error or required error
+                      if (username.length >= 30) {
+                        const message = t("signin.errors.usernameTooLong");
+                        e.currentTarget.setCustomValidity(message);
+                      } else {
+                        const message = t("signin.errors.usernameRequired");
+                        e.currentTarget.setCustomValidity(message);
+                      }
+                    }}
+                    maxLength={30}
                     className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 transition-all text-sm sm:text-base shadow-sm"
                     required
                   />
@@ -171,7 +231,16 @@ function SigninContent() {
                       type={passwordToggle.showPassword ? "text" : "password"}
                       placeholder={t("common.passwordPlaceholder")}
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      disabled={isLocked}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        // Clear custom validity when user starts typing
+                        e.target.setCustomValidity("");
+                      }}
+                      onInvalid={(e) => {
+                        const message = t("signin.errors.passwordRequired");
+                        e.currentTarget.setCustomValidity(message);
+                      }}
                       className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 transition-all pr-10 sm:pr-12 text-sm sm:text-base shadow-sm"
                       required
                     />
@@ -218,7 +287,7 @@ function SigninContent() {
                   <Button 
                     type="submit"
                     className="w-full bg-red-500 hover:bg-red-600 text-white h-12 rounded-lg font-medium transition-all text-sm sm:text-base flex items-center justify-center"
-                    disabled={isLoading}
+                    disabled={isLoading || isLocked}
                   >
                     {isLoading ? (
                       <div className="flex items-center justify-center">
@@ -231,9 +300,11 @@ function SigninContent() {
                   </Button>
 
                   {/* Continue with Google */}
-                  <GoogleAuthButton 
-                    onError={(errorMessage) => showToast(errorMessage, "error")}
-                  />
+                  {!isLocked && (
+                    <GoogleAuthButton 
+                      onError={(errorMessage) => showToast(errorMessage, "error")}
+                    />
+                  )}
                 </div>
               </form>
 
@@ -265,6 +336,7 @@ function SigninContent() {
         </div>
       </div>
     </div>
+    </>
   );
 }
 

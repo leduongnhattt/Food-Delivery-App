@@ -29,7 +29,10 @@ class ApiClient {
         endpoint: string,
         options: RequestInit = {}
     ): Promise<T | ApiResponse> {
-        const url = `${this.baseURL}${endpoint}`
+        // Accept both absolute and relative URLs
+        const url = endpoint.startsWith("http")
+            ? endpoint
+            : `${this.baseURL}${endpoint}`
 
         // Get token from localStorage for authenticated requests
         const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null

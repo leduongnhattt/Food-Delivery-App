@@ -89,9 +89,16 @@ export const DELETE = withRateLimit(async (request: NextRequest) => {
         const customer = await prisma.customer.findFirst({ where: { AccountID: customerAccountId }, select: { CustomerID: true } })
         if (!customer) return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
 
-        const order = await prisma.order.findUnique({ where: { OrderID: orderId }, select: { CustomerID: true } })
+        const order = await prisma.order.findUnique({ 
+            where: { OrderID: orderId }, 
+            select: { CustomerID: true, Status: true } 
+        })
         if (!order || order.CustomerID !== customer.CustomerID) {
             return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+        }
+
+        if ((order.Status || '').toLowerCase() !== 'pending') {
+            return NextResponse.json({ error: 'Only pending orders can be cancelled' }, { status: 400 })
         }
 
         // Delete with transaction similar to enterprise endpoint

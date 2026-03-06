@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { OrderService, Order, OrderFilters } from '@/services/order.service'
 import { useAuth } from '@/hooks/use-auth'
 import { useRouter } from 'next/navigation'
@@ -14,6 +14,8 @@ export function useOrders() {
     const hasMore = false
     const { isAuthenticated, isLoading: authLoading } = useAuth()
     const router = useRouter()
+    const isFetchingRef = useRef(false)
+    const lastFetchTimeRef = useRef(0)
 
     // localStorage functions
     const getCachedOrders = useCallback(() => {
@@ -44,17 +46,31 @@ export function useOrders() {
         }
     }, [])
 
-    const fetchOrders = useCallback(async (filters?: OrderFilters) => {
+    const fetchOrders = useCallback(async (filters?: OrderFilters, options?: { force?: boolean }) => {
+        // Check authentication first
+        if (!isAuthenticated) {
+            setError('Please sign in to view your orders')
+            setLoading(false)
+            return
+        }
+
+        if (isFetchingRef.current) {
+            return
+        }
+
+        if (!options?.force) {
+            const now = Date.now()
+            if (now - lastFetchTimeRef.current < 5000) {
+                return
+            }
+        }
+
+        isFetchingRef.current = true
+        lastFetchTimeRef.current = Date.now()
+
         try {
             setLoading(true)
             setError(null)
-
-            // Check authentication first
-            if (!isAuthenticated) {
-                setError('Please sign in to view your orders')
-                setLoading(false)
-                return
-            }
 
             // Check cache first
             const cachedOrders = getCachedOrders()
@@ -96,6 +112,7 @@ export function useOrders() {
             setError(err instanceof Error ? err.message : 'Failed to fetch orders')
         } finally {
             setLoading(false)
+            isFetchingRef.current = false
         }
     }, [isAuthenticated, getCachedOrders, setCachedOrders, router])
 
@@ -103,14 +120,15 @@ export function useOrders() {
         // All orders loaded at once, no pagination needed
     }, [])
 
-    const refreshOrders = useCallback(() => {
-        if (isAuthenticated) {
-            // Clear cache and fetch fresh data
-            if (typeof window !== 'undefined') {
-                localStorage.removeItem('orders_cache')
-            }
-            fetchOrders({})
+    const refreshOrders = useCallback(async (options?: { force?: boolean }) => {
+        if (!isAuthenticated) return
+
+        // Clear cache and fetch fresh data
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('orders_cache')
         }
+
+        await fetchOrders(undefined, options)
     }, [isAuthenticated, fetchOrders])
 
     const filterOrders = useCallback((filters: OrderFilters) => {
@@ -138,7 +156,7 @@ export function useOrders() {
     useEffect(() => {
         // Only fetch orders if user is authenticated
         if (!authLoading && isAuthenticated) {
-            fetchOrders({})
+            fetchOrders(undefined, { force: true })
         } else if (!authLoading && !isAuthenticated) {
             setLoading(false)
             setError('Please sign in to view your orders')

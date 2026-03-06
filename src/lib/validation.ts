@@ -86,7 +86,7 @@ export function validateFullName(fullName: string): ValidationResult {
         return { isValid: false, errors }
     }
 
-    if (fullName.length > 100) {
+    if (fullName.length > 50) {
         errors.push('Full name must be less than 100 characters')
     }
 
@@ -118,8 +118,8 @@ export function validateAddress(address: string): ValidationResult {
         return { isValid: false, errors }
     }
 
-    if (address.length > 200) {
-        errors.push('Address must be less than 200 characters')
+    if (address.length > 100) {
+        errors.push('Address must be less than 100 characters')
     }
 
     return {

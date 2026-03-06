@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { RestaurantService, RestaurantFilters } from '@/services/restaurant.service'
 import { Restaurant } from '@/types/models'
 
@@ -15,6 +15,17 @@ interface UseRestaurantsReturn {
     refetch: () => Promise<void>
 }
 
+function getFilterKey(filters: RestaurantFilters): string {
+    return JSON.stringify({
+        search: filters.search,
+        category: filters.category,
+        isOpen: filters.isOpen,
+        minRating: filters.minRating,
+        page: filters.page,
+        limit: filters.limit
+    })
+}
+
 export function useRestaurantList(filters: RestaurantFilters = {}): UseRestaurantsReturn {
     const [restaurants, setRestaurants] = useState<Restaurant[]>([])
     const [loading, setLoading] = useState(true)
@@ -26,12 +37,18 @@ export function useRestaurantList(filters: RestaurantFilters = {}): UseRestauran
         totalPages: 0
     })
 
+    const filtersRef = useRef(filters)
+    filtersRef.current = filters
+
+    const filterKey = getFilterKey(filters)
+
     const fetchRestaurants = useCallback(async () => {
+        const currentFilters = filtersRef.current
         try {
             setLoading(true)
             setError(null)
 
-            const response = await RestaurantService.getRestaurantsDebounced(filters)
+            const response = await RestaurantService.getRestaurantsDebounced(currentFilters)
 
             setRestaurants(response.restaurants)
             setPagination(response.pagination)
@@ -42,11 +59,11 @@ export function useRestaurantList(filters: RestaurantFilters = {}): UseRestauran
         } finally {
             setLoading(false)
         }
-    }, [filters])
+    }, [])
 
     useEffect(() => {
         fetchRestaurants()
-    }, [fetchRestaurants])
+    }, [filterKey, fetchRestaurants])
 
     return {
         restaurants,

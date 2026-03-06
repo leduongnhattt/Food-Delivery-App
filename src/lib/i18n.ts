@@ -1,14 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import enFallback from '@/locales/en.json';
 
-type Locale = 'en' | 'vi';
+export type Locale = 'en' | 'vi';
 
 interface Translations {
     [key: string]: any;
 }
 
-// Cache for loaded translations
+// Cache for loaded translations – seed English with the static JSON so we always
+// have a default to fall back to even before async fetches finish.
 const translationCache: Record<Locale, Translations> = {
-    en: {},
+    en: enFallback as Translations,
     vi: {}
 };
 
@@ -38,14 +40,28 @@ export const resetToDefaultLocale = (): void => {
     translationCache.vi = {};
 };
 
+// Clear translation cache to force reload (useful for development)
+export const clearTranslationCache = (): void => {
+    translationCache.en = {};
+    translationCache.vi = {};
+};
+
 // Load translations from JSON file
-const loadTranslations = async (locale: Locale): Promise<Translations> => {
-    if (translationCache[locale] && Object.keys(translationCache[locale]).length > 0) {
+const loadTranslations = async (
+    locale: Locale,
+    options: { forceReload?: boolean } = {}
+): Promise<Translations> => {
+    const { forceReload = false } = options;
+
+    if (!forceReload && translationCache[locale] && Object.keys(translationCache[locale]).length > 0) {
         return translationCache[locale];
     }
 
     try {
-        const response = await fetch(`/locales/${locale}.json`);
+        const cacheBuster = forceReload ? `?t=${Date.now()}` : '';
+        const response = await fetch(`/locales/${locale}.json${cacheBuster}`, {
+            cache: forceReload ? 'no-store' : 'default'
+        });
         if (!response.ok) {
             throw new Error(`Failed to load ${locale} translations`);
         }
@@ -57,9 +73,9 @@ const loadTranslations = async (locale: Locale): Promise<Translations> => {
         console.error(`Error loading translations for ${locale}:`, error);
         // Fallback to default locale if current locale fails
         if (locale !== DEFAULT_LOCALE) {
-            return loadTranslations(DEFAULT_LOCALE);
+            return loadTranslations(DEFAULT_LOCALE, { forceReload });
         }
-        return {};
+        return translationCache[DEFAULT_LOCALE];
     }
 };
 
@@ -80,38 +96,48 @@ const getNestedValue = (obj: any, path: string): string => {
     return typeof current === 'string' ? current : path;
 };
 
+const getWithFallback = (locale: Locale, key: string): string => {
+    const primary = translationCache[locale];
+    const result = getNestedValue(primary, key);
+    if (result !== key) return result;
+
+    if (locale !== DEFAULT_LOCALE) {
+        const fallback = getNestedValue(translationCache[DEFAULT_LOCALE], key);
+        if (fallback !== key) return fallback;
+    }
+    return key;
+};
+
 // Translation function
 export const t = (key: string, locale?: Locale): string => {
     const currentLocale = locale || getStoredLocale();
-    const translations = translationCache[currentLocale];
-
-    if (!translations || Object.keys(translations).length === 0) {
-        // If translations not loaded yet, return the key
-        console.log('Translations not loaded for locale:', currentLocale);
-        return key;
-    }
-
-    const result = getNestedValue(translations, key);
-    if (result === key) {
-        console.log('Translation not found for key:', key, 'in locale:', currentLocale);
-        console.log('Available keys:', Object.keys(translations));
-    }
-    return result;
+    return getWithFallback(currentLocale, key);
 };
 
 // Hook for using translations in components
 export const useTranslations = (locale?: Locale) => {
     const [currentLocale, setCurrentLocale] = useState<Locale>(locale || getStoredLocale());
     const [isLoading, setIsLoading] = useState(true);
+    const [revision, setRevision] = useState(0);
 
     useEffect(() => {
+        let isMounted = true;
         const loadTranslationsForLocale = async () => {
             setIsLoading(true);
-            await loadTranslations(currentLocale);
-            setIsLoading(false);
+            await loadTranslations(currentLocale, {
+                forceReload: process.env.NODE_ENV !== 'production'
+            });
+            if (isMounted) {
+                setIsLoading(false);
+                setRevision(prev => prev + 1); // trigger re-render so `t` sees the latest cache
+            }
         };
 
         loadTranslationsForLocale();
+
+        return () => {
+            isMounted = false;
+        };
     }, [currentLocale]);
 
     const changeLocale = (newLocale: Locale) => {
@@ -119,7 +145,13 @@ export const useTranslations = (locale?: Locale) => {
         setStoredLocale(newLocale);
     };
 
-    const translate = (key: string) => t(key, currentLocale);
+    const translate = useCallback(
+        (key: string) => {
+            void revision; // reference to ensure hook updates when cache refreshes
+            return getWithFallback(currentLocale, key);
+        },
+        [currentLocale, revision]
+    );
 
     return {
         t: translate,
@@ -131,5 +163,7 @@ export const useTranslations = (locale?: Locale) => {
 
 // Initialize translations on app start
 export const initializeTranslations = async (locale: Locale = getStoredLocale()) => {
-    await loadTranslations(locale);
+    await loadTranslations(locale, {
+        forceReload: process.env.NODE_ENV !== 'production'
+    });
 };

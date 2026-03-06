@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   User,
@@ -10,7 +11,15 @@ import {
   TicketPercent,
   BarChart3,
   Tag,
+  Star,
 } from "lucide-react";
+import { getAuthToken } from "@/lib/auth-helpers";
+
+interface AdminProfile {
+  username: string;
+  email: string;
+  avatar: string | null;
+}
 
 const menuItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: BarChart3 },
@@ -19,11 +28,45 @@ const menuItems = [
   { href: "/admin/categories", label: "Categories", icon: Tag },
   // { href: "/admin/inbox", label: "Inbox", icon: MessageCircle }, // nên loại bỏ phần ni
   { href: "/admin/discount", label: "Discount", icon: TicketPercent },
+  { href: "/admin/reviews", label: "Reviews", icon: Star },
 ];
 
 export default function AdminNavbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const [adminProfile, setAdminProfile] = useState<AdminProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAdminProfile = async () => {
+      try {
+        const token = getAuthToken();
+        if (!token) {
+          router.replace('/signin');
+          return;
+        }
+
+        const response = await fetch('/api/admin/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setAdminProfile(data);
+        } else {
+          console.error('Failed to fetch admin profile');
+        }
+      } catch (error) {
+        console.error('Error fetching admin profile:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAdminProfile();
+  }, [router]);
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
@@ -37,6 +80,23 @@ export default function AdminNavbar() {
     router.replace('/signin')
   };
 
+  // Get initials from username or email
+  const getInitials = (name: string | undefined, email: string | undefined) => {
+    if (name && name.trim()) {
+      const parts = name.trim().split(' ');
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      }
+      return name.substring(0, 2).toUpperCase();
+    }
+    if (email) {
+      return email.substring(0, 2).toUpperCase();
+    }
+    return 'AD';
+  };
+
+  const initials = getInitials(adminProfile?.username, adminProfile?.email);
+
   return (
     <>
       {/* Top Header - Full Width */}
@@ -49,13 +109,41 @@ export default function AdminNavbar() {
 
           {/* Admin Info */}
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-medium">MR</span>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-800">Mint Roy</p>
-              <p className="text-xs text-gray-500">Admin</p>
-            </div>
+            {isLoading ? (
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gray-300 rounded-full animate-pulse"></div>
+                <div>
+                  <div className="w-20 h-4 bg-gray-300 rounded animate-pulse mb-1"></div>
+                  <div className="w-16 h-3 bg-gray-300 rounded animate-pulse"></div>
+                </div>
+              </div>
+            ) : adminProfile?.avatar ? (
+              <>
+                <Image
+                  src={adminProfile.avatar}
+                  alt={adminProfile.username}
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+                <div>
+                  <p className="text-sm font-medium text-gray-800">{adminProfile.username}</p>
+                  <p className="text-xs text-gray-500">Admin</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-medium">{initials}</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-800">
+                    {adminProfile?.username || adminProfile?.email || 'Admin'}
+                  </p>
+                  <p className="text-xs text-gray-500">Admin</p>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </header>

@@ -417,6 +417,7 @@ model Review {
   CreatedAt    DateTime @default(now())
   UpdatedAt    DateTime? @updatedAt
   Images       Json?
+  IsHidden     Boolean  @default(false)
 
   customer   Customer   @relation(fields: [CustomerID], references: [CustomerID], onDelete: Cascade)
   enterprise Enterprise @relation(fields: [EnterpriseID], references: [EnterpriseID], onDelete: Restrict)
@@ -425,7 +426,9 @@ model Review {
   @@index([EnterpriseID])
   @@index([Rating])
   @@index([CreatedAt])
-  @@unique([CustomerID, EnterpriseID])
+  @@index([IsHidden])
+  // Removed unique constraint to allow multiple reviews from same customer for same restaurant
+  // @@unique([CustomerID, EnterpriseID])
   @@map("REVIEWS")
 }
 
