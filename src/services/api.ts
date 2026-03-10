@@ -1,6 +1,8 @@
 // Base API configuration
 import { refreshAccessToken, setAuthToken } from '@/lib/auth-helpers'
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api'
+
+export const API_BASE_URL =
+    (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api').replace(/\/$/, '')
 
 interface ApiResponse<T = any> {
     data?: T
