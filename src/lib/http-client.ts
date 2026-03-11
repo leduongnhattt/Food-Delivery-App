@@ -74,7 +74,7 @@ export function buildQueryString(params: Record<string, any>): string {
 }
 
 /**
- * Generic HTTP request handler
+ * Generic HTTP request handler.
  */
 export async function requestJson<T>(
     url: string,
@@ -83,11 +83,26 @@ export async function requestJson<T>(
     const performFetch = () =>
         fetch(url, {
             cache: 'no-store',
+            mode: 'cors',
+            credentials: 'include',
             ...options,
-            headers: buildHeaders(options.headers as Record<string, string>)
+            headers: buildHeaders(options.headers as Record<string, string>),
         })
 
-    let response = await performFetch()
+    let response: Response
+    try {
+        response = await performFetch()
+    } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        const hint =
+            url.startsWith('http') && typeof window !== 'undefined'
+                ? ' (Check CORS on the server or ensure the server is running with the correct URL/port)'
+                : ''
+        const error = new Error(`Failed to fetch${hint}: ${message}`) as Error & { url?: string; cause?: unknown }
+        error.url = url
+        error.cause = err
+        throw error
+    }
 
     if (response.status === 401) {
         const refreshed = await refreshAccessToken()
