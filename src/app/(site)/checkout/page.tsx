@@ -10,7 +10,6 @@ import { PaymentService } from '@/services/payment.service'
 import { useSearchParams } from 'next/navigation'
 import { ArrowLeft, CheckCircle, Circle } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { requestJson } from '@/lib/http-client'
 import { RestaurantService } from '@/services/restaurant.service'
 import { VoucherService } from '@/services/voucher.service'
 import { RestaurantHeader } from '@/components/checkout/RestaurantHeader'
@@ -110,7 +109,7 @@ export default function CheckoutPage() {
   useEffect(() => {
     const first = cartItems[0]?.menuItem
     if (!first?.restaurantId) return
-    requestJson<any>(`/api/restaurants/${first.restaurantId}/commission`)
+    RestaurantService.getCommission(first.restaurantId)
       .then((res) => {
         if (res?.success) setCommissionFee(Number(res.commissionFee) || 0)
       })
