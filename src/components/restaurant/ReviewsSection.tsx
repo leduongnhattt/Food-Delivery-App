@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { useToast } from '@/contexts/toast-context'
 import { useAuth } from '@/hooks/use-auth'
 import { useTranslations } from '@/lib/i18n'
+import { createReview } from '@/services/review.service'
 
 export type Review = {
   id: string
@@ -88,37 +89,12 @@ function ReviewComposer({ enterpriseId, onReviewSubmitted }: ReviewComposerProps
     setIsSubmitting(true)
 
     try {
-      const formData = new FormData()
-      formData.append('enterpriseId', enterpriseId)
-      if (rating > 0) {
-        formData.append('rating', rating.toString())
-      }
-      if (content.trim()) {
-        formData.append('comment', content.trim())
-      }
-      files.forEach(file => {
-        formData.append('images', file)
+      await createReview({
+        enterpriseId,
+        rating: rating > 0 ? rating : undefined,
+        comment: content.trim() || undefined,
+        images: files.length > 0 ? files : undefined,
       })
-
-      const token = localStorage.getItem('access_token')
-      const headers: Record<string, string> = {}
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`
-      }
-      // Don't set Content-Type, let browser set it with boundary for FormData
-
-      const response = await fetch('/api/reviews', {
-        method: 'POST',
-        headers,
-        body: formData,
-        credentials: 'include'
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to submit review')
-      }
 
       showToast('Review submitted successfully!', 'success')
       setRating(0)
