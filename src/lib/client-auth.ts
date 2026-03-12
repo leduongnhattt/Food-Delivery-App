@@ -1,4 +1,5 @@
 // Client-side authentication utilities
+import { API_BASE_URL } from '@/services/api'
 
 export interface AuthError {
     message: string;
@@ -83,7 +84,7 @@ export async function registerUser(data: RegisterData): Promise<AuthResponse> {
         }
 
         // Call the API
-        const response = await fetch("/api/auth/register", {
+        const response = await fetch(`${API_BASE_URL}/auth/register`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -133,7 +134,7 @@ export async function loginUser(data: LoginData): Promise<AuthResponse> {
         }
 
         // Call the API
-        const response = await fetch("/api/auth/login", {
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -193,7 +194,7 @@ export async function loginWithGoogle(data: GoogleLoginData): Promise<AuthRespon
         }
 
         // Call the API
-        const response = await fetch("/api/auth/google", {
+        const response = await fetch(`${API_BASE_URL}/auth/google`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
