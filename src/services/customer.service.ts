@@ -1,5 +1,5 @@
 import { BaseService } from '@/lib/base-service'
-import { buildHeaders, requestJson } from '@/lib/http-client'
+import { buildHeaders, getServerApiBase, requestJson } from '@/lib/http-client'
 
 export type CustomerDTO = {
     CustomerID: string
@@ -19,16 +19,21 @@ export class CustomerService extends BaseService {
 
     static async getByAccount(accountId: string): Promise<CustomerDTO | null> {
         try {
+            const base = getServerApiBase()
             const response = await requestJson<{ customer: CustomerDTO }>(
-                `/api/customers/by-account?accountId=${accountId}`,
+                `${base}/customers/by-account?accountId=${encodeURIComponent(accountId)}`,
                 {
                     method: 'GET',
                     headers: buildHeaders(),
                     cache: 'no-store'
                 }
             )
-            return response.customer
+            return response.customer ?? null
         } catch (error) {
+            const err = error as Error & { status?: number }
+            if (err.status === 404) {
+                return null
+            }
             console.error('Error fetching customer:', error)
             return null
         }
@@ -36,8 +41,9 @@ export class CustomerService extends BaseService {
 
     static async updateSelf(payload: { fullName?: string; phone?: string; address?: string }): Promise<{ success: boolean; customer?: CustomerDTO; error?: string }> {
         try {
+            const base = getServerApiBase()
             const response = await requestJson<{ customer: CustomerDTO }>(
-                '/api/customers/update-profile',
+                `${base}/customers/update-profile`,
                 {
                     method: 'PUT',
                     headers: buildHeaders(),

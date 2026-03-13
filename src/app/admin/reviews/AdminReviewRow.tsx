@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Eye, EyeOff } from 'lucide-react'
+import { patchAdminReview } from '@/services/review.service'
 
 interface Review {
   ReviewID: string
@@ -33,37 +34,19 @@ export default function AdminReviewRow({ review }: { review: Review }) {
 
   const handleToggleVisibility = async () => {
     const newIsHidden = !isHidden
-    
-    // Optimistic update
+
     setIsHidden(newIsHidden)
 
     try {
-      const response = await fetch(`/api/admin/reviews/${review.ReviewID}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ isHidden: newIsHidden }),
-        credentials: 'include'
-      })
+      await patchAdminReview(review.ReviewID, newIsHidden)
 
-      if (!response.ok) {
-        // Revert on error
-        setIsHidden(!newIsHidden)
-        const data = await response.json()
-        alert(data.error || 'Failed to update review')
-        return
-      }
-
-      // Refresh the page to show updated data
       startTransition(() => {
         router.refresh()
       })
     } catch (error) {
-      // Revert on error
       setIsHidden(!newIsHidden)
-      console.error('Error updating review:', error)
-      alert('Failed to update review. Please try again.')
+      const message = error instanceof Error ? error.message : 'Failed to update review'
+      alert(message)
     }
   }
 

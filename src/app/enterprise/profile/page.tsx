@@ -6,7 +6,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { apiClient } from "@/services/api";
 import { useToast } from "@/contexts/toast-context";
 import { useAccountHeader } from "@/hooks/use-account-header";
-import { buildAuthHeader } from "@/lib/auth-helpers";
+import { buildAuthHeader, getAuthToken } from "@/lib/auth-helpers";
+import { getServerApiBase } from "@/lib/http-client";
 import { User, Camera, Lock, Save } from "lucide-react";
 import Image from "next/image";
 
@@ -112,12 +113,11 @@ export default function EnterpriseProfile() {
     try {
       const form = new FormData();
       form.append('file', file);
-      
-      const res = await fetch('/api/enterprise/avatar', {
+      const token = getAuthToken();
+      const base = getServerApiBase();
+      const res = await fetch(`${base}/auth/avatar`, {
         method: 'POST',
-        headers: {
-          ...buildAuthHeader()
-        },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: form
       });
       

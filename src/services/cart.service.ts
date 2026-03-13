@@ -1,5 +1,10 @@
 import { CartItemPayload, CartSnapshot } from "@/types/models"
 import { buildHeaders, requestJson } from '@/lib/http-client'
+import { API_BASE_URL } from '@/services/api'
+
+function getCartApiBase(): string {
+    return `${API_BASE_URL}/cart`
+}
 
 // Debounce utility to prevent duplicate API calls
 class DebouncedCartService {
@@ -32,7 +37,7 @@ class DebouncedCartService {
         this.lastFetchPromise = new Promise((resolve, reject) => {
             this.fetchTimeout = setTimeout(async () => {
                 try {
-                    const result = await requestJson<CartSnapshot>('/api/cart', {
+                    const result = await requestJson<CartSnapshot>(getCartApiBase(), {
                         headers: buildHeaders(),
                     })
                     resolve(result)
@@ -55,7 +60,7 @@ class DebouncedCartService {
         }
         this.lastFetchPromise = null
 
-        return requestJson<CartSnapshot>('/api/cart', {
+        return requestJson<CartSnapshot>(getCartApiBase(), {
             headers: buildHeaders(),
         })
     }
@@ -86,7 +91,7 @@ class DebouncedCartService {
         this.lastClearPromise = new Promise((resolve, reject) => {
             this.clearTimeout = setTimeout(async () => {
                 try {
-                    await fetch('/api/cart', {
+                    await fetch(getCartApiBase(), {
                         method: 'DELETE',
                         cache: 'no-store',
                         headers: buildHeaders(),
@@ -113,7 +118,7 @@ class DebouncedCartService {
         }
 
         // Create immediate request without debounce
-        const updatePromise = requestJson<CartSnapshot>(`/api/cart/items/${foodId}`, {
+        const updatePromise = requestJson<CartSnapshot>(`${getCartApiBase()}/items/${foodId}`, {
             method: 'PATCH',
             headers: buildHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({ quantity }),
@@ -148,7 +153,7 @@ export function disableCartSilentMode(): void {
 }
 
 export async function addItemToCart(payload: CartItemPayload): Promise<CartSnapshot> {
-    return requestJson<CartSnapshot>('/api/cart/items', {
+    return requestJson<CartSnapshot>(`${getCartApiBase()}/items`, {
         method: 'POST',
         headers: buildHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(payload),

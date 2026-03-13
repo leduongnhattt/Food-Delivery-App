@@ -34,6 +34,17 @@ export interface SearchFilters {
 }
 
 /**
+ * Base URL of the Nest API server (for direct client calls).
+ * Use NEXT_PUBLIC_API_URL (e.g. http://localhost:3001/api) in .env.
+ */
+export function getServerApiBase(): string {
+    if (typeof window === 'undefined') {
+        return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+    }
+    return (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api').replace(/\/$/, '')
+}
+
+/**
  * Get access token from localStorage
  */
 export function getAccessToken(): string | null {
@@ -122,8 +133,7 @@ export async function requestJson<T>(
             errorMessage = response.statusText || errorMessage
         }
 
-        // Create error object with status for better handling
-        const error = new Error(errorMessage) as any
+        const error = new Error(errorMessage) as Error & { status: number; url: string }
         error.status = response.status
         error.url = url
         throw error
