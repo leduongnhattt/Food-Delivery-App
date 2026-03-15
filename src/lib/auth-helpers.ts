@@ -75,8 +75,11 @@ export async function refreshAccessToken(): Promise<string | null> {
     try {
         const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
             method: 'POST',
-            headers: { 'x-account-id': accountId },
-            credentials: 'include'
+            headers: {
+                'Content-Type': 'application/json',
+                'x-account-id': accountId,
+            },
+            credentials: 'include',
         });
         if (!res.ok) return null;
         const data = await res.json();

@@ -100,19 +100,6 @@ export const POST = withRateLimit(async (request: NextRequest) => {
             customer_email: userEmail,
         })
 
-        // Store full cart data for later retrieval
-        await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/payments/store-cart-data`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                sessionId: session.id,
-                cartItems,
-                deliveryInfo,
-                voucherCode,
-                total
-            })
-        })
-
         console.log('Checkout session created:', session.id)
         console.log('Cart items count:', cartItems.length)
 

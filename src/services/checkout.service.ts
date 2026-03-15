@@ -1,5 +1,5 @@
 import { CartItem } from '@/types/models'
-import { buildHeaders } from '@/lib/http-client'
+import { buildHeaders, getServerApiBase } from '@/lib/http-client'
 
 export interface CheckoutData {
     cartItems: CartItem[]
@@ -27,7 +27,9 @@ export class CheckoutService {
      */
     static async createCheckoutSession(data: CheckoutData): Promise<CheckoutSessionResponse> {
         try {
-            const response = await fetch('/api/payments/create-checkout-session', {
+            const base = getServerApiBase()
+            // success_url / cancel_url are built on the server from APP_URL
+            const response = await fetch(`${base}/payments/create-checkout-session`, {
                 method: 'POST',
                 headers: buildHeaders(),
                 body: JSON.stringify(data),
@@ -51,7 +53,8 @@ export class CheckoutService {
      */
     static async createOrder(data: Omit<CheckoutData, 'total'>): Promise<OrderResponse> {
         try {
-            const response = await fetch('/api/orders/create', {
+            const base = getServerApiBase()
+            const response = await fetch(`${base}/orders`, {
                 method: 'POST',
                 headers: buildHeaders(),
                 body: JSON.stringify(data),
@@ -75,10 +78,11 @@ export class CheckoutService {
      */
     static async processPaymentSuccess(sessionId: string): Promise<{ success: boolean; orderId?: string; error?: string }> {
         try {
-            const response = await fetch('/api/payments/process-checkout-success', {
+            const base = getServerApiBase()
+            const response = await fetch(`${base}/payments/process-checkout-success`, {
                 method: 'POST',
                 headers: buildHeaders(),
-                body: JSON.stringify({ sessionId })
+                body: JSON.stringify({ sessionId }),
             })
 
             const result = await response.json()
