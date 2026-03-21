@@ -1,14 +1,42 @@
-import { API_BASE_URL } from './api'
+import { getServerApiBase, requestJson } from '@/lib/http-client'
+import { refreshAccessToken, setAuthToken } from '@/lib/auth-helpers'
 
-const REVIEWS_BASE = `${API_BASE_URL}/reviews`
-const ENTERPRISE_REVIEWS_BASE = `${API_BASE_URL}/enterprise/reviews`
-const ADMIN_REVIEWS_BASE = `${API_BASE_URL}/admin/reviews`
+function apiRoot(): string {
+  return getServerApiBase().replace(/\/$/, '')
+}
 
-function getAuthHeaders(): Record<string, string> {
+function bearerHeaders(): Record<string, string> {
   if (typeof window === 'undefined') return {}
   const token = localStorage.getItem('access_token')
   if (!token) return {}
   return { Authorization: `Bearer ${token}` }
+}
+
+/**
+ * FormData POST with 401 refresh (same pattern as {@link requestJson}).
+ */
+async function fetchWithAuthRefresh(
+  url: string,
+  init: RequestInit = {},
+): Promise<Response> {
+  const run = () =>
+    fetch(url, {
+      credentials: 'include',
+      ...init,
+      headers: {
+        ...bearerHeaders(),
+        ...(init.headers as Record<string, string>),
+      },
+    })
+  let res = await run()
+  if (res.status === 401 && typeof window !== 'undefined') {
+    const next = await refreshAccessToken()
+    if (next) {
+      setAuthToken(next)
+      res = await run()
+    }
+  }
+  return res
 }
 
 export interface CreateReviewResponse {
@@ -39,13 +67,11 @@ export async function createReview(params: {
   }
   params.images?.forEach((file) => formData.append('images', file))
 
-  const res = await fetch(REVIEWS_BASE, {
+  const res = await fetchWithAuthRefresh(`${apiRoot()}/reviews`, {
     method: 'POST',
-    headers: getAuthHeaders(),
     body: formData,
-    credentials: 'include',
   })
-  const data = await res.json()
+  const data = (await res.json()) as CreateReviewResponse & { error?: string }
   if (!res.ok) {
     throw new Error(data.error || 'Failed to submit review')
   }
@@ -89,29 +115,21 @@ export async function getEnterpriseReviews(params: {
   Object.entries(params).forEach(([k, v]) => {
     if (v !== undefined && v !== null && v !== '') search.set(k, String(v))
   })
-  const res = await fetch(`${ENTERPRISE_REVIEWS_BASE}?${search}`, {
-    method: 'GET',
-    headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
-    credentials: 'include',
-  })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || 'Failed to fetch reviews')
-  return data
+  const qs = search.toString()
+  const url = qs
+    ? `${apiRoot()}/enterprise/reviews?${qs}`
+    : `${apiRoot()}/enterprise/reviews`
+  return requestJson(url, { method: 'GET' })
 }
 
 export async function patchEnterpriseReview(
   reviewId: string,
-  isHidden: boolean
+  isHidden: boolean,
 ): Promise<{ success: boolean; reviewId: string; isHidden: boolean }> {
-  const res = await fetch(`${ENTERPRISE_REVIEWS_BASE}/${reviewId}`, {
+  return requestJson(`${apiRoot()}/enterprise/reviews/${encodeURIComponent(reviewId)}`, {
     method: 'PATCH',
-    headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
     body: JSON.stringify({ isHidden }),
-    credentials: 'include',
   })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || 'Failed to update review')
-  return data
 }
 
 export async function getAdminReviews(params: {
@@ -140,27 +158,22 @@ export async function getAdminReviews(params: {
   Object.entries(params).forEach(([k, v]) => {
     if (v !== undefined && v !== null && v !== '') search.set(k, String(v))
   })
-  const res = await fetch(`${ADMIN_REVIEWS_BASE}?${search}`, {
-    method: 'GET',
-    headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
-    credentials: 'include',
-  })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || 'Failed to fetch reviews')
-  return data
+  const qs = search.toString()
+  const url = qs
+    ? `${apiRoot()}/admin/reviews?${qs}`
+    : `${apiRoot()}/admin/reviews`
+  return requestJson(url, { method: 'GET' })
 }
 
 export async function patchAdminReview(
   reviewId: string,
-  isHidden: boolean
+  isHidden: boolean,
 ): Promise<{ success: boolean; review: { id: string; isHidden: boolean } }> {
-  const res = await fetch(`${ADMIN_REVIEWS_BASE}/${reviewId}`, {
-    method: 'PATCH',
-    headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ isHidden }),
-    credentials: 'include',
-  })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || 'Failed to update review')
-  return data
+  return requestJson(
+    `${apiRoot()}/admin/reviews/${encodeURIComponent(reviewId)}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ isHidden }),
+    },
+  )
 }
