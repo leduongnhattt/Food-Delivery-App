@@ -190,7 +190,8 @@ export async function logoutUser(): Promise<void> {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
-                }
+                },
+                credentials: 'include'
             });
         }
     } catch (error) {

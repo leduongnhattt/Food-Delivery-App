@@ -89,6 +89,7 @@ export async function registerUser(data: RegisterData): Promise<AuthResponse> {
             headers: {
                 "Content-Type": "application/json",
             },
+            credentials: "include",
             body: JSON.stringify(data),
         });
 
@@ -139,6 +140,7 @@ export async function loginUser(data: LoginData): Promise<AuthResponse> {
             headers: {
                 "Content-Type": "application/json",
             },
+            credentials: "include",
             body: JSON.stringify(data),
         });
 
@@ -199,6 +201,7 @@ export async function loginWithGoogle(data: GoogleLoginData): Promise<AuthRespon
             headers: {
                 "Content-Type": "application/json",
             },
+            credentials: "include",
             body: JSON.stringify(data),
         });
 
