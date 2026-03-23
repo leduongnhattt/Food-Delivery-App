@@ -6,9 +6,15 @@ import { User, Mail, Lock, Building2, Phone, MapPin, Clock, Eye, EyeOff } from '
 import { validateEnterpriseForm, canProceedStep0 as canStep0, canProceedStep1 as canStep1 } from '@/lib/admin-enterprises-validation'
 import { useToast } from '@/contexts/toast-context'
 import { useTimeHhmm } from '@/hooks/use-time-hhmm'
-import { createEnterprise as createEnterpriseApi } from '@/services/admin-enterprises.service'
+import { createEnterprise as createEnterpriseApi } from '@/services/admin.service'
 
-export default function AddEnterpriseModal({ triggerClassName = '' }: { triggerClassName?: string }) {
+export default function AddEnterpriseModal({
+  triggerClassName = '',
+  onCreated,
+}: {
+  triggerClassName?: string
+  onCreated?: () => void
+}) {
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
@@ -66,15 +72,17 @@ export default function AddEnterpriseModal({ triggerClassName = '' }: { triggerC
     onChange('closeHours', closeTime.value)
     if (!canProceedStep0() || !canProceedStep1()) return
     startTransition(async () => {
-      const res = await createEnterpriseApi(form)
-      if (res.ok) {
+      try {
+        await createEnterpriseApi(form)
         setOpen(false)
         showToast('Enterprise created successfully', 'success', 3000)
         router.replace('/admin/enterprises?status=active')
         router.refresh()
-      } else {
-        const data = await res.json().catch(() => ({}))
-        showToast(data.error || 'Failed to create enterprise', 'error', 5000)
+        onCreated?.()
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : 'Failed to create enterprise'
+        showToast(message, 'error', 5000)
       }
     })
   }

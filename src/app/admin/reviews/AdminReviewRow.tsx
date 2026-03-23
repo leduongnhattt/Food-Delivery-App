@@ -1,36 +1,20 @@
 "use client"
 
 import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { Eye, EyeOff } from 'lucide-react'
 import { patchAdminReview } from '@/services/review.service'
+import type { AdminReviewRowModel } from '@/types/admin-api.types'
 
-interface Review {
-  ReviewID: string
-  Rating: number | null
-  Comment: string | null
-  CreatedAt: Date
-  UpdatedAt: Date | null
-  Images: any
-  IsHidden: boolean
-  customer: {
-    account: {
-      Username: string | null
-      Email: string | null
-    } | null
-  } | null
-  enterprise: {
-    EnterpriseID: string
-    EnterpriseName: string
-  } | null
-}
-
-export default function AdminReviewRow({ review }: { review: Review }) {
-  const router = useRouter()
+export default function AdminReviewRow({
+  review,
+  onPatched,
+}: {
+  review: AdminReviewRowModel
+  /** Refetch list when parent loads data from API (client pages). */
+  onPatched?: () => void
+}) {
   const [isPending, startTransition] = useTransition()
-  // Get IsHidden from review (may not exist if migration not run yet)
-  const initialIsHidden = (review as any).IsHidden ?? false
-  const [isHidden, setIsHidden] = useState(initialIsHidden)
+  const [isHidden, setIsHidden] = useState(review.IsHidden)
 
   const handleToggleVisibility = async () => {
     const newIsHidden = !isHidden
@@ -41,7 +25,7 @@ export default function AdminReviewRow({ review }: { review: Review }) {
       await patchAdminReview(review.ReviewID, newIsHidden)
 
       startTransition(() => {
-        router.refresh()
+        onPatched?.()
       })
     } catch (error) {
       setIsHidden(!newIsHidden)

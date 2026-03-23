@@ -5,7 +5,7 @@ import { Tag, Search, Filter, ArrowUpDown } from 'lucide-react'
 import AddCategoryModal from '@/components/admin/AddCategoryModal'
 import DeleteCategoryModal from '@/components/admin/DeleteCategoryModal'
 import EditCategoryModal from '@/components/admin/EditCategoryModal'
-import { getAllCategories } from '@/services/admin-categories.service'
+import { getAllCategories } from '@/services/admin.service'
 import { useToast } from '@/contexts/toast-context'
 
 interface Category {
