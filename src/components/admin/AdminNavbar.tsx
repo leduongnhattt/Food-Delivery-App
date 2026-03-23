@@ -39,7 +39,7 @@ export default function AdminNavbar() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchAdminProfile = async () => {
+    const loadAdminProfile = async () => {
       try {
         const token = getAuthToken();
         if (!token) {
@@ -60,7 +60,7 @@ export default function AdminNavbar() {
       }
     };
 
-    fetchAdminProfile();
+    loadAdminProfile();
   }, [router]);
 
   const isActive = (href: string) =>
