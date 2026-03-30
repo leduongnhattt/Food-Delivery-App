@@ -2,7 +2,7 @@
  * HTTP helpers for the admin UI.
  *
  * Most calls target the Nest API base from {@link getServerApiBase} (`NEXT_PUBLIC_API_URL`).
- * Food categories still use the Next.js route `/api/categories` on the same origin.
+ * Food categories now call the Nest API directly.
  */
 
 import { buildAuthHeader, refreshAccessToken } from '@/lib/auth-helpers'
@@ -84,30 +84,8 @@ function toHeaderRecord(h: HeadersInit | undefined): Record<string, string> {
   return { ...out, ...h }
 }
 
-/**
- * Same-origin fetch to `/api/categories`. On `401`, retries once after `refreshAccessToken`.
- */
-async function fetchNextCategoriesApi(
-  init: RequestInit = {},
-): Promise<Response> {
-  const path = '/api/categories'
-  const build = (): RequestInit => {
-    const headers = toHeaderRecord(init.headers)
-    return {
-      ...init,
-      headers: { ...headers, ...buildAuthHeader() },
-      credentials: 'include',
-    }
-  }
-
-  let res = await fetch(path, build())
-  if (res.status === 401) {
-    const newToken = await refreshAccessToken()
-    if (newToken) {
-      res = await fetch(path, build())
-    }
-  }
-  return res
+function urlCategories(): string {
+  return `${nestApiBase()}/categories`
 }
 
 /**
@@ -219,15 +197,34 @@ export async function createAdminVoucher(
 export async function createCategory(
   payload: CreateCategoryPayload,
 ): Promise<Response> {
-  return fetchNextCategoriesApi({
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
+  const build = (): RequestInit => {
+    const headers = toHeaderRecord(undefined)
+    return {
+      method: 'POST',
+      headers: { ...headers, ...buildAuthHeader() },
+      credentials: 'include',
+      body: JSON.stringify(payload),
+    }
+  }
+
+  let res = await fetch(urlCategories(), build())
+  if (res.status === 401) {
+    const newToken = await refreshAccessToken()
+    if (newToken) {
+      res = await fetch(urlCategories(), build())
+    }
+  }
+  return res
 }
 
 /**
  * @returns Raw `Response`; caller should check `ok` and parse JSON.
  */
 export async function getAllCategories(): Promise<Response> {
-  return fetchNextCategoriesApi({ method: 'GET' })
+  const headers = { ...toHeaderRecord(undefined), ...buildAuthHeader() }
+  return fetch(urlCategories(), {
+    method: 'GET',
+    headers,
+    credentials: 'include',
+  })
 }
