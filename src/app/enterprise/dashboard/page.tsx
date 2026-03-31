@@ -61,10 +61,14 @@ export default function EnterpriseDashboardPage() {
       setStats(statsResponse);
 
       // Fetch recent orders
-      const ordersResponse = await apiClient.get("/enterprise/orders/recent") as any;
-      if (ordersResponse.success === false) {
-        throw new Error(ordersResponse.error || "Failed to fetch recent orders");
+      const ordersRes = await fetch(`${base}/enterprise/orders/recent`, {
+        headers: { ...buildAuthHeader() },
+        cache: "no-store",
+      });
+      if (!ordersRes.ok) {
+        throw new Error("Failed to fetch recent orders");
       }
+      const ordersResponse = await ordersRes.json();
       setRecentOrders(ordersResponse.orders || []);
 
     } catch (error) {

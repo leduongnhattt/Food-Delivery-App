@@ -1,6 +1,6 @@
 "use client";
 
-import { apiClient } from "@/services/api";
+import { getServerApiBase, requestJson } from "@/lib/http-client";
 
 export type EnterpriseReview = {
   id: string;
@@ -33,24 +33,21 @@ export type ReviewFilters = {
 };
 
 export async function fetchEnterpriseReviews(filters: ReviewFilters = {}) {
-  const response = (await apiClient.get("/enterprise/reviews", filters)) as any;
-  if (response?.success === false) {
-    return {
-      success: false,
-      error: response.error || "Failed to fetch reviews",
-      reviews: [],
-      stats: null,
-      features: response.features || {}
-    };
-  }
-  return response;
+  const base = getServerApiBase().replace(/\/$/, "");
+  const search = new URLSearchParams();
+  Object.entries(filters).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== "") search.set(k, String(v));
+  });
+  const qs = search.toString();
+  const url = qs ? `${base}/enterprise/reviews?${qs}` : `${base}/enterprise/reviews`;
+  return requestJson(url, { method: "GET" });
 }
 
 export async function requestReviewVisibility(reviewId: string, action: "hide" | "show", reason: string) {
-  return apiClient.post("/enterprise/reviews/request", {
-    reviewId,
-    action,
-    reason
+  const base = getServerApiBase().replace(/\/$/, "");
+  return requestJson(`${base}/enterprise/reviews/request`, {
+    method: "POST",
+    body: JSON.stringify({ reviewId, action, reason }),
   });
 }
 

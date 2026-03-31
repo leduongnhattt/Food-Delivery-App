@@ -253,7 +253,16 @@ export default function AdminDashboardPage() {
         payload.MaxUsage = parseInt(maxUsage);
       }
 
-      await apiClient.post("/enterprise/voucher", payload);
+      const base = getServerApiBase();
+      await fetch(`${base}/enterprise/voucher`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...buildAuthHeader(),
+        },
+        body: JSON.stringify(payload),
+        cache: "no-store",
+      });
       
       showToast("Voucher created successfully!", "success");
       
