@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { apiClient } from "@/services/api";
+import { getServerApiBase } from "@/lib/http-client";
+import { buildAuthHeader } from "@/lib/auth-helpers";
 
 interface AddNewMenuPopupProps {
   open: boolean;
@@ -29,9 +31,18 @@ export default function AddNewMenuPopup({
     setError(null);
     setLoading(true);
     try {
-      await apiClient.post("/enterprise/menu", {
-        MenuName: menuName,
-        Description: description,
+      const base = getServerApiBase();
+      await fetch(`${base}/enterprise/menu`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...buildAuthHeader(),
+        },
+        body: JSON.stringify({
+          MenuName: menuName,
+          Description: description,
+        }),
+        cache: "no-store",
       });
       setMenuName("");
       setDescription("");

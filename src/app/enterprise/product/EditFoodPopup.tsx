@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/contexts/toast-context";
 import { Food } from "./FoodList";
 import { buildAuthHeader } from "@/lib/auth-helpers";
+import { getServerApiBase } from "@/lib/http-client";
 import { Category } from "@/types/models";
 
 interface EditFoodPopupProps {
@@ -50,7 +51,8 @@ export default function EditFoodPopup({
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch("/api/enterprise/category", {
+        const base = getServerApiBase();
+        const response = await fetch(`${base}/enterprise/category`, {
           headers: { ...buildAuthHeader() },
           cache: "no-store",
         });
@@ -169,7 +171,16 @@ export default function EditFoodPopup({
         ImageURL: imageUrl,
       };
 
-      await apiClient.put("/enterprise/food", updateData);
+      const base = getServerApiBase();
+      await fetch(`${base}/enterprise/food`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...buildAuthHeader(),
+        },
+        body: JSON.stringify(updateData),
+        cache: "no-store",
+      });
       showToast('Food item updated successfully', 'success', 3000)
       onSuccess();
     } catch (error) {

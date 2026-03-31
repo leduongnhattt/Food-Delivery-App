@@ -17,6 +17,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useAccountHeader } from "@/hooks/use-account-header";
 import { useAPICache } from "@/hooks/use-api-cache";
 import { buildAuthHeader } from "@/lib/auth-helpers";
+import { getServerApiBase } from "@/lib/http-client";
 
 const menuItems = [
   { href: "/enterprise/dashboard", label: "Dashboard", icon: BarChart3 },
@@ -47,7 +48,8 @@ export default function EnterpriseNavbar() {
   const { data: enterpriseData } = useAPICache({
     key: 'enterprise-profile',
     fetcher: async () => {
-      const res = await fetch('/api/enterprise/profile', { 
+      const base = getServerApiBase();
+      const res = await fetch(`${base}/enterprise/profile`, { 
         headers: { ...buildAuthHeader() } 
       });
       if (!res.ok) throw new Error('Failed to fetch enterprise profile');
