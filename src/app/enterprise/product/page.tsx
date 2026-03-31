@@ -1,5 +1,7 @@
 'use client'
 import { apiClient, type ApiResponse } from "@/services/api"
+import { getServerApiBase } from "@/lib/http-client"
+import { buildAuthHeader } from "@/lib/auth-helpers"
 import { useEffect, useState } from "react"
 import FoodList, { Food } from "./FoodList";
 import { useEnterpriseUpload } from "@/hooks/use-enterprise-upload";
@@ -24,17 +26,16 @@ export default function AdminDashboardPage() {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await apiClient.get<{ enterprise: any }>(
-        "/enterprise/profile?include=foods"
-      );
-
-      if (isApiError(response)) {
-        console.error("Error fetching enterprise data:", response.error);
+      const base = getServerApiBase();
+      const res = await fetch(`${base}/enterprise/profile?include=foods`, {
+        headers: { ...buildAuthHeader() },
+        cache: "no-store",
+      });
+      if (!res.ok) {
         setError("Failed to fetch enterprise data. Please try again.");
         return;
       }
-
-      const { enterprise } = response;
+      const { enterprise } = await res.json();
       setEnterpriseData(enterprise);
     } catch (error) {
       console.error("Error fetching enterprise data:", error);
@@ -75,7 +76,12 @@ export default function AdminDashboardPage() {
         await deleteImage(food.ImageURL);
       }
       // Delete food item
-      await apiClient.delete(`/enterprise/food?foodId=${food.FoodID}`);
+      const base = getServerApiBase();
+      await fetch(`${base}/enterprise/food?foodId=${food.FoodID}`, {
+        method: 'DELETE',
+        headers: { ...buildAuthHeader() },
+        cache: 'no-store',
+      });
       await refreshMenus();
       showToast('Food item deleted successfully', 'success', 3000)
     } catch (error) {

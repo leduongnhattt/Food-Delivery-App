@@ -9,6 +9,8 @@ import { Calendar, Percent, Tag, Plus, Sparkles } from "lucide-react";
 import VoucherSearch from "@/components/enterprise/VoucherSearch";
 import TabsVouchers from "@/components/enterprise/TabsVouchers";
 import { useSearchParams } from "next/navigation";
+import { getServerApiBase } from "@/lib/http-client";
+import { buildAuthHeader } from "@/lib/auth-helpers";
 
 export default function AdminDashboardPage() {
   const [entepriseData, setEnterpriseData] = useState<any>(null);
@@ -42,16 +44,13 @@ export default function AdminDashboardPage() {
 
   async function fetchEnterpriseData() {
     try {
-      const response = await apiClient.get<{ enterprise: any }>(
-        "/enterprise/profile?include=vouchers"
-      ) as any;
-      
-      if (response.success === false) {
-        console.error("Error fetching enterprise data:", response.error);
-        return;
-      }
-      
-      const { enterprise } = response;
+      const base = getServerApiBase();
+      const res = await fetch(`${base}/enterprise/profile?include=vouchers`, {
+        headers: { ...buildAuthHeader() },
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      const { enterprise } = await res.json();
       setEnterpriseData(enterprise);
     } catch (error) {
       console.error("Error fetching enterprise data:", error);
@@ -254,7 +253,16 @@ export default function AdminDashboardPage() {
         payload.MaxUsage = parseInt(maxUsage);
       }
 
-      await apiClient.post("/enterprise/voucher", payload);
+      const base = getServerApiBase();
+      await fetch(`${base}/enterprise/voucher`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...buildAuthHeader(),
+        },
+        body: JSON.stringify(payload),
+        cache: "no-store",
+      });
       
       showToast("Voucher created successfully!", "success");
       
