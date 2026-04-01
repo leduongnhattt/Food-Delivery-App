@@ -1,6 +1,12 @@
 declare module "leaflet" {
-  export type LatLngExpression = unknown;
-  export type LeafletMouseEvent = unknown;
+  export type LatLngExpression = [number, number] | { lat: number; lng: number };
+
+  export type LeafletMouseEvent = {
+    latlng: {
+      lat: number;
+      lng: number;
+    };
+  };
 
   export interface Map {
     setView: (...args: unknown[]) => unknown;
@@ -11,8 +17,8 @@ declare module "leaflet" {
   }
 
   export interface CircleMarker {
-    setLatLng: (...args: unknown[]) => unknown;
-    addTo: (...args: unknown[]) => unknown;
+    setLatLng: (...args: unknown[]) => CircleMarker;
+    addTo: (...args: unknown[]) => CircleMarker;
   }
 
   export function map(...args: unknown[]): Map;

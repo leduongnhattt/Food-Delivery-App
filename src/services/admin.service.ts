@@ -14,10 +14,12 @@ import {
 import type {
   AdminCustomersListResponse,
   AdminEnterprisesListResponse,
+  AdminDashboardSummaryResponse,
   AdminProfileResponse,
   CreateAdminVoucherPayload,
   CreateAdminVoucherResponse,
   CreateEnterpriseApiResponse,
+  AdminVouchersListResponse,
 } from '@/types/admin-api.types'
 
 /** Body for `POST` enterprise onboarding on Nest. */
@@ -65,6 +67,14 @@ function urlAdminCustomers(): string {
 
 function urlAdminEnterprises(): string {
   return `${nestApiBase()}/admin/enterprises`
+}
+
+function urlAdminVouchers(): string {
+  return `${nestApiBase()}/admin/vouchers`
+}
+
+function urlAdminDashboardSummary(): string {
+  return `${nestApiBase()}/admin/dashboard/summary`
 }
 
 /** Normalizes `HeadersInit` so `buildAuthHeader` can merge Bearer tokens. */
@@ -189,6 +199,35 @@ export async function createAdminVoucher(
       body: JSON.stringify(payload),
     },
   )
+}
+
+export async function listAdminVouchers(params: {
+  status?: 'all' | 'pending' | 'approved'
+  q?: string
+  limit?: number
+}): Promise<AdminVouchersListResponse> {
+  const qs = buildQueryString({
+    status: params.status,
+    q: params.q,
+    limit: params.limit,
+  })
+  const url = qs ? `${urlAdminVouchers()}?${qs}` : urlAdminVouchers()
+  return requestJson<AdminVouchersListResponse>(url, { method: 'GET' })
+}
+
+export async function approveAdminVoucher(voucherId: string): Promise<{ success: boolean }> {
+  return requestJson<{ success: boolean }>(
+    `${urlAdminVouchers()}/${encodeURIComponent(voucherId)}/approve`,
+    { method: 'PATCH' },
+  )
+}
+
+export async function fetchAdminDashboardSummary(params: {
+  range?: string
+}): Promise<AdminDashboardSummaryResponse> {
+  const qs = buildQueryString({ range: params.range })
+  const url = qs ? `${urlAdminDashboardSummary()}?${qs}` : urlAdminDashboardSummary()
+  return requestJson<AdminDashboardSummaryResponse>(url, { method: 'GET' })
 }
 
 /**

@@ -63,6 +63,34 @@ export type CreateEnterpriseApiResponse = {
   enterprise: Record<string, unknown>
 }
 
+export type AdminVoucherListItem = {
+  id: string
+  code: string
+  discountPercent: number | null
+  discountAmount: number | null
+  status: string
+  expiryDate: string | null
+  maxUsage: number | null
+  usedCount: number
+  createdAt: string
+  enterpriseName: string | null
+}
+
+export type AdminVouchersListResponse = {
+  items: AdminVoucherListItem[]
+}
+
+export type AdminDashboardSummaryResponse = {
+  activeEnterpriseCount: number
+  customerCount: number
+  categoriesCount: number
+  pendingVouchersCount: number
+  revenueInRange: number
+  ordersCount: number
+  revenueOrders: Array<{ orderDate: string; totalAmount: number }>
+  pendingVouchersTop: AdminVoucherListItem[]
+}
+
 /** UI row model for the admin reviews table (mapped from Nest admin reviews API). */
 export type AdminReviewRowModel = {
   ReviewID: string

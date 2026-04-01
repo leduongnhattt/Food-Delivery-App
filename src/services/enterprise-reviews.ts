@@ -32,7 +32,30 @@ export type ReviewFilters = {
   sort?: string;
 };
 
-export async function fetchEnterpriseReviews(filters: ReviewFilters = {}) {
+export type EnterpriseReviewsFeatures = {
+  visibilityToggle?: boolean;
+};
+
+export type EnterpriseReviewsSuccessResponse = {
+  success?: true;
+  reviews: EnterpriseReview[];
+  stats: EnterpriseReviewStats | null;
+  features?: EnterpriseReviewsFeatures;
+};
+
+export type EnterpriseReviewsErrorResponse = {
+  success: false;
+  error?: string;
+  features?: EnterpriseReviewsFeatures;
+};
+
+export type EnterpriseReviewsResponse =
+  | EnterpriseReviewsSuccessResponse
+  | EnterpriseReviewsErrorResponse;
+
+export async function fetchEnterpriseReviews(
+  filters: ReviewFilters = {}
+): Promise<EnterpriseReviewsResponse> {
   const base = getServerApiBase().replace(/\/$/, "");
   const search = new URLSearchParams();
   Object.entries(filters).forEach(([k, v]) => {
@@ -40,7 +63,7 @@ export async function fetchEnterpriseReviews(filters: ReviewFilters = {}) {
   });
   const qs = search.toString();
   const url = qs ? `${base}/enterprise/reviews?${qs}` : `${base}/enterprise/reviews`;
-  return requestJson(url, { method: "GET" });
+  return requestJson<EnterpriseReviewsResponse>(url, { method: "GET" });
 }
 
 export async function requestReviewVisibility(reviewId: string, action: "hide" | "show", reason: string) {

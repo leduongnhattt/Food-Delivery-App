@@ -75,7 +75,9 @@ export default function AddEnterpriseModal({
     onChange('openHours', openTime.value)
     onChange('closeHours', closeTime.value)
     if (!canProceedStep0() || !canProceedStep1()) return
-    if (form.latitude === null || form.longitude === null) return
+    const latitude = form.latitude
+    const longitude = form.longitude
+    if (latitude === null || longitude === null) return
     startTransition(async () => {
       try {
         await createEnterpriseApi({
@@ -85,8 +87,8 @@ export default function AddEnterpriseModal({
           enterpriseName: form.enterpriseName,
           phoneNumber: form.phoneNumber,
           address: form.address,
-          latitude: form.latitude,
-          longitude: form.longitude,
+          latitude,
+          longitude,
           openHours: form.openHours,
           closeHours: form.closeHours,
           description: form.description,
