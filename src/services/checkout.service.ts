@@ -141,7 +141,8 @@ export class CheckoutService {
      */
     static async verifyCartState(): Promise<{ items: any[]; isEmpty: boolean }> {
         try {
-            const response = await fetch('/api/cart', {
+            const base = getServerApiBase()
+            const response = await fetch(`${base}/cart`, {
                 method: 'GET',
                 headers: buildHeaders(),
                 cache: 'no-store'
