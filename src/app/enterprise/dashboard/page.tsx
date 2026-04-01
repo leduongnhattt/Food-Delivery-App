@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useToast } from "@/contexts/toast-context";
-import { apiClient } from "@/services/api";
 import { Activity } from "lucide-react";
 import StatsCards from "@/components/enterprise/dashboard/StatsCards";
 import RecentOrders from "@/components/enterprise/dashboard/RecentOrders";
 import QuickActions from "@/components/enterprise/dashboard/QuickActions";
+import { getServerApiBase } from "@/lib/http-client";
+import { buildAuthHeader } from "@/lib/auth-helpers";
 
 interface DashboardStats {
   totalOrders: number;
@@ -47,17 +48,26 @@ export default function EnterpriseDashboardPage() {
       setLoading(true);
       
       // Fetch dashboard statistics
-      const statsResponse = await apiClient.get("/enterprise/dashboard/stats") as any;
-      if (statsResponse.success === false) {
-        throw new Error(statsResponse.error || "Failed to fetch dashboard stats");
+      const base = getServerApiBase();
+      const statsRes = await fetch(`${base}/enterprise/dashboard/stats`, {
+        headers: { ...buildAuthHeader() },
+        cache: "no-store",
+      });
+      if (!statsRes.ok) {
+        throw new Error("Failed to fetch dashboard stats");
       }
+      const statsResponse = await statsRes.json();
       setStats(statsResponse);
 
       // Fetch recent orders
-      const ordersResponse = await apiClient.get("/enterprise/orders/recent") as any;
-      if (ordersResponse.success === false) {
-        throw new Error(ordersResponse.error || "Failed to fetch recent orders");
+      const ordersRes = await fetch(`${base}/enterprise/orders/recent`, {
+        headers: { ...buildAuthHeader() },
+        cache: "no-store",
+      });
+      if (!ordersRes.ok) {
+        throw new Error("Failed to fetch recent orders");
       }
+      const ordersResponse = await ordersRes.json();
       setRecentOrders(ordersResponse.orders || []);
 
     } catch (error) {

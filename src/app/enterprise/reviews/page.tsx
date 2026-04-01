@@ -129,7 +129,6 @@ export default function EnterpriseReviewsPage() {
       setReviews(response?.reviews || []);
       setStats(response?.stats || null);
       setSupportsVisibility(response?.features?.visibilityToggle !== false);
-      setSupportsVisibility(response.features?.visibilityToggle !== false);
     } catch (error) {
       console.error(error);
       showToast("Failed to load reviews", "error");

@@ -1,14 +1,11 @@
 "use client";
-import { apiClient, type ApiResponse } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Menu, MenuList } from "./MenuList";
 import { useEffect, useState } from "react";
 import AddNewMenuPopup from "./AddNewMenuPopup";
 import EditMenuPopup from "./EditMenuPopup";
-
-const isApiError = (response: unknown): response is ApiResponse => {
-  return !!response && typeof response === "object" && "success" in response && (response as ApiResponse).success === false;
-};
+import { getServerApiBase } from "@/lib/http-client";
+import { buildAuthHeader } from "@/lib/auth-helpers";
 
 export default function AdminDashboardPage() {
   const [entepriseData, setEnterpriseData] = useState<any>(null);
@@ -17,14 +14,13 @@ export default function AdminDashboardPage() {
 
   async function fetchEnterpriseData() {
     try {
-      const { enterprise } = await apiClient.get<{ enterprise: any }>(
-        "/enterprise/profile?include=menus"
-      ).then((res) => {
-        if (isApiError(res)) {
-          throw new Error(res.error || "Failed to fetch enterprise data");
-        }
-        return res;
+      const base = getServerApiBase();
+      const res = await fetch(`${base}/enterprise/profile?include=menus`, {
+        headers: { ...buildAuthHeader() },
+        cache: "no-store",
       });
+      if (!res.ok) throw new Error("Failed to fetch enterprise data");
+      const { enterprise } = await res.json();
       setEnterpriseData(enterprise);
     } catch (error) {
       console.error("Error fetching enterprise data:", error);
@@ -48,7 +44,12 @@ export default function AdminDashboardPage() {
     if (!confirmed) return;
 
     try {
-      await apiClient.delete(`/enterprise/menu?menuId=${menuId}`);
+      const base = getServerApiBase();
+      await fetch(`${base}/enterprise/menu?menuId=${menuId}`, {
+        method: "DELETE",
+        headers: { ...buildAuthHeader() },
+        cache: "no-store",
+      });
       alert("Menu deleted successfully");
       refreshMenus();
     } catch (error) {

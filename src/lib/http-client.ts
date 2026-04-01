@@ -34,6 +34,17 @@ export interface SearchFilters {
 }
 
 /**
+ * Base URL of the Nest API server (for direct client calls).
+ * Use NEXT_PUBLIC_API_URL (e.g. http://localhost:3001/api) in .env.
+ */
+export function getServerApiBase(): string {
+    if (typeof window === 'undefined') {
+        return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+    }
+    return (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api').replace(/\/$/, '')
+}
+
+/**
  * Get access token from localStorage
  */
 export function getAccessToken(): string | null {
@@ -74,7 +85,7 @@ export function buildQueryString(params: Record<string, any>): string {
 }
 
 /**
- * Generic HTTP request handler
+ * Generic HTTP request handler.
  */
 export async function requestJson<T>(
     url: string,
@@ -83,11 +94,26 @@ export async function requestJson<T>(
     const performFetch = () =>
         fetch(url, {
             cache: 'no-store',
+            mode: 'cors',
+            credentials: 'include',
             ...options,
-            headers: buildHeaders(options.headers as Record<string, string>)
+            headers: buildHeaders(options.headers as Record<string, string>),
         })
 
-    let response = await performFetch()
+    let response: Response
+    try {
+        response = await performFetch()
+    } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        const hint =
+            url.startsWith('http') && typeof window !== 'undefined'
+                ? ' (Check CORS on the server or ensure the server is running with the correct URL/port)'
+                : ''
+        const error = new Error(`Failed to fetch${hint}: ${message}`) as Error & { url?: string; cause?: unknown }
+        error.url = url
+        error.cause = err
+        throw error
+    }
 
     if (response.status === 401) {
         const refreshed = await refreshAccessToken()
@@ -107,8 +133,7 @@ export async function requestJson<T>(
             errorMessage = response.statusText || errorMessage
         }
 
-        // Create error object with status for better handling
-        const error = new Error(errorMessage) as any
+        const error = new Error(errorMessage) as Error & { status: number; url: string }
         error.status = response.status
         error.url = url
         throw error

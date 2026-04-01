@@ -6,7 +6,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { apiClient } from "@/services/api";
 import { useToast } from "@/contexts/toast-context";
 import { useAccountHeader } from "@/hooks/use-account-header";
-import { buildAuthHeader } from "@/lib/auth-helpers";
+import { buildAuthHeader, getAuthToken } from "@/lib/auth-helpers";
+import { getServerApiBase } from "@/lib/http-client";
 import { User, Camera, Lock, Save } from "lucide-react";
 import Image from "next/image";
 
@@ -48,16 +49,16 @@ export default function EnterpriseProfile() {
   // Get current profile data
   const fetchProfile = useCallback(async () => {
     try {
-      const response = await apiClient.get<{ enterprise: any }>(
-        "/enterprise/profile"
-      ) as any;
-
-      if (response.success === false) {
-        showToast(response.error || "Failed to load profile data", "error");
+      const base = getServerApiBase();
+      const res = await fetch(`${base}/enterprise/profile`, {
+        headers: { ...buildAuthHeader() },
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        showToast("Failed to load profile data", "error");
         return;
       }
-
-      const { enterprise } = response;
+      const { enterprise } = await res.json();
       setEnterpriseName(enterprise.EnterpriseName || "");
       setEmail(enterprise.account.Email || "");
       setAddress(enterprise.Address || "");
@@ -112,12 +113,11 @@ export default function EnterpriseProfile() {
     try {
       const form = new FormData();
       form.append('file', file);
-      
-      const res = await fetch('/api/enterprise/avatar', {
+      const token = getAuthToken();
+      const base = getServerApiBase();
+      const res = await fetch(`${base}/auth/avatar`, {
         method: 'POST',
-        headers: {
-          ...buildAuthHeader()
-        },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: form
       });
       
@@ -255,10 +255,19 @@ export default function EnterpriseProfile() {
         AvatarURL: avatar,
       };
 
-      const response = await apiClient.put("/enterprise/profile", payload) as any;
-      
-      if (response.success === false) {
-        showToast(response.error || "Failed to update profile", "error");
+      const base = getServerApiBase();
+      const res = await fetch(`${base}/enterprise/profile`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...buildAuthHeader(),
+        },
+        body: JSON.stringify(payload),
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        showToast("Failed to update profile", "error");
       } else {
         showToast("Profile updated successfully!", "success");
       }

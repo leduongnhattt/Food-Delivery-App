@@ -1,4 +1,4 @@
-import { apiClient } from "./api";
+import { getServerApiBase, requestJson } from "@/lib/http-client";
 
 export interface Order {
     id: string;
@@ -37,10 +37,11 @@ export interface OrderManagementService {
 class OrderManagementServiceImpl implements OrderManagementService {
     async fetchOrders(): Promise<Order[]> {
         try {
-            const response = await apiClient.get("/enterprise/orders") as any;
-            if (response.success === false) {
-                throw new Error(response.error || "Failed to fetch orders");
-            }
+            const base = getServerApiBase();
+            const response = await requestJson<{ orders: Order[] }>(`${base}/enterprise/orders`, {
+                method: "GET",
+                cache: "no-store",
+            });
             return response.orders || [];
         } catch (error) {
             console.error("Error fetching orders:", error);
@@ -50,11 +51,11 @@ class OrderManagementServiceImpl implements OrderManagementService {
 
     async deleteOrder(orderId: string): Promise<void> {
         try {
-            const response = await apiClient.delete(`/enterprise/orders/${orderId}`) as any;
-
-            if (response.success === false) {
-                throw new Error(response.error || "Failed to delete order");
-            }
+            const base = getServerApiBase();
+            await requestJson(`${base}/enterprise/orders/${orderId}`, {
+                method: "DELETE",
+                cache: "no-store",
+            });
         } catch (error) {
             console.error("Error deleting order:", error);
             throw error;

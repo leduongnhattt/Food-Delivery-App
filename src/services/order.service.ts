@@ -1,4 +1,4 @@
-import { buildHeaders, requestJson } from '@/lib/http-client'
+import { buildHeaders, getServerApiBase, requestJson } from '@/lib/http-client'
 
 export interface OrderItem {
     id: string
@@ -55,7 +55,8 @@ export class OrderService {
         if (filters?.endDate) queryParams.append('endDate', filters.endDate)
 
         const queryString = queryParams.toString()
-        const url = `/api/orders${queryString ? `?${queryString}` : ''}`
+        const base = getServerApiBase()
+        const url = `${base}/orders${queryString ? `?${queryString}` : ''}`
 
         return requestJson<OrderListResponse>(url, {
             headers: buildHeaders(),
@@ -66,7 +67,8 @@ export class OrderService {
      * Get a specific order by ID
      */
     static async getOrderById(orderId: string): Promise<Order> {
-        return requestJson<Order>(`/api/orders/${orderId}`, {
+        const base = getServerApiBase()
+        return requestJson<Order>(`${base}/orders/${orderId}`, {
             headers: buildHeaders(),
         })
     }
@@ -76,7 +78,8 @@ export class OrderService {
      */
     static async cancelOrder(orderId: string): Promise<{ success: boolean; message?: string }> {
         // Single unified cancellation via DELETE endpoint
-        return requestJson<{ success: boolean; message?: string }>(`/api/orders/${orderId}`, {
+        const base = getServerApiBase()
+        return requestJson<{ success: boolean; message?: string }>(`${base}/orders/${orderId}`, {
             method: 'DELETE',
             headers: buildHeaders(),
         })
@@ -86,7 +89,8 @@ export class OrderService {
      * Reorder items from a previous order
      */
     static async reorderItems(orderId: string): Promise<{ success: boolean; message: string }> {
-        return requestJson<{ success: boolean; message: string }>(`/api/orders/${orderId}/reorder`, {
+        const base = getServerApiBase()
+        return requestJson<{ success: boolean; message: string }>(`${base}/orders/${orderId}/reorder`, {
             method: 'POST',
             headers: buildHeaders({ 'Content-Type': 'application/json' }),
         })
@@ -104,6 +108,7 @@ export class OrderService {
             driverPhone?: string
         }
     }> {
+        const base = getServerApiBase()
         return requestJson<{
             status: string
             estimatedDeliveryTime?: string
@@ -112,7 +117,7 @@ export class OrderService {
                 driverName?: string
                 driverPhone?: string
             }
-        }>(`/api/orders/${orderId}/track`, {
+        }>(`${base}/orders/track/${orderId}`, {
             headers: buildHeaders(),
         })
     }

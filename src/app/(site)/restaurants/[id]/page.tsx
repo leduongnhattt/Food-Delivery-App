@@ -9,7 +9,7 @@ import EnterpriseHero from '@/components/restaurant/EnterpriseHero'
 import ReviewsSection, { Review } from '@/components/restaurant/ReviewsSection'
 import CategoryPills from '@/components/restaurant/CategoryPills'
 import RestaurantMenuSection from '@/components/restaurant/RestaurantMenuSection'
-import { buildHeaders } from '@/lib/http-client'
+import { RestaurantService } from '@/services/restaurant.service'
 
 
 interface RestaurantPageProps {
@@ -39,58 +39,11 @@ export default function RestaurantPage({ params }: RestaurantPageProps) {
 
     setReviewsLoading(true)
     try {
-      const url = `/api/restaurants/${id}/reviews?sort=${sort}&limit=50`
-      console.log('[Client] Fetching reviews from:', url)
-      
-      const response = await fetch(url, {
-        headers: buildHeaders(),
-        credentials: 'include'
-      })
-
-      console.log('[Client] Response status:', response.status, response.statusText)
-
-      if (!response.ok) {
-        let errorData
-        try {
-          errorData = await response.json()
-        } catch (parseError) {
-          console.error('[Client] Failed to parse error response:', parseError)
-          errorData = { error: `HTTP ${response.status}: ${response.statusText}` }
-        }
-        
-        const errorMessage = errorData.error || `Failed to fetch reviews (${response.status})`
-        console.error('[Client] Failed to fetch reviews:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorMessage,
-          errorData
-        })
-        
-        // Don't throw, just set empty state to allow page to render
-        setReviews([])
-        setAverageRating(0)
-        return
-      }
-
-      const data = await response.json()
-      console.log('[Client] Reviews data received:', {
-        reviewsCount: data.reviews?.length || 0,
-        averageRating: data.averageRating,
-        totalReviews: data.totalReviews
-      })
-      
+      const data = await RestaurantService.getReviews(id, { sort, limit: 50 })
       setReviews(data.reviews || [])
       setAverageRating(data.averageRating || 0)
-    } catch (error) {
-      console.error('[Client] Error fetching reviews:', error)
-      if (error instanceof Error) {
-        console.error('[Client] Error details:', {
-          message: error.message,
-          stack: error.stack,
-          name: error.name
-        })
-      }
-      // Don't throw, just set empty state to allow page to render
+    } catch (err) {
+      console.error('[Client] Error fetching reviews:', err)
       setReviews([])
       setAverageRating(0)
     } finally {

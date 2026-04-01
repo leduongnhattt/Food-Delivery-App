@@ -10,7 +10,6 @@ import { PaymentService } from '@/services/payment.service'
 import { useSearchParams } from 'next/navigation'
 import { ArrowLeft, CheckCircle, Circle } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { requestJson } from '@/lib/http-client'
 import { RestaurantService } from '@/services/restaurant.service'
 import { VoucherService } from '@/services/voucher.service'
 import { RestaurantHeader } from '@/components/checkout/RestaurantHeader'
@@ -60,6 +59,7 @@ export default function CheckoutPage() {
   const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null)
   const [availableVouchers, setAvailableVouchers] = useState<{ code: string, amount?: number, percent?: number, minOrder?: number }[]>([])
   const [commissionFee, setCommissionFee] = useState<number>(DEFAULT_COMMISSION_FEE)
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false)
   const hasLoadedVouchersRef = useRef(false)
 
   // Auto-apply promo from query (?promo=CODE) using API validation
@@ -110,7 +110,7 @@ export default function CheckoutPage() {
   useEffect(() => {
     const first = cartItems[0]?.menuItem
     if (!first?.restaurantId) return
-    requestJson<any>(`/api/restaurants/${first.restaurantId}/commission`)
+    RestaurantService.getCommission(first.restaurantId)
       .then((res) => {
         if (res?.success) setCommissionFee(Number(res.commissionFee) || 0)
       })
@@ -194,8 +194,18 @@ export default function CheckoutPage() {
     )
   }
 
-  // Redirect if cart is empty - AFTER all hooks
+  // Redirect if cart is empty - AFTER all hooks (skip during place order to avoid "cart is empty" flash)
   if (cartItems.length === 0) {
+    if (isPlacingOrder) {
+      return (
+        <div className="container py-8 flex items-center justify-center min-h-[50vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-500 mx-auto mb-4" />
+            <p className="text-gray-600">Placing your order...</p>
+          </div>
+        </div>
+      )
+    }
     return (
       <div className="container py-8">
         <div className="max-w-2xl mx-auto text-center">
@@ -274,6 +284,7 @@ export default function CheckoutPage() {
         total: total
       }
 
+      setIsPlacingOrder(true)
       if (paymentMethod === 'stripe') {
         await handleStripePayment(checkoutData)
       } else if (paymentMethod === 'cash') {
@@ -282,13 +293,15 @@ export default function CheckoutPage() {
     } catch (error) {
       console.error('Error processing order:', error)
       alert('Failed to process order')
+      setIsPlacingOrder(false)
     }
   }
 
   const handleStripePayment = async (checkoutData: CheckoutData) => {
     const result = await PaymentService.processStripePayment(checkoutData)
-    
+
     if (result.error) {
+      setIsPlacingOrder(false)
       alert(`Failed to create checkout session: ${result.error}`)
       return
     }
@@ -300,7 +313,7 @@ export default function CheckoutPage() {
 
   const handleCashPayment = async (checkoutData: CheckoutData) => {
     const paymentNotification = PaymentService.createPaymentNotification()
-    
+
     const result = await PaymentService.processCashOnDelivery(
       checkoutData,
       clearCart,
@@ -309,10 +322,9 @@ export default function CheckoutPage() {
 
     if (result.success && result.orderId) {
       // Cart is already cleared in PaymentService.processCashOnDelivery()
-      // Just notify other tabs and redirect
+      // Keep isPlacingOrder true until redirect so we don't flash "cart is empty"
       paymentNotification.notifyOtherTabs()
-      
-      // Redirect to success page with delivery information
+
       const deliveryParams = new URLSearchParams({
         orderId: result.orderId,
         paymentMethod: 'cash',
@@ -321,6 +333,7 @@ export default function CheckoutPage() {
       })
       router.push(`/order-success?${deliveryParams.toString()}`)
     } else {
+      setIsPlacingOrder(false)
       alert(`Failed to create order: ${result.error}`)
     }
   }

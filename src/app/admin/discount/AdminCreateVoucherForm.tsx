@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Tag, Percent, Calendar, Sparkles } from 'lucide-react'
 import { useToast } from '@/contexts/toast-context'
-import { getAuthToken } from '@/lib/auth-helpers'
+import { createAdminVoucher } from '@/services/admin.service'
 
 export default function AdminCreateVoucherForm({ onCreated }: { onCreated?: () => void }) {
   const router = useRouter()
@@ -36,33 +36,24 @@ export default function AdminCreateVoucherForm({ onCreated }: { onCreated?: () =
     if (!validate()) return
     setLoading(true)
     try {
-      const token = getAuthToken()
-      if (!token) {
-        showToast('Please login first', 'error')
-        return
+      const payload: {
+        Code: string
+        ExpiryDate: string
+        DiscountPercent?: number
+        DiscountAmount?: number
+        MinOrderValue?: number
+        MaxUsage?: number
+      } = { Code: couponCode.trim(), ExpiryDate: expire }
+      if (discountType === 'percent') {
+        payload.DiscountPercent = parseFloat(percentDiscount)
+      } else {
+        payload.DiscountAmount = parseFloat(discountAmount)
       }
-
-      const payload: any = { Code: couponCode.trim(), ExpiryDate: expire }
-      if (discountType === 'percent') payload.DiscountPercent = parseFloat(percentDiscount)
-      else payload.DiscountAmount = parseFloat(discountAmount)
       if (minOrderValue.trim()) payload.MinOrderValue = parseFloat(minOrderValue)
-      if (maxUsage.trim()) payload.MaxUsage = parseInt(maxUsage)
-      
-      const res = await fetch('/api/admin/voucher', { 
-        method: 'POST', 
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }, 
-        credentials: 'include', 
-        body: JSON.stringify(payload) 
-      })
-      
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ error: 'Failed to create voucher' }))
-        throw new Error(errorData.error || 'Failed to create voucher')
-      }
-      
+      if (maxUsage.trim()) payload.MaxUsage = parseInt(maxUsage, 10)
+
+      await createAdminVoucher(payload)
+
       showToast('Voucher created successfully', 'success')
       setCouponCode(''); setExpire(''); setPercentDiscount(''); setDiscountAmount(''); setMinOrderValue(''); setMaxUsage('')
       
@@ -70,8 +61,8 @@ export default function AdminCreateVoucherForm({ onCreated }: { onCreated?: () =
       router.refresh()
       
       onCreated?.()
-    } catch (e:any) {
-      showToast(e?.message || 'Failed to create voucher', 'error')
+    } catch (e: unknown) {
+      showToast(e instanceof Error ? e.message : 'Failed to create voucher', 'error')
     } finally {
       setLoading(false)
     }

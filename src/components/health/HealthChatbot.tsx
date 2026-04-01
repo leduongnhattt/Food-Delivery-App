@@ -6,6 +6,7 @@ import { X } from 'lucide-react'
 import { type GeminiHealthAnalysis, type HealthProfile } from '@/services/gemini-health-ai.service'
 import { BASE_IMAGE_URL } from '@/lib/constants'
 import { useToast } from '@/contexts/toast-context'
+import { getServerApiBase } from '@/lib/http-client'
 import FloatingButton from './FloatingButton'
 import HealthForm from './HealthForm'
 import RecommendationsDisplay from './RecommendationsDisplay'
@@ -78,6 +79,10 @@ export default function HealthChatbot({ className = '' }: HealthChatbotProps) {
     return undefined
   }
 
+  const isNumericField = (
+    field: keyof HealthProfile
+  ): field is 'age' | 'height' | 'weight' => field === 'age' || field === 'height' || field === 'weight'
+
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}
 
@@ -104,7 +109,8 @@ export default function HealthChatbot({ className = '' }: HealthChatbotProps) {
 
     setIsAnalyzing(true)
     try {
-      const response = await fetch('/api/health/gemini-analyze', {
+      const base = getServerApiBase()
+      const response = await fetch(`${base}/health/gemini-analyze`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -112,10 +118,10 @@ export default function HealthChatbot({ className = '' }: HealthChatbotProps) {
         body: JSON.stringify(formData),
       })
 
-      const result = await response.json()
+      const result: { success?: boolean; data?: GeminiHealthAnalysis; error?: string } = await response.json()
       
       if (result.success) {
-        setGeminiAnalysis(result.data)
+        setGeminiAnalysis(result.data ?? null)
         showToast('Health analysis completed successfully!', 'success')
       } else {
         showToast(result.error || 'Error analyzing health data', 'error')
@@ -128,15 +134,17 @@ export default function HealthChatbot({ className = '' }: HealthChatbotProps) {
     }
   }
 
-  const handleInputChange = (field: keyof HealthProfile, value: any) => {
+  const handleInputChange = <K extends keyof HealthProfile>(field: K, value: HealthProfile[K]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }))
     
     // Validate field in real-time if it's age, height, or weight
-    if (field === 'age' || field === 'height' || field === 'weight') {
-      const error = validateField(field, value)
+    if (isNumericField(field)) {
+      const numericValue =
+        typeof value === 'number' ? value : Number(value ?? 0)
+      const error = validateField(field, numericValue)
       setErrors(prev => {
         if (error) {
           return { ...prev, [field]: error }

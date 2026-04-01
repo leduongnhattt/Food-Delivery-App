@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loading } from '@/components/ui/loading';
+import { getServerApiBase } from '@/lib/http-client';
 
 interface RegistryStatus {
   success: boolean;
@@ -26,7 +27,8 @@ const DataRegistry: React.FC = () => {
   const checkStatus = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/registry', {
+      const base = getServerApiBase();
+      const response = await fetch(`${base}/registry`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -54,7 +56,8 @@ const DataRegistry: React.FC = () => {
   const registerData = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/registry', {
+      const base = getServerApiBase();
+      const response = await fetch(`${base}/registry`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
