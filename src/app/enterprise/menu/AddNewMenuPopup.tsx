@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { apiClient } from "@/services/api";
 import { getServerApiBase } from "@/lib/http-client";
 import { buildAuthHeader } from "@/lib/auth-helpers";
 

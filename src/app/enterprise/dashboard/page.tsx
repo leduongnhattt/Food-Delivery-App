@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useToast } from "@/contexts/toast-context";
-import { apiClient } from "@/services/api";
 import { Activity } from "lucide-react";
 import StatsCards from "@/components/enterprise/dashboard/StatsCards";
 import RecentOrders from "@/components/enterprise/dashboard/RecentOrders";

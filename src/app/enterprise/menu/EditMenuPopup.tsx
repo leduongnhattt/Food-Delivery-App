@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { apiClient } from "@/services/api";
 import { Menu } from "./MenuList";
 import { getServerApiBase } from "@/lib/http-client";
 import { buildAuthHeader } from "@/lib/auth-helpers";

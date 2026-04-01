@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { apiClient } from "@/services/api";
 import { Voucher } from "./VoucherList";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/contexts/toast-context";

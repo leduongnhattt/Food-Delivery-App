@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { Camera, ChevronDown, X } from "lucide-react";
 import { useEnterpriseUpload } from "@/hooks/use-enterprise-upload";
-import { apiClient } from "@/services/api";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/contexts/toast-context";

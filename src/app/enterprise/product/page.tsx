@@ -1,5 +1,4 @@
 'use client'
-import { apiClient, type ApiResponse } from "@/services/api"
 import { getServerApiBase } from "@/lib/http-client"
 import { buildAuthHeader } from "@/lib/auth-helpers"
 import { useEffect, useState } from "react"
@@ -7,10 +6,6 @@ import FoodList, { Food } from "./FoodList";
 import { useEnterpriseUpload } from "@/hooks/use-enterprise-upload";
 import EditFoodPopup from "./EditFoodPopup";
 import { useToast } from "@/contexts/toast-context";
-
-const isApiError = (response: unknown): response is ApiResponse => {
-  return !!response && typeof response === "object" && "success" in response && (response as ApiResponse).success === false;
-};
 
 export default function AdminDashboardPage() {
   const [entepriseData, setEnterpriseData] = useState<any>(null);

@@ -47,6 +47,12 @@ export default function EnterpriseLocationPicker({
   const markerRef = useRef<Leaflet.CircleMarker | null>(null)
   const leafletRef = useRef<typeof Leaflet | null>(null)
   const onLocationChangeRef = useRef(onLocationChange)
+  const applyLocationRef = useRef<((nextLatitude: number, nextLongitude: number, zoom?: number) => void) | null>(null)
+  const updateMarkerRef = useRef<((nextLatitude: number, nextLongitude: number) => void) | null>(null)
+  const initialCoordinatesRef = useRef<Coordinates>({
+    latitude,
+    longitude,
+  })
   const [mapReady, setMapReady] = useState(false)
   const [searching, setSearching] = useState(false)
   const [locating, setLocating] = useState(false)
@@ -95,6 +101,14 @@ export default function EnterpriseLocationPicker({
   }, [updateMarker])
 
   useEffect(() => {
+    applyLocationRef.current = applyLocation
+  }, [applyLocation])
+
+  useEffect(() => {
+    updateMarkerRef.current = updateMarker
+  }, [updateMarker])
+
+  useEffect(() => {
     let isDisposed = false
 
     async function initializeMap() {
@@ -102,8 +116,8 @@ export default function EnterpriseLocationPicker({
       const L = await import('leaflet')
       if (isDisposed || !mapContainerRef.current) return
 
-      const initialLatitude = latitude ?? DEFAULT_CENTER.latitude
-      const initialLongitude = longitude ?? DEFAULT_CENTER.longitude
+      const initialLatitude = initialCoordinatesRef.current.latitude ?? DEFAULT_CENTER.latitude
+      const initialLongitude = initialCoordinatesRef.current.longitude ?? DEFAULT_CENTER.longitude
 
       leafletRef.current = L
       const map = L.map(mapContainerRef.current, {
@@ -118,15 +132,16 @@ export default function EnterpriseLocationPicker({
       }).addTo(map)
 
       map.on('click', (event: Leaflet.LeafletMouseEvent) => {
-        applyLocation(event.latlng.lat, event.latlng.lng, MAP_ZOOM_FOCUSED)
+        applyLocationRef.current?.(event.latlng.lat, event.latlng.lng, MAP_ZOOM_FOCUSED)
         setSearchMessage(null)
       })
 
       mapRef.current = map
       setMapReady(true)
 
-      if (latitude !== null && longitude !== null) {
-        updateMarker(latitude, longitude)
+      const initialCoords = initialCoordinatesRef.current
+      if (initialCoords.latitude !== null && initialCoords.longitude !== null) {
+        updateMarkerRef.current?.(initialCoords.latitude, initialCoords.longitude)
       }
     }
 

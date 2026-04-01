@@ -1,5 +1,4 @@
 "use client";
-import { apiClient, type ApiResponse } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Menu, MenuList } from "./MenuList";
 import { useEffect, useState } from "react";
@@ -7,10 +6,6 @@ import AddNewMenuPopup from "./AddNewMenuPopup";
 import EditMenuPopup from "./EditMenuPopup";
 import { getServerApiBase } from "@/lib/http-client";
 import { buildAuthHeader } from "@/lib/auth-helpers";
-
-const isApiError = (response: unknown): response is ApiResponse => {
-  return !!response && typeof response === "object" && "success" in response && (response as ApiResponse).success === false;
-};
 
 export default function AdminDashboardPage() {
   const [entepriseData, setEnterpriseData] = useState<any>(null);

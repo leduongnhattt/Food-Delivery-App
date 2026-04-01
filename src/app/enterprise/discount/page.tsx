@@ -1,5 +1,4 @@
 "use client";
-import { apiClient } from "@/services/api";
 import { useEffect, useState } from "react";
 import { Voucher, VoucherList } from "./VoucherList";
 import { Button } from "@/components/ui/button";
