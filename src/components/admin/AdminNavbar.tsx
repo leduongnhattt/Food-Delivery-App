@@ -13,7 +13,8 @@ import {
   Tag,
   Star,
 } from "lucide-react";
-import { getAuthToken } from "@/lib/auth-helpers";
+import { getAuthToken, logoutUser } from "@/lib/auth-helpers";
+import { fetchAdminProfile } from "@/services/admin.service";
 
 interface AdminProfile {
   username: string;
@@ -38,7 +39,7 @@ export default function AdminNavbar() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchAdminProfile = async () => {
+    const loadAdminProfile = async () => {
       try {
         const token = getAuthToken();
         if (!token) {
@@ -46,17 +47,11 @@ export default function AdminNavbar() {
           return;
         }
 
-        const response = await fetch('/api/admin/profile', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
+        try {
+          const data = await fetchAdminProfile();
           setAdminProfile(data);
-        } else {
-          console.error('Failed to fetch admin profile');
+        } catch {
+          console.error("Failed to fetch admin profile");
         }
       } catch (error) {
         console.error('Error fetching admin profile:', error);
@@ -65,7 +60,7 @@ export default function AdminNavbar() {
       }
     };
 
-    fetchAdminProfile();
+    loadAdminProfile();
   }, [router]);
 
   const isActive = (href: string) =>
@@ -73,11 +68,12 @@ export default function AdminNavbar() {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+      await logoutUser();
     } catch {}
-    // clear client token/local flags
-    try { localStorage.removeItem('verified') } catch {}
-    router.replace('/signin')
+    try {
+      localStorage.removeItem('verified');
+    } catch {}
+    router.replace('/signin');
   };
 
   // Get initials from username or email

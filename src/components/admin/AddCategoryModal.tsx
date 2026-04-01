@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from 'react'
 import { Tag, FileText } from 'lucide-react'
 import { validateCategoryForm, canProceedCategoryForm, CategoryFormData } from '@/lib/admin-categories-validation'
 import { useToast } from '@/contexts/toast-context'
-import { createCategory } from '@/services/admin-categories.service'
+import { createCategory } from '@/services/admin.service'
 
 export default function AddCategoryModal({ 
   triggerClassName = '',
