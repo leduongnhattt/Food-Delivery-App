@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { CheckCircle, Clock, MapPin, Phone, Home } from 'lucide-react'
 import { buildHeaders } from '@/lib/http-client'
+import { CHECKOUT_PAYMENT_METHOD } from '@/lib/payment-method'
 
 export default function OrderSuccessPage() {
   const searchParams = useSearchParams()
@@ -30,7 +31,7 @@ export default function OrderSuccessPage() {
           status: data.currentStatus || 'Confirmed',
           estimatedDelivery: data.estimatedDeliveryTime ? 
             new Date(data.estimatedDeliveryTime).toLocaleString() : '25-35 minutes',
-          paymentMethod: paymentMethod || 'cash',
+          paymentMethod: paymentMethod || CHECKOUT_PAYMENT_METHOD.Cash,
           deliveryAddress: data.order?.DeliveryAddress || address,
           phone: phone
         }
@@ -44,7 +45,7 @@ export default function OrderSuccessPage() {
       id: orderId,
       status: 'Confirmed',
       estimatedDelivery: '25-35 minutes',
-      paymentMethod: paymentMethod || 'cash',
+      paymentMethod: paymentMethod || CHECKOUT_PAYMENT_METHOD.Cash,
       deliveryAddress: address,
       phone: phone
     }
@@ -107,7 +108,9 @@ export default function OrderSuccessPage() {
               <div className="flex justify-between">
                 <span className="text-gray-600">Payment Method:</span>
                 <span className="font-medium capitalize">
-                  {paymentMethod === 'cash' ? 'Cash on Delivery' : paymentMethod}
+                  {paymentMethod === CHECKOUT_PAYMENT_METHOD.Cash
+                    ? 'Cash on Delivery'
+                    : paymentMethod}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -147,7 +150,7 @@ export default function OrderSuccessPage() {
           </Card>
 
           {/* Payment Info for Cash */}
-          {paymentMethod === 'cash' && (
+          {paymentMethod === CHECKOUT_PAYMENT_METHOD.Cash && (
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
