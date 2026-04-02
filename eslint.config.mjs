@@ -13,6 +13,9 @@ const eslintConfig = [
   // Ensure generated artifacts are ignored regardless of other configs
   {
     ignores: [
+      // Next.js root shim (triple-slash refs); do not lint
+      "next-env.d.ts",
+      "**/next-env.d.ts",
       "src/generated/**",
       "generated/**",
       "prisma/migrations/**",
@@ -28,7 +31,6 @@ const eslintConfig = [
       "**/.next/**",
       "out/**",
       "build/**",
-      "next-env.d.ts",
       // Generated Prisma client and types
       "src/generated/**",
       "generated/**",
