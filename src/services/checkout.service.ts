@@ -18,6 +18,8 @@ export interface OrderResponse {
 
 export interface CheckoutSessionResponse {
     url?: string
+    orderId?: string
+    paymentId?: string
     error?: string
 }
 
@@ -44,6 +46,31 @@ export class CheckoutService {
             return { url: result.url }
         } catch (error) {
             console.error('Error creating checkout session:', error)
+            return { error: 'Network error occurred' }
+        }
+    }
+
+    /**
+     * Create VNPay payment URL (returns a redirect URL)
+     */
+    static async createVnPayPaymentUrl(data: CheckoutData): Promise<CheckoutSessionResponse> {
+        try {
+            const base = getServerApiBase()
+            const response = await fetch(`${base}/payments/vnpay/create-payment-url`, {
+                method: 'POST',
+                headers: buildHeaders(),
+                body: JSON.stringify(data),
+            })
+
+            const result = await response.json()
+
+            if (!response.ok) {
+                return { error: result.error || 'Failed to create VNPay payment URL' }
+            }
+
+            return { url: result.url, orderId: result.orderId, paymentId: result.paymentId }
+        } catch (error) {
+            console.error('Error creating VNPay payment URL:', error)
             return { error: 'Network error occurred' }
         }
     }
@@ -95,6 +122,39 @@ export class CheckoutService {
         } catch (error) {
             console.error('Error processing payment success:', error)
             return { success: false, error: 'Network error occurred' }
+        }
+    }
+
+    /**
+     * Verify VNPAY return URL query (HMAC) on the server — same rules as IPN.
+     */
+    static async verifyVnPayReturnQuery(searchParams: URLSearchParams): Promise<{
+        valid: boolean
+        txnRef?: string
+        responseCode?: string
+        transactionStatus?: string
+        error?: string
+    }> {
+        try {
+            const base = getServerApiBase()
+            const qs = searchParams.toString()
+            const response = await fetch(`${base}/payments/vnpay/verify-return?${qs}`, {
+                method: 'GET',
+                cache: 'no-store',
+            })
+            const result = await response.json().catch(() => ({}))
+            if (!response.ok) {
+                return { valid: false, error: (result as { message?: string }).message || 'Verify failed' }
+            }
+            return result as {
+                valid: boolean
+                txnRef?: string
+                responseCode?: string
+                transactionStatus?: string
+            }
+        } catch (error) {
+            console.error('verifyVnPayReturnQuery', error)
+            return { valid: false, error: 'Network error' }
         }
     }
 

@@ -21,6 +21,7 @@ import { OrderSummary } from '@/components/checkout/OrderSummary'
 import { useToast } from '@/contexts/toast-context'
 import { useTranslations } from '@/lib/i18n'
 import { exceedsItemValueLimit, getOrderLimitLabel } from '@/lib/order-limit'
+import { CHECKOUT_PAYMENT_METHOD, getCheckoutPrimaryButtonLabel, type CheckoutPaymentMethod } from '@/lib/payment-method'
 
 // Constants
 const DEFAULT_COMMISSION_FEE = 0.5
@@ -29,7 +30,6 @@ const RESTAURANT_LOGO_DEBOUNCE_MS = 200
 // Offers now loaded from API
 
 // Types
-type PaymentMethod = 'cash' | 'card' | 'momo' | 'stripe'
 type AppliedVoucher = { code: string; discount: number } | null
 
 interface CheckoutData {
@@ -54,7 +54,9 @@ export default function CheckoutPage() {
   // State management
   const [appliedVoucher, setAppliedVoucher] = useState<AppliedVoucher>(null)
   const [isOffersModalOpen, setIsOffersModalOpen] = useState(false)
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
+  const [paymentMethod, setPaymentMethod] = useState<CheckoutPaymentMethod>(
+    CHECKOUT_PAYMENT_METHOD.Cash,
+  )
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
   const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null)
   const [availableVouchers, setAvailableVouchers] = useState<{ code: string, amount?: number, percent?: number, minOrder?: number }[]>([])
@@ -285,10 +287,15 @@ export default function CheckoutPage() {
       }
 
       setIsPlacingOrder(true)
-      if (paymentMethod === 'stripe') {
+      if (paymentMethod === CHECKOUT_PAYMENT_METHOD.Stripe) {
         await handleStripePayment(checkoutData)
-      } else if (paymentMethod === 'cash') {
+      } else if (paymentMethod === CHECKOUT_PAYMENT_METHOD.VnPay) {
+        await handleVnPayPayment(checkoutData)
+      } else if (paymentMethod === CHECKOUT_PAYMENT_METHOD.Cash) {
         await handleCashPayment(checkoutData)
+      } else {
+        setIsPlacingOrder(false)
+        showToast('This payment method is not supported yet.', 'warning', 6000)
       }
     } catch (error) {
       console.error('Error processing order:', error)
@@ -304,6 +311,32 @@ export default function CheckoutPage() {
       setIsPlacingOrder(false)
       alert(`Failed to create checkout session: ${result.error}`)
       return
+    }
+
+    if (result.redirectUrl) {
+      window.location.href = result.redirectUrl
+    }
+  }
+
+  const handleVnPayPayment = async (checkoutData: CheckoutData) => {
+    const result = await PaymentService.processVnPayPayment(checkoutData)
+
+    if (!result.success) {
+      setIsPlacingOrder(false)
+      alert(`Failed to create VNPay payment URL: ${result.error}`)
+      return
+    }
+
+    if (result.orderId && typeof window !== 'undefined') {
+      sessionStorage.setItem(
+        'vnpay_pending',
+        JSON.stringify({
+          orderId: result.orderId,
+          paymentId: result.paymentId,
+          phone: checkoutData.deliveryInfo.phone,
+          address: checkoutData.deliveryInfo.address,
+        })
+      )
     }
 
     if (result.redirectUrl) {
@@ -327,7 +360,7 @@ export default function CheckoutPage() {
 
       const deliveryParams = new URLSearchParams({
         orderId: result.orderId,
-        paymentMethod: 'cash',
+        paymentMethod: CHECKOUT_PAYMENT_METHOD.Cash,
         phone: deliveryData.phone,
         address: deliveryData.address
       })
@@ -445,13 +478,10 @@ export default function CheckoutPage() {
                 deliveryFee={commissionFee}
                 discount={appliedVoucher ? { code: appliedVoucher.code, amount: appliedVoucher.discount } : null}
                 total={total}
-                buttonText={
-                  paymentMethod === 'stripe'
-                    ? `Pay Now — ${formatPrice(total)}`
-                    : paymentMethod === 'cash'
-                      ? `Confirm Order — ${formatPrice(total)}`
-                      : `Proceed to Payment — ${formatPrice(total)}`
-                }
+                buttonText={getCheckoutPrimaryButtonLabel(
+                  paymentMethod,
+                  formatPrice(total),
+                )}
                 onPlaceOrder={handlePlaceOrder}
               />
 
