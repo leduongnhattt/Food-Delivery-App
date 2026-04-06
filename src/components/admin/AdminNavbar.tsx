@@ -5,14 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  User,
   LogOut,
-  Briefcase,
-  TicketPercent,
-  BarChart3,
-  Tag,
-  Star,
-  Headphones,
+  ChevronDown,
 } from "lucide-react";
 import { getAuthToken, logoutUser } from "@/lib/auth-helpers";
 import { fetchAdminProfile } from "@/services/admin.service";
@@ -23,15 +17,28 @@ interface AdminProfile {
   avatar: string | null;
 }
 
-const menuItems = [
-  { href: "/admin/dashboard", label: "Dashboard", icon: BarChart3 },
-  { href: "/admin/customers", label: "Customers", icon: User },
-  { href: "/admin/enterprises", label: "Enterprises", icon: Briefcase },
-  { href: "/admin/categories", label: "Categories", icon: Tag },
-  // { href: "/admin/inbox", label: "Inbox", icon: MessageCircle }, // nên loại bỏ phần ni
-  { href: "/admin/discount", label: "Discount", icon: TicketPercent },
-  { href: "/admin/reviews", label: "Reviews", icon: Star },
-  { href: "/admin/support", label: "Support", icon: Headphones },
+const NAV_SECTIONS: {
+  title: string;
+  items: { href: string; label: string }[];
+}[] = [
+  {
+    title: "Overview",
+    items: [{ href: "/admin/dashboard", label: "Dashboard" }],
+  },
+  {
+    title: "Management",
+    items: [
+      { href: "/admin/customers", label: "Customers" },
+      { href: "/admin/enterprises", label: "Enterprises" },
+      { href: "/admin/categories", label: "Categories" },
+      { href: "/admin/discount", label: "Discount" },
+      { href: "/admin/reviews", label: "Reviews" },
+    ],
+  },
+  {
+    title: "Support",
+    items: [{ href: "/admin/support", label: "Support" }],
+  },
 ];
 
 export default function AdminNavbar() {
@@ -39,6 +46,27 @@ export default function AdminNavbar() {
   const router = useRouter();
   const [adminProfile, setAdminProfile] = useState<AdminProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    // Default all sections open.
+    setOpenSections((prev) => {
+      const next: Record<string, boolean> = { ...prev };
+      for (const sec of NAV_SECTIONS) {
+        if (next[sec.title] === undefined) next[sec.title] = true;
+      }
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    try {
+      document.documentElement.style.setProperty(
+        "--admin-sidebar-w",
+        "264px",
+      );
+    } catch {}
+  }, []);
 
   useEffect(() => {
     const loadAdminProfile = async () => {
@@ -98,12 +126,19 @@ export default function AdminNavbar() {
   return (
     <>
       {/* Top Header - Full Width */}
-      <header className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-30">
+      <header className="fixed top-0 left-0 right-0 h-16 z-30 border-b border-slate-200 bg-white">
         <div className="flex items-center justify-between h-full px-6">
-          {/* Logo */}
-          <div>
-            <h2 className="text-xl font-bold text-blue-600">Hanala Food</h2>
-          </div>
+          <Link href="/admin/dashboard" className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-600 via-sky-600 to-emerald-500 shadow-sm" />
+            <div className="leading-tight">
+              <div className="text-base font-extrabold tracking-tight text-slate-900">
+                HanalaFood
+              </div>
+              <div className="text-[11px] font-semibold text-slate-500">
+                Admin Console
+              </div>
+            </div>
+          </Link>
 
           {/* Admin Info */}
           <div className="flex items-center gap-3">
@@ -122,23 +157,25 @@ export default function AdminNavbar() {
                   alt={adminProfile.username}
                   width={32}
                   height={32}
-                  className="w-8 h-8 rounded-full object-cover"
+                  className="w-8 h-8 rounded-full object-cover ring-2 ring-white shadow-sm"
                 />
                 <div>
-                  <p className="text-sm font-medium text-gray-800">{adminProfile.username}</p>
-                  <p className="text-xs text-gray-500">Admin</p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {adminProfile.username}
+                  </p>
+                  <p className="text-xs text-slate-500">Admin</p>
                 </div>
               </>
             ) : (
               <>
-                <div className="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">{initials}</span>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-fuchsia-500 to-rose-500 shadow-sm ring-2 ring-white">
+                  <span className="text-white text-sm font-semibold">{initials}</span>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-800">
+                  <p className="text-sm font-semibold text-slate-900">
                     {adminProfile?.username || adminProfile?.email || 'Admin'}
                   </p>
-                  <p className="text-xs text-gray-500">Admin</p>
+                  <p className="text-xs text-slate-500">Admin</p>
                 </div>
               </>
             )}
@@ -146,51 +183,109 @@ export default function AdminNavbar() {
         </div>
       </header>
 
-      {/* Sidebar - Below Header */}
-      <aside className="fixed top-16 left-0 h-[calc(100vh-64px)] w-64 bg-white border-r border-gray-200 z-40">
-        {/* Navigation */}
-        <nav className="p-4">
-          <ul className="space-y-2">
-            {menuItems.map(({ href, label, icon: Icon }) => {
-              const active = isActive(href);
+      {/* Sidebar - Light, sectioned */}
+      <aside
+        className="fixed top-16 left-0 h-[calc(100vh-64px)] w-[264px] bg-white border-r border-slate-200 z-40"
+      >
+        <div className="h-full flex flex-col">
+          {/* Navigation */}
+          <nav className="flex-1 py-2 overflow-y-auto bg-white">
+            {NAV_SECTIONS.map((sec) => {
+              const isOpen = openSections[sec.title] !== false;
               return (
-                <li key={href}>
-                  <Link
-                    href={href}
-                    className={`
-                      flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-200 group relative
-                      ${
-                        active
-                          ? "bg-blue-50 text-blue-600"
-                          : "hover:bg-gray-50 text-gray-600 hover:text-gray-800"
-                      }
-                    `}
+                <div key={sec.title} className="pb-1">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setOpenSections((prev) => ({
+                        ...prev,
+                        [sec.title]: !isOpen,
+                      }))
+                    }
+                    className="w-full px-4 py-2 flex items-center justify-between text-xs font-semibold text-slate-500 hover:text-slate-700"
                   >
-                    <Icon
-                      className={`w-5 h-5 transition-transform duration-200 ${
-                        active ? "text-blue-600" : "text-gray-500"
+                    <span className="truncate">{sec.title}</span>
+                    <ChevronDown
+                      className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${
+                        isOpen ? "rotate-0" : "-rotate-90"
                       }`}
                     />
-                    <span className="font-medium text-sm">{label}</span>
-                    {active && (
-                      <div className="absolute right-0 top-0 bottom-0 w-1 bg-blue-600 rounded-l-full" />
-                    )}
-                  </Link>
-                </li>
+                  </button>
+
+                  <div
+                    className={`overflow-hidden transition-[max-height,opacity] duration-200 ease-out ${
+                      isOpen ? "max-h-[520px] opacity-100" : "max-h-0 opacity-0"
+                    }`}
+                  >
+                    <ul className="py-1">
+                      {sec.items.map(({ href, label }) => {
+                        const active = isActive(href);
+                        return (
+                          <li key={href}>
+                            <Link
+                              href={href}
+                              prefetch
+                              className={`relative block px-4 py-2 pl-9 text-sm transition-colors ${
+                                active
+                                  ? "bg-blue-50 text-blue-700"
+                                  : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                              }`}
+                            >
+                              {/* Active indicator */}
+                              <span
+                                className={`absolute left-0 top-1 bottom-1 w-1 bg-blue-600 transition-opacity ${
+                                  active ? "opacity-100" : "opacity-0"
+                                }`}
+                                aria-hidden="true"
+                              />
+                              <span className="font-medium">{label}</span>
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                </div>
               );
             })}
-          </ul>
-        </nav>
+          </nav>
 
-        {/* Footer Actions */}
-        <div className="absolute bottom-0 left-0 w-full p-4 border-t border-gray-200">
-          <button
-            onClick={handleLogout}
-            className="cursor-pointer w-full flex items-center gap-4 px-4 py-3 rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-600 transition-all duration-200 group"
-          >
-            <LogOut className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
-            <span className="font-medium text-sm">Logout</span>
-          </button>
+          {/* Footer */}
+          <div className="mt-auto border-t border-slate-200 bg-white">
+            <div className="px-4 py-4">
+              <div className="flex items-center gap-3">
+                {adminProfile?.avatar ? (
+                  <Image
+                    src={adminProfile.avatar}
+                    alt={adminProfile.username}
+                    width={36}
+                    height={36}
+                    className="h-9 w-9 rounded-full object-cover ring-1 ring-slate-200"
+                  />
+                ) : (
+                  <div className="h-9 w-9 rounded-full bg-slate-900 text-white flex items-center justify-center text-sm font-bold">
+                    {initials}
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-semibold text-slate-900 truncate">
+                    {adminProfile?.username || "Admin"}
+                  </div>
+                  <div className="text-xs text-slate-500 truncate">
+                    {adminProfile?.email || ""}
+                  </div>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition"
+                  title="Logout"
+                  aria-label="Logout"
+                >
+                  <LogOut className="h-5 w-5 text-slate-700" />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </aside>
     </>
