@@ -12,6 +12,7 @@ import {
   BarChart3,
   Tag,
   Star,
+  Headphones,
 } from "lucide-react";
 import { getAuthToken, logoutUser } from "@/lib/auth-helpers";
 import { fetchAdminProfile } from "@/services/admin.service";
@@ -30,6 +31,7 @@ const menuItems = [
   // { href: "/admin/inbox", label: "Inbox", icon: MessageCircle }, // nên loại bỏ phần ni
   { href: "/admin/discount", label: "Discount", icon: TicketPercent },
   { href: "/admin/reviews", label: "Reviews", icon: Star },
+  { href: "/admin/support", label: "Support", icon: Headphones },
 ];
 
 export default function AdminNavbar() {
