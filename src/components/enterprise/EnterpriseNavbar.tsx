@@ -11,7 +11,8 @@ import {
   TicketPercent,
   BarChart3,
   Menu,
-  Star
+  Star,
+  Headphones,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useAccountHeader } from "@/hooks/use-account-header";
@@ -26,6 +27,7 @@ const menuItems = [
   { href: "/enterprise/add-product", label: "Add Product", icon: SquarePlus },
   { href: "/enterprise/discount", label: "Discount", icon: TicketPercent },
   { href: "/enterprise/reviews", label: "Reviews", icon: Star },
+  { href: "/enterprise/support", label: "Support", icon: Headphones },
   { href: "/enterprise/profile", label: "Profile", icon: User },
 ];
 
