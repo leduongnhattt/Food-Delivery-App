@@ -13,7 +13,10 @@ export default function AdminLayoutClient({
       <AdminNavbar />
 
       {/* Main Content */}
-      <main className="ml-64 pt-16 min-h-screen bg-gray-50">
+      <main
+        className="pt-16 min-h-screen bg-gray-50 transition-[margin-left] duration-200 ease-out"
+        style={{ marginLeft: "var(--admin-sidebar-w, 248px)" }}
+      >
         <div className="w-full h-full">
           <div className="bg-white shadow-sm border border-gray-200 min-h-[calc(100vh-112px)]">
             <div className="p-6">{children}</div>
