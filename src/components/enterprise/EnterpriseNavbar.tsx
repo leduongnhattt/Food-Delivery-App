@@ -23,12 +23,6 @@ type NavSection = { key: string; label: string; defaultOpen?: boolean; children:
 
 const NAV_SECTIONS: NavSection[] = [
   {
-    key: "dashboard",
-    label: "DASHBOARD",
-    defaultOpen: true,
-    children: [{ href: "/enterprise/dashboard", label: "Dashboard" }],
-  },
-  {
     key: "product",
     label: "PRODUCT",
     defaultOpen: true,
@@ -55,7 +49,10 @@ const NAV_SECTIONS: NavSection[] = [
     key: "finance",
     label: "FINANCE",
     defaultOpen: true,
-    children: [{ href: "/enterprise/analytics", label: "My Income" }],
+    children: [
+      { href: "/enterprise/analytics", label: "My Income" },
+      { href: "/enterprise/bank-accounts", label: "Bank Accounts" },
+    ],
   },
   {
     key: "shop",
