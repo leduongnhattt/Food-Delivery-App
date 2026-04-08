@@ -188,7 +188,7 @@ export default function EnterpriseReviewsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-indigo-50/60">
+    <div className="min-h-screen bg-gray-50">
       <div className="sticky top-16 z-10 border-b border-white/40 bg-white/80 backdrop-blur-lg">
         <div className="px-6 py-5 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
