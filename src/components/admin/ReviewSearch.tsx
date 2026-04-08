@@ -102,65 +102,69 @@ export default function ReviewSearch({
     updateURL({ endDate: value })
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch()
-    }
-  }
-
   return (
-    <div className="flex flex-col gap-2 w-full md:flex-row md:items-center">
-      {/* Search Input */}
-      <div className="relative flex-1 md:max-w-xs">
-        <div className="flex gap-1">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+    <div className="w-full">
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-end">
+        {/* Search */}
+        <div className="w-full md:w-[380px]">
+          <div className="relative">
+            <Search className="pointer-events-none h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={searchValue}
               onChange={handleInputChange}
-              onKeyPress={handleKeyPress}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSearch()
+              }}
               placeholder="Search review, customer, or restaurant"
-              className="pl-9 pr-3 w-full h-9 rounded-md border border-slate-200 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300"
+              className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-11 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
               disabled={isPending}
             />
+            <button
+              type="button"
+              onClick={handleSearch}
+              disabled={isPending}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Search"
+              aria-label="Search"
+            >
+              {isPending ? (
+                <div className="h-4 w-4 border-2 border-slate-300 border-t-slate-700 rounded-full animate-spin" />
+              ) : (
+                <Search className="h-4 w-4" />
+              )}
+            </button>
           </div>
-          <button
-            onClick={handleSearch}
-            disabled={isPending}
-            className="px-2 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center min-w-[60px]"
-            title="Search"
-          >
-            {isPending ? (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <Search className="w-4 h-4" />
-            )}
-          </button>
         </div>
-      </div>
 
-      {/* Date Range Filter */}
-      <div className="flex items-center gap-2">
-        <Calendar className="w-4 h-4 text-slate-400" />
+        {/* Date range */}
         <div className="flex items-center gap-2">
-          <input
-            type="date"
-            value={startDate}
-            onChange={handleStartDateChange}
-            className="h-9 px-3 rounded-md border border-slate-200 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 text-sm"
-            disabled={isPending}
-            title="Start Date"
-          />
-          <span className="text-slate-400">-</span>
-          <input
-            type="date"
-            value={endDate}
-            onChange={handleEndDateChange}
-            className="h-9 px-3 rounded-md border border-slate-200 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 text-sm"
-            disabled={isPending}
-            title="End Date"
-          />
+          <div className="hidden md:flex items-center gap-2 text-xs font-medium text-slate-500">
+            <Calendar className="h-4 w-4 text-slate-400" />
+            <span>Date</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={startDate}
+              onChange={handleStartDateChange}
+              className="h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
+              disabled={isPending}
+              aria-label="Start date"
+              title="Start date"
+            />
+            <span className="text-slate-300">–</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={handleEndDateChange}
+              className="h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
+              disabled={isPending}
+              aria-label="End date"
+              title="End date"
+            />
+          </div>
         </div>
       </div>
     </div>
