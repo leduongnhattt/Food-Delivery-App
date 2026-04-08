@@ -269,7 +269,6 @@ export function EnterpriseOrdersPageClient() {
             tab={tab}
             toShipSub={toShipSub}
             onTabChange={setTabQuery}
-            onToShipSubChange={setToShipSubQuery}
           />
         </div>
 

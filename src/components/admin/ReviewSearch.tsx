@@ -102,12 +102,6 @@ export default function ReviewSearch({
     updateURL({ endDate: value })
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch()
-    }
-  }
-
   return (
     <div className="w-full">
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-end">

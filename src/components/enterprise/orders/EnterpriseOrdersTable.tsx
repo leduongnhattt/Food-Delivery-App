@@ -128,6 +128,7 @@ export function EnterpriseOrdersTable({
                   <div className="flex items-start gap-3">
                     <div className="h-14 w-14 shrink-0 overflow-hidden rounded-md border border-gray-200 bg-gray-100">
                       {firstLine?.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={firstLine.imageUrl}
                           alt=""

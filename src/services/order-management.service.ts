@@ -2,7 +2,7 @@ import { getServerApiBase, requestJson } from "@/lib/http-client";
 import type { EnterpriseOrderListItem } from "@/lib/enterprise-order-buckets";
 
 /** List row from GET /enterprise/orders (includes latest payment fields). */
-export interface Order extends EnterpriseOrderListItem {}
+export type Order = EnterpriseOrderListItem;
 
 export interface EnterpriseOrderDetailCustomer {
   fullName: string | null;

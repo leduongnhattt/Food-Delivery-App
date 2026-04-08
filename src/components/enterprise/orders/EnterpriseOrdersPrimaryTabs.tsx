@@ -19,14 +19,12 @@ interface Props {
   tab: EnterpriseOrderTab;
   toShipSub: EnterpriseToShipSubTab;
   onTabChange: (t: EnterpriseOrderTab) => void;
-  onToShipSubChange: (s: EnterpriseToShipSubTab) => void;
 }
 
 export function EnterpriseOrdersPrimaryTabs({
   tab,
   toShipSub,
   onTabChange,
-  onToShipSubChange,
 }: Props) {
   return (
     <div className="space-y-2">
