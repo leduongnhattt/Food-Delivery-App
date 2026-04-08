@@ -55,9 +55,19 @@ export interface OrderFilters {
 export interface OrderManagementService {
   fetchOrders(): Promise<Order[]>;
   fetchOrderById(orderId: string): Promise<EnterpriseOrderDetail>;
+  updateDeliveryMethod(
+    orderId: string,
+    deliveryMethod: "SelfDelivery" | "ThirdParty",
+  ): Promise<{ success: boolean; orderId: string; deliveryMethod: string }>;
   updateOrderStatus(
     orderId: string,
-    status: "Confirmed" | "Preparing" | "ReadyForPickup" | "Cancelled",
+    status:
+      | "Confirmed"
+      | "Preparing"
+      | "ReadyForPickup"
+      | "OutForDelivery"
+      | "Delivered"
+      | "Cancelled",
   ): Promise<{ success: boolean; orderId: string; status: string; unchanged?: boolean }>;
   deleteOrder(orderId: string): Promise<void>;
   formatCurrency(amount: number): string;
@@ -100,9 +110,30 @@ class OrderManagementServiceImpl implements OrderManagementService {
     return res.order;
   }
 
+  async updateDeliveryMethod(
+    orderId: string,
+    deliveryMethod: "SelfDelivery" | "ThirdParty",
+  ): Promise<{ success: boolean; orderId: string; deliveryMethod: string }> {
+    const base = getServerApiBase();
+    return requestJson(
+      `${base}/enterprise/orders/${encodeURIComponent(orderId)}/delivery-method`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ deliveryMethod }),
+        cache: "no-store",
+      },
+    );
+  }
+
   async updateOrderStatus(
     orderId: string,
-    status: "Confirmed" | "Preparing" | "ReadyForPickup" | "Cancelled",
+    status:
+      | "Confirmed"
+      | "Preparing"
+      | "ReadyForPickup"
+      | "OutForDelivery"
+      | "Delivered"
+      | "Cancelled",
   ): Promise<{ success: boolean; orderId: string; status: string; unchanged?: boolean }> {
     const base = getServerApiBase();
     return requestJson(`${base}/enterprise/orders/${encodeURIComponent(orderId)}/status`, {

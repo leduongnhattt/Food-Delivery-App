@@ -11,6 +11,11 @@ import DeleteOrderPopup from "@/components/enterprise/orders/DeleteOrderPopup";
 import { EnterpriseOrdersPrimaryTabs } from "@/components/enterprise/orders/EnterpriseOrdersPrimaryTabs";
 import { EnterpriseOrdersTable } from "@/components/enterprise/orders/EnterpriseOrdersTable";
 import {
+  ArrangeShipmentModal,
+  type DeliveryMethod,
+} from "@/components/enterprise/orders/ArrangeShipmentModal";
+import { getDeliveryMethodFromMetadata } from "@/components/enterprise/orders/order-actions";
+import {
   matchesEnterpriseTab,
   parseTabFromQuery,
   parseToShipSubFromQuery,
@@ -69,6 +74,11 @@ export function EnterpriseOrdersPageClient() {
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
   const [confirmingOrderId, setConfirmingOrderId] = useState<string | null>(null);
+  const [actionLoadingOrderId, setActionLoadingOrderId] = useState<string | null>(null);
+  const [arrangeOpen, setArrangeOpen] = useState(false);
+  const [arrangeOrderId, setArrangeOrderId] = useState<string | null>(null);
+  const [arrangeSelected, setArrangeSelected] = useState<DeliveryMethod | null>(null);
+  const [arrangeSaving, setArrangeSaving] = useState(false);
   const { showToast } = useToast();
 
   const router = useRouter();
@@ -208,6 +218,76 @@ export function EnterpriseOrdersPageClient() {
     },
     [fetchOrders, showToast],
   );
+
+  const handleStartPreparing = useCallback(
+    async (orderId: string) => {
+      try {
+        setActionLoadingOrderId(orderId);
+        await orderManagementService.updateOrderStatus(orderId, "Preparing");
+        showToast("Order is now preparing", "success");
+        await fetchOrders();
+      } catch (error: unknown) {
+        console.error("Error starting preparing:", error);
+        const msg =
+          error instanceof Error ? error.message : "Could not start preparing";
+        showToast(msg, "error");
+      } finally {
+        setActionLoadingOrderId(null);
+      }
+    },
+    [fetchOrders, showToast],
+  );
+
+  // Start delivery is triggered by Arrange shipment (SelfDelivery) confirm.
+
+  const handleMarkDelivered = useCallback(
+    async (orderId: string) => {
+      try {
+        setActionLoadingOrderId(orderId);
+        await orderManagementService.updateOrderStatus(orderId, "Delivered");
+        showToast("Order delivered", "success");
+        await fetchOrders();
+      } catch (error: unknown) {
+        console.error("Error marking delivered:", error);
+        const msg =
+          error instanceof Error ? error.message : "Could not mark delivered";
+        showToast(msg, "error");
+      } finally {
+        setActionLoadingOrderId(null);
+      }
+    },
+    [fetchOrders, showToast],
+  );
+
+  const openArrangeShipment = useCallback((orderId: string) => {
+    const o = orders.find((x) => x.id === orderId);
+    setArrangeOrderId(orderId);
+    setArrangeSelected(getDeliveryMethodFromMetadata(o?.metadata) ?? "SelfDelivery");
+    setArrangeOpen(true);
+  }, [orders]);
+
+  const confirmArrangeShipment = useCallback(async () => {
+    if (!arrangeOrderId || !arrangeSelected) return;
+    try {
+      setArrangeSaving(true);
+      await orderManagementService.updateDeliveryMethod(arrangeOrderId, arrangeSelected);
+      // SelfDelivery: immediately move to Shipping (OutForDelivery) after arrangement.
+      if (arrangeSelected === "SelfDelivery") {
+        await orderManagementService.updateOrderStatus(arrangeOrderId, "OutForDelivery");
+      }
+      showToast("Shipment arranged", "success");
+      setArrangeOpen(false);
+      setArrangeOrderId(null);
+      await fetchOrders();
+    } catch (error: unknown) {
+      console.error("Error saving delivery method:", error);
+      const msg =
+        error instanceof Error ? error.message : "Could not save shipping method";
+      showToast(msg, "error");
+    } finally {
+      setArrangeSaving(false);
+    }
+  }, [arrangeOrderId, arrangeSelected, fetchOrders, showToast]);
 
   const confirmDeleteOrder = async () => {
     if (!orderToDelete) return;
@@ -424,7 +504,11 @@ export function EnterpriseOrdersPageClient() {
           orders={sortedOrders}
           onDelete={handleDeleteOrder}
           onConfirm={handleConfirmOrder}
+          onArrangeShipment={openArrangeShipment}
+          onStartPreparing={handleStartPreparing}
+          onMarkDelivered={handleMarkDelivered}
           confirmingOrderId={confirmingOrderId}
+          actionLoadingOrderId={actionLoadingOrderId}
         />
       </div>
 
@@ -432,6 +516,21 @@ export function EnterpriseOrdersPageClient() {
         isOpen={showDeletePopup}
         onConfirm={confirmDeleteOrder}
         onCancel={cancelDeleteOrder}
+      />
+
+      <ArrangeShipmentModal
+        open={arrangeOpen}
+        orderIdLabel={arrangeOrderId ? `#${arrangeOrderId}` : ""}
+        selected={arrangeSelected}
+        onSelect={setArrangeSelected}
+        onClose={() => {
+          if (arrangeSaving) return;
+          setArrangeOpen(false);
+          setArrangeOrderId(null);
+        }}
+        onConfirm={confirmArrangeShipment}
+        confirmDisabled={arrangeSaving || !arrangeSelected}
+        confirmLabel={arrangeSaving ? "Saving…" : "Confirm"}
       />
     </div>
   );

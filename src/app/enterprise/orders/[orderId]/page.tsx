@@ -18,6 +18,11 @@ import { PaymentInformationCard } from "@/components/enterprise/orders/PaymentIn
 import { SellerContactCard } from "@/components/enterprise/orders/SellerContactCard";
 import { StatusCard } from "@/components/enterprise/orders/StatusCard";
 import {
+  ArrangeShipmentModal,
+  type DeliveryMethod,
+} from "@/components/enterprise/orders/ArrangeShipmentModal";
+import { buildEnterpriseOrderActions } from "@/components/enterprise/orders/order-actions";
+import {
   buildActivityDisplayItems,
   buildLogisticsTimelineItems,
   buildStatusDisplay,
@@ -26,7 +31,13 @@ import {
   maskPhone,
 } from "@/components/enterprise/orders/order-detail-helpers";
 
-type PatchableStatus = "Confirmed" | "Preparing" | "ReadyForPickup" | "Cancelled";
+type PatchableStatus =
+  | "Confirmed"
+  | "Preparing"
+  | "ReadyForPickup"
+  | "OutForDelivery"
+  | "Delivered"
+  | "Cancelled";
 
 export default function EnterpriseOrderDetailPage() {
   const params = useParams();
@@ -43,6 +54,9 @@ export default function EnterpriseOrderDetailPage() {
   const [timelineExpanded, setTimelineExpanded] = useState(false);
   const [incomeDetailsExpanded, setIncomeDetailsExpanded] = useState(true);
   const [buyerPaymentExpanded, setBuyerPaymentExpanded] = useState(true);
+  const [arrangeOpen, setArrangeOpen] = useState(false);
+  const [arrangeSelected, setArrangeSelected] = useState<DeliveryMethod | null>(null);
+  const [arrangeSaving, setArrangeSaving] = useState(false);
 
   const load = useCallback(async () => {
     if (!orderId) return;
@@ -74,6 +88,12 @@ export default function EnterpriseOrderDetailPage() {
           ? "Order cancelled"
           : status === "Confirmed"
             ? "Order confirmed"
+            : status === "Preparing"
+              ? "Order is now preparing"
+              : status === "OutForDelivery"
+                ? "Order is now out for delivery"
+                : status === "Delivered"
+                  ? "Order delivered"
             : "Order status updated",
         "success",
       );
@@ -114,6 +134,7 @@ export default function EnterpriseOrderDetailPage() {
 
   const st = order.status.trim();
   const stLower = st.toLowerCase();
+  const actionModel = buildEnterpriseOrderActions(order);
 
   const subtotal = order.orderDetails.reduce((s, l) => s + l.subTotal, 0);
   const commission = order.commissionAmount ?? 0;
@@ -157,6 +178,102 @@ export default function EnterpriseOrderDetailPage() {
             actionLoading={actionLoading}
             onCancel={() => setShowCancelConfirm(true)}
             onViewPickup={() => showToast("Pickup details is not implemented yet", "info")}
+            extraActions={
+              <>
+                {actionModel.actions.map((a) => {
+                  if (a.key === "confirm") {
+                    return (
+                      <button
+                        key={a.key}
+                        type="button"
+                        disabled={actionLoading}
+                        onClick={() => patchStatus("Confirmed")}
+                        className={`text-sm font-medium ${
+                          actionLoading
+                            ? "text-gray-400 cursor-not-allowed"
+                            : "text-[#0070f0] hover:text-[#0050c0] hover:underline"
+                        }`}
+                      >
+                        {a.label}
+                      </button>
+                    );
+                  }
+                  if (a.key === "arrange_shipment") {
+                    return (
+                      <button
+                        key={a.key}
+                        type="button"
+                        disabled={actionLoading}
+                        onClick={() => {
+                          setArrangeSelected(actionModel.deliveryMethod ?? "SelfDelivery");
+                          setArrangeOpen(true);
+                        }}
+                        className={`text-sm ${
+                          actionLoading
+                            ? "text-gray-400 cursor-not-allowed"
+                            : "text-[#0070f0] hover:text-[#0050c0] hover:underline"
+                        }`}
+                      >
+                        {a.label}
+                      </button>
+                    );
+                  }
+                  if (a.key === "start_preparing") {
+                    return (
+                      <button
+                        key={a.key}
+                        type="button"
+                        disabled={actionLoading}
+                        onClick={() => patchStatus("Preparing")}
+                        className={`text-sm ${
+                          actionLoading
+                            ? "text-gray-400 cursor-not-allowed"
+                            : "text-[#0070f0] hover:text-[#0050c0] hover:underline"
+                        }`}
+                      >
+                        {a.label}
+                      </button>
+                    );
+                  }
+                  if (a.key === "start_delivery") {
+                    return (
+                      <button
+                        key={a.key}
+                        type="button"
+                        disabled={actionLoading || a.disabled}
+                        title={a.disabledReason || undefined}
+                        onClick={() => patchStatus("OutForDelivery")}
+                        className={`text-sm ${
+                          actionLoading || a.disabled
+                            ? "text-gray-400 cursor-not-allowed"
+                            : "text-[#0070f0] hover:text-[#0050c0] hover:underline"
+                        }`}
+                      >
+                        {a.label}
+                      </button>
+                    );
+                  }
+                  if (a.key === "mark_delivered") {
+                    return (
+                      <button
+                        key={a.key}
+                        type="button"
+                        disabled={actionLoading}
+                        onClick={() => patchStatus("Delivered")}
+                        className={`text-sm ${
+                          actionLoading
+                            ? "text-gray-400 cursor-not-allowed"
+                            : "text-[#0070f0] hover:text-[#0050c0] hover:underline"
+                        }`}
+                      >
+                        {a.label}
+                      </button>
+                    );
+                  }
+                  return null;
+                })}
+              </>
+            }
           />
 
           {/* Order Information card */}
@@ -227,6 +344,37 @@ export default function EnterpriseOrderDetailPage() {
         actionLoading={actionLoading}
         onClose={() => setShowCancelConfirm(false)}
         onConfirm={() => patchStatus("Cancelled")}
+      />
+
+      <ArrangeShipmentModal
+        open={arrangeOpen}
+        orderIdLabel={order.orderId ? `#${order.orderId}` : ""}
+        selected={arrangeSelected}
+        onSelect={setArrangeSelected}
+        onClose={() => {
+          if (arrangeSaving) return;
+          setArrangeOpen(false);
+        }}
+        onConfirm={async () => {
+          if (!arrangeSelected) return;
+          try {
+            setArrangeSaving(true);
+            await orderManagementService.updateDeliveryMethod(orderId, arrangeSelected);
+            if (arrangeSelected === "SelfDelivery") {
+              await orderManagementService.updateOrderStatus(orderId, "OutForDelivery");
+            }
+            showToast("Shipment arranged", "success");
+            setArrangeOpen(false);
+            await load();
+          } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : "Could not save shipping method";
+            showToast(msg, "error");
+          } finally {
+            setArrangeSaving(false);
+          }
+        }}
+        confirmDisabled={arrangeSaving || !arrangeSelected}
+        confirmLabel={arrangeSaving ? "Saving…" : "Confirm"}
       />
     </div>
   );

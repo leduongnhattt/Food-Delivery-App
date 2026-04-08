@@ -10,6 +10,7 @@ export function StatusCard(props: {
   actionLoading: boolean;
   onCancel: () => void;
   onViewPickup: () => void;
+  extraActions?: React.ReactNode;
 }) {
   const Icon = props.icon;
   return (
@@ -26,9 +27,10 @@ export function StatusCard(props: {
 
         {props.message ? <p className="ml-7 text-sm text-gray-700">{props.message}</p> : null}
 
-        {props.showViewPickup || props.showCancelOrder ? (
+        {props.extraActions || props.showViewPickup || props.showCancelOrder ? (
           <div className="space-y-3">
             <div className="flex justify-end gap-2">
+              {props.extraActions}
               {props.showCancelOrder ? (
                 <button
                   type="button"

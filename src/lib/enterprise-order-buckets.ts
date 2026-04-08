@@ -25,6 +25,7 @@ export interface EnterpriseOrderListItem {
   deliveryAddress: string;
   phoneNumber?: string | null;
   customerAddress?: string | null;
+  metadata?: unknown;
   orderDetails: Array<{
     dishName: string;
     quantity: number;
