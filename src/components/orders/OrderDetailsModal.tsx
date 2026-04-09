@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button'
 import { formatPrice, formatDate } from '@/lib/utils'
 import type { Order } from '@/services/order.service'
 import { ChevronDown, ChevronUp, MapPin, Phone } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import Image from 'next/image'
+import { useEffect, useState } from 'react'
 
 interface OrderDetailsModalProps {
   open: boolean
@@ -89,11 +90,6 @@ export function OrderDetailsModal({ open, loading, order, onClose }: OrderDetail
     const t = window.setTimeout(() => setMounted(false), 320)
     return () => window.clearTimeout(t)
   }, [open])
-
-  const itemsTotal = useMemo(() => {
-    if (!order) return 0
-    return order.items.reduce((sum, it) => sum + it.price * it.quantity, 0)
-  }, [order])
 
   if (!mounted) return null
 
@@ -193,11 +189,12 @@ export function OrderDetailsModal({ open, loading, order, onClose }: OrderDetail
               <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                 <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     {order.restaurantAvatarUrl ? (
-                      <img
+                      <Image
                         src={order.restaurantAvatarUrl}
                         alt=""
+                        width={28}
+                        height={28}
                         className="h-7 w-7 rounded-full object-cover border border-gray-200 bg-gray-100"
                       />
                     ) : (
@@ -216,9 +213,14 @@ export function OrderDetailsModal({ open, loading, order, onClose }: OrderDetail
                     <div key={it.id} className="px-4 py-3">
                       <div className="flex items-start gap-3">
                         <div className="h-12 w-12 rounded-lg bg-gray-100 border border-gray-200 shrink-0 overflow-hidden">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           {it.imageUrl ? (
-                            <img src={it.imageUrl} alt="" className="h-full w-full object-cover" />
+                            <Image
+                              src={it.imageUrl}
+                              alt=""
+                              width={48}
+                              height={48}
+                              className="h-full w-full object-cover"
+                            />
                           ) : (
                             <div className="h-full w-full bg-gradient-to-br from-gray-100 to-gray-200" />
                           )}

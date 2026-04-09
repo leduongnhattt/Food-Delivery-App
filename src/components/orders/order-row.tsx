@@ -25,23 +25,6 @@ interface OrderRowProps {
   onRequestRefund: (orderId: string) => void
 }
 
-type CustomerBucketKey =
-  | 'to_ship'
-  | 'to_receive'
-  | 'completed'
-  | 'return_refund'
-  | 'cancel'
-  | 'other'
-
-function getCustomerBucket(status: Order['status']): CustomerBucketKey {
-  if (['pending', 'confirmed', 'preparing'].includes(status)) return 'to_ship'
-  if (status === 'out_for_delivery') return 'to_receive'
-  if (status === 'delivered' || status === 'completed') return 'completed'
-  if (status === 'refunded') return 'return_refund'
-  if (status === 'cancelled') return 'cancel'
-  return 'other'
-}
-
 const getStatusConfig = (status: Order['status']) => {
   // Display raw status on each item (bucket is only for filters).
   switch (status) {
