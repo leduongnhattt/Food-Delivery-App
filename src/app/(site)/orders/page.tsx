@@ -77,6 +77,11 @@ export default function OrdersPage() {
     setConfirmOpen(true)
   }
 
+  const handleRequestRefund = (orderId: string) => {
+    // TODO: implement refund workflow + backend endpoint
+    showToast(`Return/Refund for order ${orderId} is not implemented yet`, 'info', 3500)
+  }
+
   const confirmCancel = async () => {
     if (!pendingCancelId) return
     setSubmitting(true)
@@ -277,7 +282,7 @@ export default function OrdersPage() {
         ) : orders.length === 0 ? (
           <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
             <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
-              <Package className="w-12 h-12 text-gray-400" />
+              <div className="w-12 h-12 rounded-full bg-gray-200" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">No orders found</h2>
             <p className="text-gray-600 mb-6">
@@ -333,6 +338,7 @@ export default function OrdersPage() {
                         onReorder={handleReorder}
                         onTrack={handleTrack}
                         onCancel={handleCancel}
+                        onRequestRefund={handleRequestRefund}
                       />
                     ))}
                   </tbody>
@@ -350,6 +356,7 @@ export default function OrdersPage() {
                   onReorder={handleReorder}
                   onTrack={handleTrack}
                   onCancel={handleCancel}
+                  onRequestRefund={handleRequestRefund}
                 />
               ))}
             </div>

@@ -137,7 +137,27 @@ export function useOrders() {
         let filteredOrders = [...allOrders]
 
         if (filters.status) {
-            filteredOrders = filteredOrders.filter(order => order.status === filters.status)
+            const bucket = filters.status
+            if (bucket === 'bucket_to_ship') {
+                filteredOrders = filteredOrders.filter(order =>
+                    ['pending', 'confirmed', 'preparing'].includes(order.status)
+                )
+            } else if (bucket === 'bucket_to_receive') {
+                filteredOrders = filteredOrders.filter(order =>
+                    order.status === 'out_for_delivery'
+                )
+            } else if (bucket === 'bucket_completed') {
+                filteredOrders = filteredOrders.filter(order =>
+                    order.status === 'delivered' || order.status === 'completed'
+                )
+            } else if (bucket === 'bucket_return_refund') {
+                filteredOrders = filteredOrders.filter(order => order.status === 'refunded')
+            } else if (bucket === 'bucket_cancel') {
+                filteredOrders = filteredOrders.filter(order => order.status === 'cancelled')
+            } else {
+                // fallback to raw status match
+                filteredOrders = filteredOrders.filter(order => order.status === filters.status)
+            }
         }
 
         if (filters.startDate || filters.endDate) {
