@@ -80,8 +80,8 @@ export default function EditCategoryModal({
                 <Edit3 className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-white">Edit Category</h3>
-                <p className="text-sm text-blue-100">Update category information</p>
+                <h3 className="text-[14px] leading-[18px] font-medium text-white">Edit Category</h3>
+                <p className="mt-1 text-[12px] leading-4 font-normal text-blue-100">Update category information</p>
               </div>
             </div>
             {!isSaving && (
@@ -99,13 +99,13 @@ export default function EditCategoryModal({
         <form onSubmit={handleSubmit} className="p-6">
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-[12px] leading-4 font-medium text-slate-600 mb-1">
                 Category Name *
               </label>
               <div className={`relative ${showError('categoryName') ? 'text-rose-600' : ''}`}>
                 <input 
-                  className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-200 focus:border-blue-300 ${
-                    showError('categoryName') ? 'border-rose-300' : 'border-gray-300'
+                  className={`w-full px-3 py-2 border rounded-md text-[12px] leading-4 font-normal text-[oklch(0.208_0.042_265.755)] focus:ring-2 focus:ring-blue-200 focus:border-blue-300 ${
+                    showError('categoryName') ? 'border-rose-300' : 'border-slate-200'
                   }`} 
                   placeholder="e.g. Pizza, Burger, Dessert" 
                   value={form.categoryName} 
@@ -115,17 +115,17 @@ export default function EditCategoryModal({
                 />
               </div>
               {showError('categoryName') && (
-                <p className="text-sm text-rose-600 mt-1">{errors.categoryName}</p>
+                <p className="text-xs text-rose-600 mt-1">{errors.categoryName}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-[12px] leading-4 font-medium text-slate-600 mb-1">
                 Description
               </label>
               <textarea 
-                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-200 focus:border-blue-300 ${
-                  showError('description') ? 'border-rose-300' : 'border-gray-300'
+                className={`w-full px-3 py-2 border rounded-md text-[12px] leading-4 font-normal text-[oklch(0.208_0.042_265.755)] focus:ring-2 focus:ring-blue-200 focus:border-blue-300 ${
+                  showError('description') ? 'border-rose-300' : 'border-slate-200'
                 }`} 
                 rows={3} 
                 placeholder="Optional description for this category" 
@@ -135,7 +135,7 @@ export default function EditCategoryModal({
                 disabled={isSaving}
               />
               {showError('description') && (
-                <p className="text-sm text-rose-600 mt-1">{errors.description}</p>
+                <p className="text-xs text-rose-600 mt-1">{errors.description}</p>
               )}
             </div>
           </div>
@@ -146,14 +146,14 @@ export default function EditCategoryModal({
               type="button"
               onClick={onClose}
               disabled={isSaving}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="h-9 px-4 rounded-md border border-slate-200 text-[12px] leading-4 font-medium text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSaving || !canProceedCategoryForm(errors)}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              className="h-9 px-4 rounded-md text-[12px] leading-4 font-medium text-white bg-blue-600 border border-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
             >
               {isSaving ? (
                 <>

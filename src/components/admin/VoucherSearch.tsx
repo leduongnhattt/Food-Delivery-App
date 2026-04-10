@@ -55,7 +55,7 @@ export default function VoucherSearch({ currentStatus, currentSearch }: { curren
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
             placeholder="Search code or enterprise"
-            className="pl-9 pr-3 w-full h-9 rounded-md border border-slate-200 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300"
+            className="pl-9 pr-3 w-full h-9 rounded-md border border-slate-200 text-[13px] leading-4 font-normal text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300"
             disabled={isPending}
           />
         </div>

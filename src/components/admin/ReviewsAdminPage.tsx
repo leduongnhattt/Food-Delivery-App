@@ -89,12 +89,12 @@ export default function ReviewsAdminPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-[14px] leading-[18px] font-medium text-[oklch(0.21_0.034_264.665)]">
             Reviews
           </h1>
-          <p className="text-slate-600 mt-1">
+          <p className="mt-1 text-[13px] leading-[18px] font-medium text-[oklch(0.551_0.027_264.364)] whitespace-nowrap">
             Manage all customer reviews and ratings
           </p>
         </div>
@@ -132,7 +132,7 @@ export default function ReviewsAdminPage() {
           startDate ||
           endDate) &&
           !loading && (
-            <div className="mt-4 mb-2 text-sm text-slate-600">
+            <div className="mt-4 mb-2 text-[13px] leading-4 font-normal text-slate-600">
               <div className="flex flex-wrap items-center gap-2">
                 {q && (
                   <span>
@@ -176,25 +176,41 @@ export default function ReviewsAdminPage() {
           )}
 
         {error && (
-          <div className="mt-4 rounded-lg bg-rose-50 text-rose-800 text-sm px-3 py-2">
+          <div className="mt-4 rounded-lg bg-rose-50 text-rose-800 text-[13px] leading-4 font-normal px-3 py-2">
             {error}
           </div>
         )}
 
         <div className="mt-4 overflow-x-auto">
           {loading ? (
-            <div className="text-center text-slate-500 py-10">Loading…</div>
+            <div className="text-center text-slate-500 text-[13px] leading-4 font-normal py-10">
+              Loading…
+            </div>
           ) : (
-            <table className="min-w-full text-sm">
+            <table className="min-w-full text-[13px]">
               <thead>
                 <tr className="text-left text-slate-500">
-                  <th className="py-2 pr-4">Customer</th>
-                  <th className="py-2 pr-4">Restaurant</th>
-                  <th className="py-2 pr-4">Rating</th>
-                  <th className="py-2 pr-4">Comment</th>
-                  <th className="py-2 pr-4">Date</th>
-                  <th className="py-2 pr-4">Status</th>
-                  <th className="py-2 pr-4">Actions</th>
+                  <th className="py-2 pr-4 text-xs leading-4 font-semibold text-[oklch(0.21_0.034_264.665)]">
+                    Customer
+                  </th>
+                  <th className="py-2 pr-4 text-xs leading-4 font-semibold text-[oklch(0.21_0.034_264.665)]">
+                    Restaurant
+                  </th>
+                  <th className="py-2 pr-4 text-xs leading-4 font-semibold text-[oklch(0.21_0.034_264.665)]">
+                    Rating
+                  </th>
+                  <th className="py-2 pr-4 text-xs leading-4 font-semibold text-[oklch(0.21_0.034_264.665)]">
+                    Comment
+                  </th>
+                  <th className="py-2 pr-4 text-xs leading-4 font-semibold text-[oklch(0.21_0.034_264.665)]">
+                    Date
+                  </th>
+                  <th className="py-2 pr-4 text-xs leading-4 font-semibold text-[oklch(0.21_0.034_264.665)]">
+                    Status
+                  </th>
+                  <th className="py-2 pr-4 text-xs leading-4 font-semibold text-[oklch(0.21_0.034_264.665)]">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -202,7 +218,7 @@ export default function ReviewsAdminPage() {
                   <tr>
                     <td
                       colSpan={7}
-                      className="text-center text-slate-500 py-8"
+                      className="text-center text-slate-500 text-[13px] leading-4 font-normal py-8"
                     >
                       No reviews found
                     </td>

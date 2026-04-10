@@ -26,7 +26,7 @@ export default function TabsVouchers({ current, search }: { current: TabKey; sea
       key={t}
       onClick={() => onSelect(t)}
       aria-current={current === t}
-      className={`px-3 py-1.5 rounded-md text-sm border transition-colors ${
+      className={`px-3 py-1.5 rounded-md text-[13px] leading-4 font-medium border transition-colors ${
         current === t 
           ? 'bg-indigo-600 text-white border-indigo-600' 
           : 'border-slate-200 text-slate-700 hover:bg-slate-50'
