@@ -14,6 +14,8 @@ import {
 import type {
   AdminCustomersListResponse,
   AdminEnterprisesListResponse,
+  AdminEnterpriseDetailResponse,
+  AdminEnterpriseInvitationDetailResponse,
   AdminDashboardSummaryResponse,
   AdminProfileResponse,
   CreateAdminVoucherPayload,
@@ -55,6 +57,34 @@ export type ListAdminEnterprisesParams = {
   search?: string
 }
 
+export type InviteEnterprisePayload = {
+  email: string
+  phoneNumber: string
+  enterpriseNameDraft?: string
+}
+
+export type AdminEnterpriseInvitationListItem = {
+  InvitationID: string
+  AccountID: string
+  Email: string
+  PhoneNumber: string
+  EnterpriseNameDraft: string | null
+  ExpiresAt: string
+  Status: 'Pending' | 'Accepted' | 'Expired' | 'Revoked'
+  AcceptedAt: string | null
+  CreatedAt: string
+}
+
+export type AdminEnterpriseInvitationsListResponse = {
+  items: AdminEnterpriseInvitationListItem[]
+}
+
+export type AdminInvitationTemplateValue = {
+  subject: string
+  html: string
+  text?: string
+}
+
 type LockSuccessResponse = { success: boolean }
 
 function nestApiBase(): string {
@@ -67,6 +97,10 @@ function urlAdminCustomers(): string {
 
 function urlAdminEnterprises(): string {
   return `${nestApiBase()}/admin/enterprises`
+}
+
+function urlAdminEnterpriseInvitations(): string {
+  return `${nestApiBase()}/admin/enterprise-invitations`
 }
 
 function urlAdminVouchers(): string {
@@ -148,6 +182,15 @@ export async function listAdminEnterprises(
   return requestJson<AdminEnterprisesListResponse>(url, { method: 'GET' })
 }
 
+export async function getAdminEnterpriseDetail(
+  enterpriseId: string,
+): Promise<AdminEnterpriseDetailResponse> {
+  return requestJson<AdminEnterpriseDetailResponse>(
+    `${urlAdminEnterprises()}/${encodeURIComponent(enterpriseId)}`,
+    { method: 'GET' },
+  )
+}
+
 export async function createEnterprise(
   payload: CreateEnterprisePayload,
 ): Promise<CreateEnterpriseApiResponse> {
@@ -178,6 +221,69 @@ export async function unlockAdminEnterpriseAccount(
   return requestJson<LockSuccessResponse>(
     `${urlAdminEnterprises()}/${encodeURIComponent(accountId)}/unlock`,
     { method: 'POST' },
+  )
+}
+
+export async function listAdminEnterpriseInvitations(params: {
+  status?: string
+  search?: string
+}): Promise<AdminEnterpriseInvitationsListResponse> {
+  const qs = buildQueryString({ status: params.status, search: params.search })
+  const url = qs
+    ? `${urlAdminEnterpriseInvitations()}?${qs}`
+    : urlAdminEnterpriseInvitations()
+  return requestJson<AdminEnterpriseInvitationsListResponse>(url, { method: 'GET' })
+}
+
+export async function getAdminEnterpriseInvitationDetail(
+  invitationId: string,
+): Promise<AdminEnterpriseInvitationDetailResponse> {
+  return requestJson<AdminEnterpriseInvitationDetailResponse>(
+    `${urlAdminEnterpriseInvitations()}/${encodeURIComponent(invitationId)}`,
+    { method: 'GET' },
+  )
+}
+
+export async function inviteEnterprise(
+  payload: InviteEnterprisePayload,
+): Promise<{ success: boolean }> {
+  return requestJson<{ success: boolean }>(urlAdminEnterpriseInvitations(), {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function resendEnterpriseInvitation(
+  invitationId: string,
+): Promise<{ success: boolean }> {
+  return requestJson<{ success: boolean }>(
+    `${urlAdminEnterpriseInvitations()}/${encodeURIComponent(invitationId)}/resend`,
+    { method: 'POST' },
+  )
+}
+
+export async function revokeEnterpriseInvitation(
+  invitationId: string,
+): Promise<{ success: boolean }> {
+  return requestJson<{ success: boolean }>(
+    `${urlAdminEnterpriseInvitations()}/${encodeURIComponent(invitationId)}/revoke`,
+    { method: 'POST' },
+  )
+}
+
+export async function getEnterpriseInvitationTemplate(): Promise<{ template: AdminInvitationTemplateValue }> {
+  return requestJson<{ template: AdminInvitationTemplateValue }>(
+    `${urlAdminEnterpriseInvitations()}/template`,
+    { method: 'GET' },
+  )
+}
+
+export async function updateEnterpriseInvitationTemplate(
+  template: AdminInvitationTemplateValue,
+): Promise<{ success: boolean }> {
+  return requestJson<{ success: boolean }>(
+    `${urlAdminEnterpriseInvitations()}/template`,
+    { method: 'PUT', body: JSON.stringify(template) },
   )
 }
 

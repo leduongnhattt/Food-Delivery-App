@@ -44,10 +44,14 @@ export default function AdminDiscountPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">Discounts</h1>
-          <p className="text-slate-600 mt-1">Approve pending vouchers from enterprises</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-[14px] leading-[18px] font-medium text-[oklch(0.21_0.034_264.665)]">
+            Discounts
+          </h1>
+          <p className="mt-1 text-[13px] leading-[18px] font-medium text-[oklch(0.551_0.027_264.364)]">
+            Approve pending vouchers from enterprises
+          </p>
         </div>
         <VoucherSearch currentStatus={status} currentSearch={q} />
       </div>
@@ -61,7 +65,7 @@ export default function AdminDiscountPage() {
 
           {/* Search Results Info */}
           {(q || status !== 'all') && (
-            <div className="mt-4 mb-2 text-sm text-slate-600">
+            <div className="mt-4 mb-2 text-[13px] leading-4 font-normal text-slate-600">
               {q ? (
                 <span>Found {vouchers.length} voucher{vouchers.length !== 1 ? 's' : ''} matching "{q}"</span>
               ) : (
@@ -71,48 +75,48 @@ export default function AdminDiscountPage() {
           )}
 
           <div className="mt-4 overflow-x-auto">
-            <table className="min-w-full text-sm">
+            <table className="min-w-full text-[13px]">
               <thead>
                 <tr className="text-left text-slate-500">
-                  <th className="py-2 pr-4">Voucher Code</th>
-                  <th className="py-2 pr-4">Discount Percent</th>
-                  <th className="py-2 pr-4">Discount Amount</th>
-                  <th className="py-2 pr-4">Usage Count</th>
-                  <th className="py-2 pr-4">Expiry Date</th>
-                  <th className="py-2 pr-4">Status</th>
+                  <th className="py-2 pr-4 text-xs leading-4 font-semibold text-[oklch(0.21_0.034_264.665)]">Voucher Code</th>
+                  <th className="py-2 pr-4 text-xs leading-4 font-semibold text-[oklch(0.21_0.034_264.665)]">Discount Percent</th>
+                  <th className="py-2 pr-4 text-xs leading-4 font-semibold text-[oklch(0.21_0.034_264.665)]">Discount Amount</th>
+                  <th className="py-2 pr-4 text-xs leading-4 font-semibold text-[oklch(0.21_0.034_264.665)]">Usage Count</th>
+                  <th className="py-2 pr-4 text-xs leading-4 font-semibold text-[oklch(0.21_0.034_264.665)]">Expiry Date</th>
+                  <th className="py-2 pr-4 text-xs leading-4 font-semibold text-[oklch(0.21_0.034_264.665)]">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="text-center text-slate-500 py-8">
+                    <td colSpan={6} className="text-center text-slate-500 text-[13px] leading-4 font-normal py-8">
                       Loading...
                     </td>
                   </tr>
                 ) : vouchers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center text-slate-500 py-8">
+                    <td colSpan={6} className="text-center text-slate-500 text-[13px] leading-4 font-normal py-8">
                       No vouchers found
                     </td>
                   </tr>
                 ) : (
                   vouchers.map((v) => (
                     <tr key={v.id} className="hover:bg-slate-50">
-                      <td className="py-3 pr-4 font-medium text-slate-900">
+                      <td className="py-3 pr-4 text-[13px] leading-4 font-medium text-slate-900">
                         {v.code}
                       </td>
-                      <td className="py-3 pr-4 text-slate-700">
+                      <td className="py-3 pr-4 text-[13px] leading-4 font-normal text-slate-700">
                         {v.discountPercent != null ? `${v.discountPercent}%` : 'N/A'}
                       </td>
-                      <td className="py-3 pr-4 text-slate-700">
+                      <td className="py-3 pr-4 text-[13px] leading-4 font-normal text-slate-700">
                         {v.discountAmount != null ? `$${v.discountAmount}` : 'N/A'}
                       </td>
-                      <td className="py-3 pr-4 text-slate-700">
+                      <td className="py-3 pr-4 text-[13px] leading-4 font-normal text-slate-700">
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           {v.usedCount || 0} / {v.maxUsage ?? '∞'}
                         </span>
                       </td>
-                      <td className="py-3 pr-4 text-slate-700">
+                      <td className="py-3 pr-4 text-[13px] leading-4 font-normal text-slate-700">
                         {v.expiryDate ? new Date(v.expiryDate).toLocaleDateString('vi-VN') : 'N/A'}
                       </td>
                       <td className="py-3 pr-4">
