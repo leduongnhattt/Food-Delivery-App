@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
@@ -405,10 +406,13 @@ export default function EnterpriseDetailAdminPage({
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-slate-100 bg-slate-50">
                           {p.ImageURL ? (
-                            <img
+                            <Image
                               src={p.ImageURL}
                               alt=""
+                              width={40}
+                              height={40}
                               className="h-full w-full object-cover"
+                              unoptimized
                             />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center text-[10px] text-slate-400">

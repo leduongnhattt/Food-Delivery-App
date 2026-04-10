@@ -134,13 +134,15 @@ export default function EnterpriseActivateClient() {
   async function onFinish() {
     if (!step3CanFinish) return
     if (step3.latitude === null || step3.longitude === null) return
+    const latitude = step3.latitude
+    const longitude = step3.longitude
     startTransition(async () => {
       try {
         await enterpriseActivationStep3({
           token,
           address: step3.address.trim(),
-          latitude: step3.latitude,
-          longitude: step3.longitude,
+          latitude,
+          longitude,
           openHours: step3.openHours,
           closeHours: step3.closeHours,
           description: step3.description?.trim() ? step3.description.trim() : undefined,

@@ -107,10 +107,6 @@ export default function SendEnterpriseInvitationAdminPage() {
     [previewInputs.email, previewInputs.enterpriseNameDraft],
   )
 
-  const previewSubject = useMemo(
-    () => renderPreview(template.subject || "", previewParams),
-    [template.subject, previewParams],
-  )
   const previewText = useMemo(() => {
     const base = (template.text || "").trim()
       ? template.text || ""

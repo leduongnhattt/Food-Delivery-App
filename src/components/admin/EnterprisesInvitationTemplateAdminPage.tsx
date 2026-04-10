@@ -91,10 +91,6 @@ export default function EnterprisesInvitationTemplateAdminPage() {
     [],
   )
 
-  const previewSubject = useMemo(
-    () => renderPreview(template.subject || "", sampleParams),
-    [template.subject, sampleParams],
-  )
   const previewText = useMemo(() => {
     const base = (template.text || "").trim() ? template.text || "" : htmlToText(template.html || "")
     return renderPreview(base, sampleParams)
