@@ -38,6 +38,93 @@ export type AdminEnterprisesListResponse = {
   items: AdminEnterpriseListItem[]
 }
 
+export type AdminEnterpriseDetailLinkedProduct = {
+  FoodID: string
+  DishName: string
+  Price: number | string
+  IsAvailable: boolean
+  ImageURL: string | null
+  CategoryName: string | null
+}
+
+export type AdminEnterpriseDetailResponse = {
+  enterprise: {
+    EnterpriseID: string
+    EnterpriseName: string
+    PhoneNumber: string
+    Address: string
+    OpenHours: string
+    CloseHours: string
+    Description: string | null
+    Latitude: unknown
+    Longitude: unknown
+    CreatedAt: string
+    account: {
+      AccountID: string
+      Email: string
+      Username: string
+      Status: AdminAccountStatus
+      CreatedAt: string
+    }
+  }
+  business: {
+    legalBusinessName: string | null
+    registrationNumber: string | null
+    taxId: string | null
+    bankAccountMasked: string
+    payoutMethod: string
+  }
+  stats: {
+    totalProducts: number
+    totalRevenue: number | string
+    totalOrders: number
+    totalReturns: number
+    cancellationRatePercent: number
+    satisfactionRatingAvg: number | null
+    reviewCount: number
+  }
+  linkedProducts: AdminEnterpriseDetailLinkedProduct[]
+  primaryCategoryName: string | null
+  /** True when a pending enterprise invitation still exists for this account (admin “pending” UX). */
+  hasPendingInvitation: boolean
+}
+
+export type AdminEnterpriseInvitationStatus =
+  | 'Pending'
+  | 'Accepted'
+  | 'Expired'
+  | 'Revoked'
+
+export type AdminEnterpriseInvitationDetailRow = {
+  InvitationID: string
+  AccountID: string
+  Email: string
+  PhoneNumber: string
+  EnterpriseNameDraft: string | null
+  ExpiresAt: string
+  Status: AdminEnterpriseInvitationStatus
+  AcceptedAt: string | null
+  CreatedAt: string
+}
+
+export type AdminEnterpriseInvitationDetailTimelineItem = {
+  title: string
+  at: string
+  by: string
+}
+
+export type AdminEnterpriseInvitationDetailResponse = {
+  invitation: AdminEnterpriseInvitationDetailRow
+  inviteLinkMasked: string
+  sentByLabel: string
+  timeline: AdminEnterpriseInvitationDetailTimelineItem[]
+  quickStats: {
+    emailOpens: number
+    linkClicks: number
+    daysSinceSent: number
+  }
+}
+
 export type AdminProfileResponse = {
   username: string
   email: string

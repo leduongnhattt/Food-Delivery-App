@@ -76,10 +76,12 @@ export default function AddCategoryModal({
             <div className="bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-600 px-6 py-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                  <h3 className="text-[14px] leading-[18px] font-medium text-white flex items-center gap-2">
                     <Tag className="w-5 h-5" /> Add Category
                   </h3>
-                  <p className="text-xs text-emerald-100">Create a new food category for the system</p>
+                  <p className="mt-1 text-[12px] leading-4 font-normal text-emerald-100">
+                    Create a new food category for the system
+                  </p>
                 </div>
                 <button 
                   onClick={() => setOpen(false)} 
@@ -94,13 +96,13 @@ export default function AddCategoryModal({
             <form onSubmit={onSubmit} className="p-6">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">
+                  <label className="block text-[12px] leading-4 font-medium text-slate-600 mb-1">
                     Category Name *
                   </label>
                   <div className={`relative ${showError('categoryName') ? 'text-rose-600' : ''}`}>
                     <Tag className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input 
-                      className={`border rounded-md h-10 pl-9 pr-3 w-full ${
+                      className={`border rounded-md h-10 pl-9 pr-3 w-full text-[12px] leading-4 font-normal text-[oklch(0.208_0.042_265.755)] ${
                         showError('categoryName') ? 'border-rose-300' : 'border-slate-200'
                       } focus:ring-2 focus:ring-emerald-200`} 
                       placeholder="e.g. Pizza, Burger, Dessert" 
@@ -115,13 +117,13 @@ export default function AddCategoryModal({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">
+                  <label className="block text-[12px] leading-4 font-medium text-slate-600 mb-1">
                     Description
                   </label>
                   <div className={`relative ${showError('description') ? 'text-rose-600' : ''}`}>
                     <FileText className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
                     <textarea 
-                      className={`border rounded-md px-3 py-2 pl-9 w-full border-slate-200 focus:ring-2 focus:ring-emerald-200 ${
+                      className={`border rounded-md px-3 py-2 pl-9 w-full border-slate-200 focus:ring-2 focus:ring-emerald-200 text-[12px] leading-4 font-normal text-[oklch(0.208_0.042_265.755)] ${
                         showError('description') ? 'border-rose-300' : 'border-slate-200'
                       }`} 
                       rows={3} 
@@ -142,14 +144,14 @@ export default function AddCategoryModal({
                 <button 
                   type="button" 
                   onClick={() => setOpen(false)} 
-                  className="h-10 px-4 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+                  className="h-9 px-4 rounded-md border border-slate-200 text-[12px] leading-4 font-medium text-slate-700 hover:bg-slate-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button 
                   disabled={isPending || !canProceedCategoryForm(errors)} 
                   type="submit" 
-                  className="h-10 px-5 rounded-md bg-gradient-to-r from-emerald-600 to-teal-600 text-white disabled:opacity-60 disabled:cursor-not-allowed hover:from-emerald-700 hover:to-teal-700 transition-all"
+                  className="h-9 px-5 rounded-md bg-gradient-to-r from-emerald-600 to-teal-600 text-[12px] leading-4 font-medium text-white disabled:opacity-60 disabled:cursor-not-allowed hover:from-emerald-700 hover:to-teal-700 transition-all"
                 >
                   {isPending ? 'Creating…' : 'Create Category'}
                 </button>

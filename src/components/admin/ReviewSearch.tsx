@@ -117,7 +117,7 @@ export default function ReviewSearch({
                 if (e.key === "Enter") handleSearch()
               }}
               placeholder="Search review, customer, or restaurant"
-              className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-11 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
+              className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-11 text-[13px] leading-4 font-normal text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
               disabled={isPending}
             />
             <button
@@ -139,7 +139,7 @@ export default function ReviewSearch({
 
         {/* Date range */}
         <div className="flex items-center gap-2">
-          <div className="hidden md:flex items-center gap-2 text-xs font-medium text-slate-500">
+          <div className="hidden md:flex items-center gap-2 text-[12px] leading-4 font-medium text-slate-500">
             <Calendar className="h-4 w-4 text-slate-400" />
             <span>Date</span>
           </div>
@@ -149,7 +149,7 @@ export default function ReviewSearch({
               type="date"
               value={startDate}
               onChange={handleStartDateChange}
-              className="h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
+              className="h-10 px-3 rounded-lg border border-slate-200 bg-white text-[13px] leading-4 font-normal text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
               disabled={isPending}
               aria-label="Start date"
               title="Start date"
@@ -159,7 +159,7 @@ export default function ReviewSearch({
               type="date"
               value={endDate}
               onChange={handleEndDateChange}
-              className="h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
+              className="h-10 px-3 rounded-lg border border-slate-200 bg-white text-[13px] leading-4 font-normal text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
               disabled={isPending}
               aria-label="End date"
               title="End date"

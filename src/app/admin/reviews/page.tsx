@@ -5,7 +5,9 @@ export default function AdminReviewsPage() {
   return (
     <Suspense
       fallback={
-        <div className="p-8 text-center text-slate-500">Loading…</div>
+        <div className="p-8 text-center text-slate-500 text-[13px] leading-4 font-normal">
+          Loading…
+        </div>
       }
     >
       <ReviewsAdminPage />
