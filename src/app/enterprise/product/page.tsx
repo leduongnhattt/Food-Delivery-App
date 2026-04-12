@@ -6,6 +6,7 @@ import FoodList, { Food } from "./FoodList";
 import { useEnterpriseUpload } from "@/hooks/use-enterprise-upload";
 import EditFoodPopup from "./EditFoodPopup";
 import { useToast } from "@/contexts/toast-context";
+import { EnterprisePageHeader } from "@/components/enterprise/EnterprisePageHeader";
 
 export default function AdminDashboardPage() {
   const [entepriseData, setEnterpriseData] = useState<any>(null);
@@ -111,9 +112,12 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">Product</h1>
-      
+    <div className="space-y-6">
+      <EnterprisePageHeader
+        title="My Products"
+        description="View, edit, and remove dishes in your catalog."
+      />
+
       {/* Delete error display */}
       {deleteError && (
         <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-4">

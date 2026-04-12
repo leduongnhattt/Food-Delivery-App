@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Landmark } from "lucide-react";
+import { EnterprisePageHeader, ENTERPRISE_PANEL_CLASS } from "@/components/enterprise/EnterprisePageHeader";
 
 export default function EnterpriseBankAccountsPage() {
   const [loading, setLoading] = useState(true);
@@ -13,41 +14,34 @@ export default function EnterpriseBankAccountsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex min-h-[40vh] items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2563FF] mx-auto mb-4" />
-          <p className="text-gray-600">Loading bank accounts...</p>
+          <div className="mx-auto mb-3 h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-sky-600" />
+          <p className="text-[13px] leading-[18px] font-medium text-[oklch(0.551_0.027_264.364)]">
+            Loading bank accounts…
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Bank Accounts</h1>
-              <p className="text-gray-600 mt-1">Manage payout bank accounts for your shop</p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <EnterprisePageHeader
+        title="Bank Accounts"
+        description="Manage payout bank accounts for your shop"
+      />
 
-      <div className="p-6">
-        <div className="bg-white rounded-2xl p-12 border border-gray-200 shadow-sm text-center">
-          <div className="w-20 h-20 bg-[#2563FF] rounded-full flex items-center justify-center mx-auto mb-6">
-            <Landmark className="h-10 w-10 text-white" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Bank Accounts Coming Soon</h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            This section will let you add and verify bank accounts, choose a default payout account,
-            and view payout history.
-          </p>
+      <div className={`${ENTERPRISE_PANEL_CLASS} p-8 text-center`}>
+        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-sky-100">
+          <Landmark className="h-8 w-8 text-sky-700" aria-hidden />
         </div>
+        <h2 className="text-[15px] leading-5 font-semibold text-slate-900">Bank Accounts Coming Soon</h2>
+        <p className="mx-auto mt-2 max-w-2xl text-[13px] leading-[18px] text-slate-600">
+          This section will let you add and verify bank accounts, choose a default payout account, and view payout
+          history.
+        </p>
       </div>
     </div>
   );
 }
-

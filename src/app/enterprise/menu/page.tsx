@@ -6,6 +6,7 @@ import AddNewMenuPopup from "./AddNewMenuPopup";
 import EditMenuPopup from "./EditMenuPopup";
 import { getServerApiBase } from "@/lib/http-client";
 import { buildAuthHeader } from "@/lib/auth-helpers";
+import { EnterprisePageHeader } from "@/components/enterprise/EnterprisePageHeader";
 
 export default function AdminDashboardPage() {
   const [entepriseData, setEnterpriseData] = useState<any>(null);
@@ -59,16 +60,19 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold mb-4">Menu Dashboard</h1>
-        <Button
-          onClick={() => setOpenPopup(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-        >
-          Add New Menu
-        </Button>
-      </div>
+    <div className="space-y-6">
+      <EnterprisePageHeader
+        title="Menu Dashboard"
+        description="Create and organize menus for your restaurant."
+        actions={
+          <Button
+            onClick={() => setOpenPopup(true)}
+            className="h-9 rounded-lg bg-sky-600 px-4 text-[13px] font-medium text-white hover:bg-sky-700"
+          >
+            Add New Menu
+          </Button>
+        }
+      />
       <MenuList
         menus={entepriseData?.menus ?? []}
         onEdit={handleEdit}
