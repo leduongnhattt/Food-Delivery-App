@@ -4,6 +4,7 @@ import type { Restaurant, MenuItem } from '@/types/models'
 import { RestaurantService } from '@/services/restaurant.service'
 import { FoodService } from '@/services/food.service'
 import { mapRestaurantToVM, mapFoodToMenuItem } from '@/lib/mappers/restaurant'
+import { CATALOG_REFETCH_INTERVAL_MS } from '@/hooks/catalog-refetch'
 
 interface UseRestaurantResult {
     restaurant: Restaurant | null
@@ -22,8 +23,19 @@ export function useRestaurantDetail(id: string): UseRestaurantResult {
     // Memoize the ID to prevent unnecessary re-renders
     const memoizedId = React.useMemo(() => id, [id])
 
-    const load = React.useCallback(async () => {
-        setLoading(true)
+    const load = React.useCallback(async (opts?: { silent?: boolean }) => {
+        const silent = opts?.silent === true
+        if (!memoizedId) {
+            if (!silent) {
+                setLoading(false)
+                setRestaurant(null)
+                setItems([])
+            }
+            return
+        }
+        if (!silent) {
+            setLoading(true)
+        }
         setError(null)
         try {
             const [r, foodsResp] = await Promise.all([
@@ -34,23 +46,49 @@ export function useRestaurantDetail(id: string): UseRestaurantResult {
             setRestaurant(mapRestaurantToVM(r))
             setItems((foodsResp.foods || []).map(mapFoodToMenuItem))
         } catch (e) {
-            console.error('Failed to load restaurant detail:', e)
-            setError('Failed to load restaurant')
+            if (!silent) {
+                console.error('Failed to load restaurant detail:', e)
+                setError('Failed to load restaurant')
+            } else {
+                console.warn('useRestaurantDetail: background refetch failed', e)
+            }
         } finally {
-            setLoading(false)
+            if (!silent) {
+                setLoading(false)
+            }
         }
     }, [memoizedId])
 
     React.useEffect(() => {
         // Simple debounce to prevent double calls
         const timeoutId = setTimeout(() => {
-            load()
+            void load()
         }, 100)
 
         return () => {
             clearTimeout(timeoutId)
         }
     }, [load])
+
+    React.useEffect(() => {
+        if (!memoizedId) return
+        const id = window.setInterval(() => {
+            if (document.visibilityState !== 'visible') return
+            void load({ silent: true })
+        }, CATALOG_REFETCH_INTERVAL_MS)
+        return () => window.clearInterval(id)
+    }, [memoizedId, load])
+
+    React.useEffect(() => {
+        if (!memoizedId) return
+        const onVisibility = () => {
+            if (document.visibilityState === 'visible') {
+                void load({ silent: true })
+            }
+        }
+        document.addEventListener('visibilitychange', onVisibility)
+        return () => document.removeEventListener('visibilitychange', onVisibility)
+    }, [memoizedId, load])
 
     return { restaurant, items, loading, error, refetch: load }
 }

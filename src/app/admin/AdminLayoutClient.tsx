@@ -1,6 +1,6 @@
 "use client";
 
-import AdminNavbar from "@/components/admin/AdminNavbar";
+import AdminNavbar from "@/components/admin/layout/AdminNavbar";
 import React from "react";
 
 export default function AdminLayoutClient({

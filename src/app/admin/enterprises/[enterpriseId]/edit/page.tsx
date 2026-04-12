@@ -1,9 +1,9 @@
 "use client"
 
 import { useParams } from "next/navigation"
-import EnterpriseDetailAdminPage from "@/components/admin/enterprises/EnterpriseDetailAdminPage"
+import EnterpriseEditAdminPage from "@/components/admin/enterprises/EnterpriseEditAdminPage"
 
-export default function AdminEnterpriseDetailRoutePage() {
+export default function AdminEnterpriseEditRoutePage() {
   const params = useParams()
   const enterpriseId = typeof params?.enterpriseId === "string" ? params.enterpriseId : ""
   if (!enterpriseId) {
@@ -13,5 +13,5 @@ export default function AdminEnterpriseDetailRoutePage() {
       </div>
     )
   }
-  return <EnterpriseDetailAdminPage enterpriseId={enterpriseId} />
+  return <EnterpriseEditAdminPage enterpriseId={enterpriseId} />
 }

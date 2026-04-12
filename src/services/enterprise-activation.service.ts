@@ -26,6 +26,7 @@ export async function enterpriseActivationStep1(params: {
   token: string
   enterpriseName: string
   password: string
+  locale?: string
 }): Promise<{ success: boolean }> {
   return requestJson(`${urlActivation()}/step1`, {
     method: 'POST',
