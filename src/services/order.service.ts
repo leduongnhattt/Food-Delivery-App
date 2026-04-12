@@ -7,17 +7,21 @@ export interface OrderItem {
     foodName: string
     quantity: number
     price: number
+    imageUrl?: string | null
     specialInstructions?: string
 }
 
 export interface Order {
     id: string
     customerId: string
+    recipientName?: string | null
+    recipientPhone?: string | null
     restaurantId: string
     restaurantName: string
+    restaurantAvatarUrl?: string | null
     items: OrderItem[]
     totalAmount: number
-    status: 'pending' | 'confirmed' | 'preparing' | 'out_for_delivery' | 'delivered' | 'cancelled'
+    status: 'pending' | 'confirmed' | 'preparing' | 'out_for_delivery' | 'delivered' | 'completed' | 'cancelled' | 'refunded'
     deliveryAddress: string
     deliveryInstructions?: string
     paymentMethod: string

@@ -23,12 +23,6 @@ type NavSection = { key: string; label: string; defaultOpen?: boolean; children:
 
 const NAV_SECTIONS: NavSection[] = [
   {
-    key: "dashboard",
-    label: "DASHBOARD",
-    defaultOpen: true,
-    children: [{ href: "/enterprise/dashboard", label: "Dashboard" }],
-  },
-  {
     key: "product",
     label: "PRODUCT",
     defaultOpen: true,
@@ -49,21 +43,36 @@ const NAV_SECTIONS: NavSection[] = [
     key: "orders",
     label: "ORDERS",
     defaultOpen: true,
-    children: [{ href: "/enterprise/orders", label: "My Orders" }],
+    children: [
+      { href: "/enterprise/orders", label: "My Orders" },
+      { href: "/enterprise/orders/returns-refunds", label: "Return / Refund" },
+      { href: "/enterprise/orders/order-cancellation", label: "Order Cancellation" },
+    ],
   },
   {
     key: "finance",
     label: "FINANCE",
     defaultOpen: true,
-    children: [{ href: "/enterprise/analytics", label: "My Income" }],
+    children: [
+      { href: "/enterprise/analytics", label: "My Income" },
+      { href: "/enterprise/bank-accounts", label: "Bank Accounts" },
+    ],
   },
   {
     key: "shop",
     label: "SHOP",
     defaultOpen: true,
-    children: [{ href: "/enterprise/profile", label: "Shop Setting" }],
+    children: [
+      { href: "/enterprise/profile", label: "Shop Profile" },
+      { href: "/enterprise/shop-settings", label: "Shop Settings" },
+    ],
   },
 ];
+
+const ORDERS_SUBPAGE_SEGMENTS = new Set([
+  "returns-refunds",
+  "order-cancellation",
+]);
 
 function titleCase(s: string) {
   const t = s.trim();
@@ -88,16 +97,22 @@ function findNavLabel(pathname: string): {
   if (p === "/enterprise" || p === "/enterprise/dashboard") {
     return {};
   }
-  // Detail routes must be handled before generic prefix matching (e.g. /enterprise/orders/:id)
+  // Order detail: /enterprise/orders/:orderId — not list sub-pages (returns, cancellation).
   if (p.startsWith("/enterprise/orders/") && p !== "/enterprise/orders") {
-    return {
-      sectionLabel: "Orders",
-      pageLabel: "Order Details",
-      sectionHref: "/enterprise/orders",
-    };
+    const seg = p.replace(/^\/enterprise\/orders\//, "").split("/")[0];
+    if (seg && !ORDERS_SUBPAGE_SEGMENTS.has(seg)) {
+      return {
+        sectionLabel: "Orders",
+        pageLabel: "Order Details",
+        sectionHref: "/enterprise/orders",
+      };
+    }
   }
   for (const section of NAV_SECTIONS) {
-    for (const child of section.children) {
+    const sortedChildren = [...section.children].sort(
+      (a, b) => b.href.length - a.href.length,
+    );
+    for (const child of sortedChildren) {
       const base = normalizePath(child.href);
       if (p === base || p.startsWith(base + "/")) {
         const sectionHref = section.children[0]?.href;
@@ -142,8 +157,16 @@ export default function EnterpriseNavbar() {
     });
   }, []);
 
-  const isActive = (href: string) =>
-    pathname === href || pathname.startsWith(href + "/");
+  const isActive = (href: string) => {
+    if (pathname === href) return true;
+    if (!pathname.startsWith(href + "/")) return false;
+    if (href === "/enterprise/orders") {
+      const seg = pathname.slice("/enterprise/orders/".length).split("/")[0];
+      if (ORDERS_SUBPAGE_SEGMENTS.has(seg)) return false;
+      return true;
+    }
+    return true;
+  };
 
   const handleLogout = () => {
     logout("/signin");
@@ -209,13 +232,18 @@ export default function EnterpriseNavbar() {
       {/* Top Header - Full Width */}
       <header className="fixed top-0 left-0 right-0 h-[var(--ui-header-height)] bg-white border-b border-gray-200 z-30">
         <div className="flex items-center justify-between h-full px-6">
-          {/* Hanala logo + breadcrumb (MallPlus layout) */}
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="flex items-center gap-2">
-              <div className="text-2xl font-extrabold leading-none text-[#2563FF]">
-                Hanala
-              </div>
-            </div>
+          {/* Brand + breadcrumb */}
+          <div className="flex min-w-0 items-center gap-3">
+            <Link
+              href="/enterprise/dashboard"
+              className="shrink-0 text-xl font-extrabold leading-none tracking-tight text-emerald-700 transition-colors hover:text-emerald-800 sm:text-2xl"
+            >
+              Hanala
+            </Link>
+            <span
+              className="hidden h-5 w-px shrink-0 bg-gray-200 sm:block sm:h-6"
+              aria-hidden
+            />
 
             {(() => {
               const b = findNavLabel(pathname);
@@ -228,17 +256,25 @@ export default function EnterpriseNavbar() {
               ];
               const lastIdx = parts.length - 1;
               return (
-                <div className="flex items-center gap-2 min-w-0">
+                <nav
+                  className="flex min-w-0 items-center gap-2 text-sm leading-snug sm:text-[15px] sm:gap-2.5"
+                  aria-label="Breadcrumb"
+                >
                   {parts.map((it, idx) => {
                     const isLast = idx === lastIdx;
                     const clickable = !!it.href && !isLast;
-                    const cls = `text-base truncate ${
-                      isLast ? "text-gray-900 font-medium" : "text-gray-500 hover:text-gray-900"
+                    const cls = `truncate ${
+                      isLast
+                        ? "font-semibold text-slate-900"
+                        : "font-medium text-slate-500 hover:text-slate-800"
                     }`;
                     return (
                       <React.Fragment key={`${it.label}-${idx}`}>
                         {idx > 0 ? (
-                          <ChevronBreadcrumb className="h-3 w-3 text-gray-400" />
+                          <ChevronBreadcrumb
+                            className="h-3.5 w-3.5 shrink-0 text-slate-300 sm:h-4 sm:w-4"
+                            aria-hidden
+                          />
                         ) : null}
                         {clickable ? (
                           <Link href={it.href!} className={cls} title={it.label}>
@@ -252,7 +288,7 @@ export default function EnterpriseNavbar() {
                       </React.Fragment>
                     );
                   })}
-                </div>
+                </nav>
               );
             })()}
           </div>
@@ -320,13 +356,13 @@ export default function EnterpriseNavbar() {
                     Shop Information
                   </Link>
                   <Link
-                    href="/enterprise/profile"
+                    href="/enterprise/shop-settings"
                     role="menuitem"
                     onClick={() => setUserMenuOpen(false)}
                     className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                   >
                     <Settings className="h-4 w-4 text-gray-500" />
-                    Shop Setting
+                    Shop Settings
                   </Link>
                   <button
                     type="button"
@@ -374,10 +410,10 @@ export default function EnterpriseNavbar() {
       </header>
 
       {/* Sidebar - Below Header */}
-      <aside className="fixed top-[var(--ui-header-height)] left-0 h-[calc(100vh-var(--ui-header-height))] w-[var(--ui-sidebar-width)] bg-white border-r border-gray-200 z-40">
-        <div className="h-full overflow-y-auto px-0 py-2">
+      <aside className="fixed top-[var(--ui-header-height)] left-0 z-40 flex h-[calc(100vh-var(--ui-header-height))] w-[var(--ui-sidebar-width)] flex-col overflow-hidden border-r border-gray-200 bg-white">
+        <div className="enterprise-nav-scroll min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-0 py-2 [overflow-anchor:none]">
           {/* Sections (match MallPlus UNavigationMenu sidebar classes) */}
-          <nav className="relative flex flex-col gap-1.5 pb-24">
+          <nav className="relative flex flex-col gap-1.5 pb-4">
             <ul className="isolate min-w-0">
               {NAV_SECTIONS.map((section) => {
                 const open = !!openSections[section.key];

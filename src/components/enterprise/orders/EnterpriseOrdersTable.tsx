@@ -5,12 +5,17 @@ import Link from "next/link";
 import { MessageCircle } from "lucide-react";
 import { orderStatusLabel } from "@/lib/order-status.labels";
 import { orderManagementService } from "@/services/order-management.service";
+import { buildEnterpriseOrderActions } from "@/components/enterprise/orders/order-actions";
 
 interface Props {
   orders: Order[];
   onDelete?: (orderId: string) => void;
   onConfirm?: (orderId: string) => void;
+  onArrangeShipment?: (orderId: string) => void;
+  onStartPreparing?: (orderId: string) => void;
+  onMarkDelivered?: (orderId: string) => void;
   confirmingOrderId?: string | null;
+  actionLoadingOrderId?: string | null;
 }
 
 function productTitle(order: Order): string {
@@ -60,7 +65,11 @@ export function EnterpriseOrdersTable({
   orders,
   onDelete,
   onConfirm,
+  onArrangeShipment,
+  onStartPreparing,
+  onMarkDelivered,
   confirmingOrderId,
+  actionLoadingOrderId,
 }: Props) {
   if (orders.length === 0) {
     return (
@@ -93,11 +102,13 @@ export function EnterpriseOrdersTable({
           const showConfirm =
             stNorm === "pending" && typeof onConfirm === "function";
           const confirmBusy = confirmingOrderId === order.id;
+          const actionBusy = actionLoadingOrderId === order.id;
           const qty = order.orderDetails.reduce((s, d) => s + d.quantity, 0);
           const firstLine = order.orderDetails[0];
           const secondary = productSecondaryLine(order);
           const shipBy = formatShipBy(order.estimatedDeliveryTime);
           const buyerName = order.customerName || "Buyer";
+          const actionModel = buildEnterpriseOrderActions(order);
 
           return (
             <div
@@ -180,24 +191,101 @@ export function EnterpriseOrdersTable({
 
                 <div className="col-span-2">
                   <div className="flex flex-col items-start gap-2">
-                    {showConfirm ? (
-                      <button
-                        type="button"
-                        disabled={confirmBusy}
-                        onClick={() => onConfirm?.(order.id)}
-                        className="rounded-md bg-[#2563FF] px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+                    {actionModel.actions.map((a) => {
+                      if (a.key === "confirm" && showConfirm) {
+                        return (
+                          <button
+                            key={a.key}
+                            type="button"
+                            disabled={confirmBusy}
+                            onClick={() => onConfirm?.(order.id)}
+                            className={`text-sm font-medium ${
+                              confirmBusy
+                                ? "text-gray-400 cursor-not-allowed"
+                                : "text-[#0070f0] hover:text-[#0050c0] hover:underline"
+                            }`}
+                          >
+                            {confirmBusy ? "Confirming…" : a.label}
+                          </button>
+                        );
+                      }
+
+                      if (a.key === "arrange_shipment") {
+                        const disabled = typeof onArrangeShipment !== "function";
+                        if (disabled) return null;
+                        return (
+                          <button
+                            key={a.key}
+                            type="button"
+                            disabled={actionBusy}
+                            onClick={() => onArrangeShipment?.(order.id)}
+                            className={`text-sm ${
+                              actionBusy
+                                ? "text-gray-400 cursor-not-allowed"
+                                : "text-[#0070f0] hover:text-[#0050c0] hover:underline"
+                            }`}
+                          >
+                            {a.label}
+                          </button>
+                        );
+                      }
+
+                      if (a.key === "start_preparing") {
+                        const disabled = a.disabled || typeof onStartPreparing !== "function";
+                        if (typeof onStartPreparing !== "function") return null;
+                        return (
+                          <button
+                            key={a.key}
+                            type="button"
+                            disabled={disabled || actionBusy}
+                            onClick={() => onStartPreparing?.(order.id)}
+                            title={a.disabledReason || undefined}
+                            className={`text-sm ${
+                              disabled || actionBusy
+                                ? "text-gray-400 cursor-not-allowed"
+                                : "text-[#0070f0] hover:text-[#0050c0] hover:underline"
+                            }`}
+                          >
+                            {a.label}
+                          </button>
+                        );
+                      }
+
+                      if (a.key === "start_delivery") {
+                        return null;
+                      }
+
+                      if (a.key === "mark_delivered") {
+                        const disabled = a.disabled || typeof onMarkDelivered !== "function";
+                        if (typeof onMarkDelivered !== "function") return null;
+                        return (
+                          <button
+                            key={a.key}
+                            type="button"
+                            disabled={disabled || actionBusy}
+                            onClick={() => onMarkDelivered?.(order.id)}
+                            title={a.disabledReason || undefined}
+                            className={`text-sm ${
+                              disabled || actionBusy
+                                ? "text-gray-400 cursor-not-allowed"
+                                : "text-[#0070f0] hover:text-[#0050c0] hover:underline"
+                            }`}
+                          >
+                            {a.label}
+                          </button>
+                        );
+                      }
+
+                      return null;
+                    })}
+                    {stNorm !== "pending" ? (
+                      <Link
+                        href={`/enterprise/orders/${encodeURIComponent(order.id)}`}
+                        className="text-sm text-[#0070f0] hover:text-[#0050c0] hover:underline"
                       >
-                        {confirmBusy ? "Confirming…" : "Confirm order"}
-                      </button>
+                        Check Details
+                      </Link>
                     ) : null}
-                    <Link
-                      href={`/enterprise/orders/${encodeURIComponent(order.id)}`}
-                      className={`text-sm text-[#0070f0] hover:text-[#0050c0] hover:underline ${
-                        showConfirm ? "font-normal" : ""
-                      }`}
-                    >
-                      {showConfirm ? "View details" : "Check Details"}
-                    </Link>
                     {pendingDelete && (
                       <button
                         type="button"

@@ -10,6 +10,7 @@ import TabsVouchers from "@/components/enterprise/TabsVouchers";
 import { useSearchParams } from "next/navigation";
 import { getServerApiBase } from "@/lib/http-client";
 import { buildAuthHeader } from "@/lib/auth-helpers";
+import { EnterprisePageHeader, ENTERPRISE_PANEL_CLASS } from "@/components/enterprise/EnterprisePageHeader";
 
 export default function AdminDashboardPage() {
   const [entepriseData, setEnterpriseData] = useState<any>(null);
@@ -305,31 +306,21 @@ export default function AdminDashboardPage() {
   });
 
   return (
-    <div className="relative">
-      {/* Decorative Background */}
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute inset-x-0 top-0 h-64 bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50" />
-        <div className="absolute -top-10 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-purple-200/30 blur-3xl" />
-        <div className="absolute top-10 right-10 h-40 w-40 rounded-full bg-orange-200/30 blur-2xl" />
+    <div className="space-y-6">
+      <div className={`${ENTERPRISE_PANEL_CLASS} p-4`}>
+        <EnterprisePageHeader
+          title="Voucher Management"
+          description="Create and manage discount vouchers for your customers."
+          actions={
+            <div className="flex items-center gap-2 text-[13px] font-medium text-slate-600">
+              <Sparkles className="h-4 w-4 shrink-0 text-sky-600" />
+              <span>{entepriseData?.vouchers?.length || 0} Active Vouchers</span>
+            </div>
+          }
+        />
       </div>
 
-      {/* Header */}
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8 rounded-2xl border border-white/50 bg-white/70 p-6 shadow-md backdrop-blur supports-[backdrop-filter]:bg-white/60">
-          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-gray-900">Voucher Management</h1>
-              <p className="mt-1 text-sm text-gray-600">Create and manage discount vouchers for your customers.</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-purple-500" />
-              <span className="text-sm font-medium text-purple-600">
-                {entepriseData?.vouchers?.length || 0} Active Vouchers
-              </span>
-            </div>
-          </div>
-        </div>
-
         {/* Content Grid */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           {/* Left: Create Voucher Form */}

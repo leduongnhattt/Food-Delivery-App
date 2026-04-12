@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation'
 import { PaymentService } from '@/services/payment.service'
 import { useSearchParams } from 'next/navigation'
 import { ArrowLeft, CheckCircle, Circle } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { RestaurantService } from '@/services/restaurant.service'
 import { VoucherService } from '@/services/voucher.service'
 import { RestaurantHeader } from '@/components/checkout/RestaurantHeader'
@@ -91,6 +91,8 @@ export default function CheckoutPage() {
     deliveryTime: '25-35 min',
     address: '123 Main Street, City'
   } : null
+
+  const hasDeliveryInfo = Boolean(deliveryData.phone?.trim() && deliveryData.address?.trim())
 
   // Debounced restaurant logo fetch
   useEffect(() => {
@@ -393,37 +395,59 @@ export default function CheckoutPage() {
               </h1>
             </div>
             
-            {/* Order Status Progress */}
+            {/* Checkout progress (not order status) */}
             <div className="flex items-center justify-center mb-8">
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center">
-                  <div className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center">
-                    <CheckCircle className="w-5 h-5" />
+              {(() => {
+                const steps = [
+                  { key: 'cart', label: 'Cart', done: cartItems.length > 0 },
+                  { key: 'delivery', label: 'Delivery', done: hasDeliveryInfo },
+                  { key: 'payment', label: 'Payment', done: Boolean(paymentMethod) },
+                  { key: 'confirm', label: 'Confirm', done: false },
+                ]
+
+                const currentIdx = Math.min(
+                  steps.findIndex(s => !s.done),
+                  steps.length - 1
+                )
+
+                return (
+                  <div className="flex items-center">
+                    {steps.map((s, idx) => {
+                      const active = idx === currentIdx
+                      const done = s.done
+                      const circleCls = done
+                        ? 'bg-orange-500 text-white'
+                        : active
+                          ? 'bg-orange-100 text-orange-600 ring-2 ring-orange-300'
+                          : 'bg-gray-200 text-gray-500'
+
+                      const textCls = done
+                        ? 'text-orange-600'
+                        : active
+                          ? 'text-orange-700'
+                          : 'text-gray-500'
+
+                      const lineCls = steps[idx]?.done
+                        ? 'bg-orange-300'
+                        : 'bg-gray-300'
+
+                      return (
+                        <Fragment key={s.key}>
+                          <div className="flex items-center">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${circleCls}`}>
+                              {done ? <CheckCircle className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
+                            </div>
+                            <span className={`ml-2 text-sm font-medium ${textCls}`}>{s.label}</span>
+                          </div>
+                          {idx < steps.length - 1 ? (
+                            <div className={`w-14 sm:w-16 h-0.5 mx-3 ${lineCls}`} />
+                          ) : null}
+                        </Fragment>
+                      )
+                    })}
                   </div>
-                  <span className="ml-2 text-sm font-medium text-orange-600">Confirmed</span>
-                </div>
-                <div className="w-16 h-0.5 bg-orange-300"></div>
-                <div className="flex items-center">
-                  <div className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center">
-                    <CheckCircle className="w-5 h-5" />
-                  </div>
-                  <span className="ml-2 text-sm font-medium text-orange-600">Preparing</span>
-                </div>
-                <div className="w-16 h-0.5 bg-orange-300"></div>
-                <div className="flex items-center">
-                  <div className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center">
-                    <CheckCircle className="w-5 h-5" />
-                  </div>
-                  <span className="ml-2 text-sm font-medium text-orange-600">On the way</span>
-                </div>
-                <div className="w-16 h-0.5 bg-gray-300"></div>
-                <div className="flex items-center">
-                  <div className="w-8 h-8 bg-gray-300 text-gray-500 rounded-full flex items-center justify-center">
-                    <Circle className="w-5 h-5" />
-                  </div>
-                  <span className="ml-2 text-sm font-medium text-gray-500">Delivered</span>
-                </div>
-              </div>
+                )
+              })()}
             </div>
           </div>
           
