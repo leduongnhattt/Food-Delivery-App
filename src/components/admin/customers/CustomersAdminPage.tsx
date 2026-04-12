@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useAdminSearchInput } from "@/hooks/use-admin-search-input"
 import { useRouter, useSearchParams } from "next/navigation"
 import { formatDate } from "@/lib/utils"
 import { Check, ChevronDown, Lock, Search, Unlock } from "lucide-react"
@@ -67,6 +68,11 @@ export default function CustomersAdminPage() {
     router.push(qs ? `/admin/customers?${qs}` : "/admin/customers")
   }
 
+  const { value: searchInput, onChange: onSearchChange } = useAdminSearchInput(
+    search,
+    (q) => setQuery({ search: q }),
+  )
+
   const statusLabel = useMemo(() => {
     if (tab === "active") return "Active"
     if (tab === "locked") return "Locked"
@@ -120,13 +126,9 @@ export default function CustomersAdminPage() {
                 <input
                   className="w-full border-0 appearance-none placeholder:text-slate-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-75 transition-colors rounded px-3 gap-2 text-slate-900 ring ring-inset focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-300 ps-10 text-[13px] py-2.5 ring-slate-200 bg-white"
                   placeholder="Search name / phone / email"
-                  defaultValue={search}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      const v = (e.target as HTMLInputElement).value
-                      setQuery({ search: v })
-                    }
-                  }}
+                  value={searchInput}
+                  onChange={onSearchChange}
+                  aria-label="Search customers"
                 />
               </div>
             </div>

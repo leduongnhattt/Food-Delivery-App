@@ -26,47 +26,47 @@ export default function EnterpriseFilter({
   currentEndDate?: string
 }) {
   const router = useRouter()
-  const params = useSearchParams()
+  const currentSearchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement | null>(null)
 
-  const apply = (enterpriseId: string) => {
-    const p = new URLSearchParams(params.toString())
-    if (currentStatus) p.set('status', currentStatus)
-    if (currentSearch) p.set('q', currentSearch)
-    else p.delete('q')
-    if (currentStartDate) p.set('startDate', currentStartDate)
-    else p.delete('startDate')
-    if (currentEndDate) p.set('endDate', currentEndDate)
-    else p.delete('endDate')
-    if (enterpriseId) {
-      p.set('enterpriseId', enterpriseId)
+  const navigateWithEnterpriseId = (nextEnterpriseId: string) => {
+    const nextQuery = new URLSearchParams(currentSearchParams.toString())
+    if (currentStatus) nextQuery.set('status', currentStatus)
+    if (currentSearch) nextQuery.set('q', currentSearch)
+    else nextQuery.delete('q')
+    if (currentStartDate) nextQuery.set('startDate', currentStartDate)
+    else nextQuery.delete('startDate')
+    if (currentEndDate) nextQuery.set('endDate', currentEndDate)
+    else nextQuery.delete('endDate')
+    if (nextEnterpriseId) {
+      nextQuery.set('enterpriseId', nextEnterpriseId)
     } else {
-      p.delete('enterpriseId')
+      nextQuery.delete('enterpriseId')
     }
     startTransition(() => {
-      router.replace(`/admin/reviews?${p.toString()}`, { scroll: false })
+      router.replace(`/admin/reviews?${nextQuery.toString()}`, { scroll: false })
     })
   }
 
-  const currentLabel = useMemo(() => {
+  const selectedEnterpriseLabel = useMemo(() => {
     if (!currentEnterpriseId) return 'All Restaurants'
-    return (
-      enterprises.find((e) => e.EnterpriseID === currentEnterpriseId)
-        ?.EnterpriseName || 'All Restaurants'
+    const match = enterprises.find(
+      (enterprise) => enterprise.EnterpriseID === currentEnterpriseId,
     )
+    return match?.EnterpriseName ?? 'All Restaurants'
   }, [currentEnterpriseId, enterprises])
 
   useEffect(() => {
-    function onDown(e: MouseEvent) {
+    function handleDocumentMouseDown(event: MouseEvent) {
       if (!open) return
-      const t = e.target as Node | null
-      if (!t) return
-      if (rootRef.current && !rootRef.current.contains(t)) setOpen(false)
+      const targetNode = event.target as Node | null
+      if (!targetNode) return
+      if (rootRef.current && !rootRef.current.contains(targetNode)) setOpen(false)
     }
-    document.addEventListener('mousedown', onDown)
-    return () => document.removeEventListener('mousedown', onDown)
+    document.addEventListener('mousedown', handleDocumentMouseDown)
+    return () => document.removeEventListener('mousedown', handleDocumentMouseDown)
   }, [open])
 
   return (
@@ -79,7 +79,7 @@ export default function EnterpriseFilter({
         aria-haspopup="menu"
         aria-expanded={open}
       >
-        <span className="truncate">{currentLabel}</span>
+        <span className="truncate">{selectedEnterpriseLabel}</span>
         <ChevronDown
           className={`w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 transition-transform duration-150 ${
             open ? "rotate-180" : ""
@@ -92,7 +92,7 @@ export default function EnterpriseFilter({
           <button
             type="button"
             onClick={() => {
-              apply('')
+              navigateWithEnterpriseId('')
               setOpen(false)
             }}
             className="w-full flex items-center justify-between px-3 py-2 text-[13px] md:text-[13px] text-slate-900 hover:bg-slate-50"
@@ -100,18 +100,18 @@ export default function EnterpriseFilter({
             <span>All Restaurants</span>
             {!currentEnterpriseId && <Check className="w-4 h-4 text-slate-700" />}
           </button>
-          {enterprises.map((ent) => (
+          {enterprises.map((enterprise) => (
             <button
-              key={ent.EnterpriseID}
+              key={enterprise.EnterpriseID}
               type="button"
               onClick={() => {
-                apply(ent.EnterpriseID)
+                navigateWithEnterpriseId(enterprise.EnterpriseID)
                 setOpen(false)
               }}
               className="w-full flex items-center justify-between px-3 py-2 text-[13px] md:text-[13px] text-slate-900 hover:bg-slate-50"
             >
-              <span className="truncate">{ent.EnterpriseName}</span>
-              {currentEnterpriseId === ent.EnterpriseID && (
+              <span className="truncate">{enterprise.EnterpriseName}</span>
+              {currentEnterpriseId === enterprise.EnterpriseID && (
                 <Check className="w-4 h-4 text-slate-700" />
               )}
             </button>

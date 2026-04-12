@@ -22,6 +22,11 @@ import {
   type EnterpriseOrderTab,
   type EnterpriseToShipSubTab,
 } from "@/lib/enterprise-order-buckets";
+import {
+  EnterpriseMenuSelect,
+  type EnterpriseMenuSelectOption,
+} from "@/components/enterprise/orders/EnterpriseMenuSelect";
+import { EnterprisePageHeader, ENTERPRISE_PANEL_CLASS } from "@/components/enterprise/EnterprisePageHeader";
 
 type SearchField = "product" | "buyer_name" | "order_id" | "tracking_number";
 type ShippingPriority = "all" | "overdue" | "today" | "tomorrow";
@@ -66,6 +71,24 @@ function chipClass(active: boolean) {
       : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
   }`;
 }
+
+const SEARCH_FIELD_OPTIONS: EnterpriseMenuSelectOption[] = [
+  { value: "product", label: "Product" },
+  { value: "buyer_name", label: "Buyer Name" },
+  { value: "order_id", label: "Order ID" },
+  { value: "tracking_number", label: "Tracking Number" },
+];
+
+const SHIPPING_CHANNEL_OPTIONS: EnterpriseMenuSelectOption[] = [
+  { value: "all", label: "All Channels" },
+];
+
+const SORT_OPTIONS: EnterpriseMenuSelectOption[] = [
+  { value: "newest", label: "Confirmed Date (Newest First)" },
+  { value: "oldest", label: "Confirmed Date (Oldest First)" },
+  { value: "amount_high", label: "Order Total (High to Low)" },
+  { value: "amount_low", label: "Order Total (Low to High)" },
+];
 
 export function EnterpriseOrdersPageClient() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -312,37 +335,43 @@ export function EnterpriseOrdersPageClient() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+      <div className="flex min-h-[40vh] items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-purple-600" />
-          <p className="text-gray-600">Loading orders...</p>
+          <div className="mx-auto mb-3 h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-sky-600" />
+          <p className="text-[13px] leading-[18px] font-medium text-[oklch(0.551_0.027_264.364)]">
+            Loading orders…
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full">
-      <div className="rounded-lg border border-gray-200 bg-white px-3 py-3 sm:px-4">
-        <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-2xl font-medium text-gray-900">My Orders</h1>
-          <div className="flex gap-3">
+    <div className="w-full space-y-6">
+      <EnterprisePageHeader
+        title="My Orders"
+        description="View and manage orders from your customers."
+        actions={
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              className="h-10 rounded-md border border-[#b9cffc] bg-white px-6 text-sm font-medium text-gray-900 shadow-sm hover:bg-gray-50"
+              className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-4 text-[13px] font-medium text-slate-900 shadow-sm hover:bg-slate-50"
               onClick={() => showToast("Export is not implemented yet", "info")}
             >
               Export
             </button>
             <button
               type="button"
-              className="h-10 rounded-md border border-[#b9cffc] bg-white px-6 text-sm font-medium text-gray-900 shadow-sm hover:bg-gray-50"
+              className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-4 text-[13px] font-medium text-slate-900 shadow-sm hover:bg-slate-50"
               onClick={() => showToast("Export History is not implemented yet", "info")}
             >
               Export History
             </button>
           </div>
-        </div>
+        }
+      />
+
+      <div className={`${ENTERPRISE_PANEL_CLASS} px-3 py-3 sm:px-4`}>
 
         <div className="px-2 pt-2">
           <EnterpriseOrdersPrimaryTabs
@@ -419,22 +448,21 @@ export function EnterpriseOrdersPageClient() {
           ) : null}
 
           <div className="flex items-center gap-4">
-            <div className="flex flex-1 items-center">
-              <select
+            <div className="flex min-w-0 flex-1 items-stretch rounded border border-slate-200 bg-white focus-within:ring-2 focus-within:ring-inset focus-within:ring-sky-300">
+              <EnterpriseMenuSelect
                 value={pendingSearchField}
-                onChange={(e) => setPendingSearchField(e.target.value as SearchField)}
-                className="h-9 w-40 shrink-0 rounded-l border border-gray-300 bg-gray-50 px-3 text-sm text-gray-700 focus:border-[#2563FF] focus:outline-none focus:ring-2 focus:ring-[#2563FF]/20"
-              >
-                <option value="product">Product</option>
-                <option value="buyer_name">Buyer Name</option>
-                <option value="order_id">Order ID</option>
-                <option value="tracking_number">Tracking Number</option>
-              </select>
+                onChange={(v) => setPendingSearchField(v as SearchField)}
+                options={SEARCH_FIELD_OPTIONS}
+                className="w-40 shrink-0"
+                borderlessTrigger
+                triggerClassName="rounded-none rounded-l-md rounded-r-none"
+                aria-label="Search by field"
+              />
               <input
                 value={pendingSearchInput}
                 onChange={(e) => setPendingSearchInput(e.target.value)}
                 placeholder="Input Product Name/Parent SKU/SKU"
-                className="h-9 flex-1 rounded-l-none border border-gray-300 bg-gray-50 px-3 text-sm text-gray-700 placeholder:text-gray-400 focus:border-[#2563FF] focus:outline-none focus:ring-2 focus:ring-[#2563FF]/20"
+                className="h-9 min-h-9 min-w-0 flex-1 rounded-none rounded-r-md border-0 border-l border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0"
               />
             </div>
 
@@ -442,13 +470,13 @@ export function EnterpriseOrdersPageClient() {
               <label className="shrink-0 text-sm text-gray-600">
                 Shipping Channel
               </label>
-              <select
+              <EnterpriseMenuSelect
                 value={pendingShippingChannel}
-                onChange={(e) => setPendingShippingChannel(e.target.value)}
-                className="h-9 flex-1 rounded border border-gray-300 bg-gray-50 px-3 text-sm text-gray-700 focus:border-[#2563FF] focus:outline-none focus:ring-2 focus:ring-[#2563FF]/20"
-              >
-                <option value="all">All Channels</option>
-              </select>
+                onChange={setPendingShippingChannel}
+                options={SHIPPING_CHANNEL_OPTIONS}
+                className="min-w-0 flex-1"
+                aria-label="Shipping channel"
+              />
             </div>
 
             <div className="flex gap-2">
@@ -478,16 +506,15 @@ export function EnterpriseOrdersPageClient() {
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-600">Sort by:</span>
-            <select
+            <EnterpriseMenuSelect
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="h-9 w-72 rounded border border-gray-300 bg-gray-50 px-3 text-sm text-gray-700 focus:border-[#2563FF] focus:outline-none focus:ring-2 focus:ring-[#2563FF]/20"
-            >
-              <option value="newest">Confirmed Date (Newest First)</option>
-              <option value="oldest">Confirmed Date (Oldest First)</option>
-              <option value="amount_high">Order Total (High to Low)</option>
-              <option value="amount_low">Order Total (Low to High)</option>
-            </select>
+              onChange={setSortBy}
+              options={SORT_OPTIONS}
+              className="w-72 shrink-0"
+              menuClassName="min-w-[18rem]"
+              alignMenu="right"
+              aria-label="Sort orders"
+            />
             {tab === "to_ship" ? (
               <button
                 type="button"

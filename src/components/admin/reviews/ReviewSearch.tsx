@@ -1,8 +1,10 @@
 "use client"
 
-import { useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Search, Calendar } from 'lucide-react'
+
+const SEARCH_DEBOUNCE_MS = 350
 
 export default function ReviewSearch({ 
   currentStatus, 
@@ -23,6 +25,17 @@ export default function ReviewSearch({
   const [searchValue, setSearchValue] = useState(currentSearch)
   const [startDate, setStartDate] = useState(currentStartDate || '')
   const [endDate, setEndDate] = useState(currentEndDate || '')
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    setSearchValue(currentSearch)
+  }, [currentSearch])
+
+  useEffect(() => {
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+    }
+  }, [])
 
   const updateURL = (updates: {
     search?: string
@@ -83,11 +96,14 @@ export default function ReviewSearch({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     setSearchValue(value)
-    
-    // Auto-clear search when input is empty
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
     if (value.trim() === '') {
       updateURL({ search: '' })
+      return
     }
+    searchDebounceRef.current = setTimeout(() => {
+      updateURL({ search: value })
+    }, SEARCH_DEBOUNCE_MS)
   }
 
   const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,6 +132,7 @@ export default function ReviewSearch({
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleSearch()
               }}
+              autoComplete="off"
               placeholder="Search review, customer, or restaurant"
               className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-11 text-[13px] leading-4 font-normal text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
               disabled={isPending}

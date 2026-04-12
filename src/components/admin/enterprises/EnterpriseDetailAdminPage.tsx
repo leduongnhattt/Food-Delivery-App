@@ -6,7 +6,6 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
-  Building2,
   DollarSign,
   FileText,
   Package,
@@ -19,10 +18,15 @@ import { formatDate, formatPriceCompact } from "@/lib/utils"
 import {
   getAdminEnterpriseDetail,
   lockAdminEnterpriseAccount,
+  softDeleteAdminEnterprise,
   unlockAdminEnterpriseAccount,
 } from "@/services/admin.service"
 import type { AdminEnterpriseDetailResponse } from "@/types/admin-api.types"
 import { useToast } from "@/contexts/toast-context"
+import SuspendEnterpriseConfirmModal from "./SuspendEnterpriseConfirmModal"
+import DeleteEnterpriseConfirmModal from "./DeleteEnterpriseConfirmModal"
+import ApproveEnterpriseConfirmModal from "./ApproveEnterpriseConfirmModal"
+import ActivateEnterpriseConfirmModal from "./ActivateEnterpriseConfirmModal"
 
 function num(v: unknown): number {
   if (typeof v === "number" && Number.isFinite(v)) return v
@@ -107,6 +111,10 @@ export default function EnterpriseDetailAdminPage({
   const [loading, setLoading] = useState(true)
   const [approving, setApproving] = useState(false)
   const [suspending, setSuspending] = useState(false)
+  const [suspendModalOpen, setSuspendModalOpen] = useState(false)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [unlockModalKind, setUnlockModalKind] = useState<"approve" | "activate" | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -125,26 +133,47 @@ export default function EnterpriseDetailAdminPage({
     void load()
   }, [load])
 
-  const onApprove = async () => {
-    if (!data || data.enterprise.account.Status === "Active") return
+  const confirmUnlockEnterprise = async () => {
+    if (!data || !unlockModalKind || data.enterprise.account.Status === "Active") return
     setApproving(true)
     try {
       await unlockAdminEnterpriseAccount(data.enterprise.account.AccountID)
-      showToast("Enterprise activated", "success", 3000)
+      showToast(
+        unlockModalKind === "approve" ? "Enterprise approved" : "Enterprise activated",
+        "success",
+        3000
+      )
+      setUnlockModalKind(null)
       await load()
     } catch (e) {
-      showToast(e instanceof Error ? e.message : "Approve failed", "error", 5000)
+      showToast(e instanceof Error ? e.message : "Unlock failed", "error", 5000)
     } finally {
       setApproving(false)
     }
   }
 
-  const onSuspend = async () => {
+  const confirmDeleteEnterprise = async () => {
+    if (!data) return
+    setDeleting(true)
+    try {
+      await softDeleteAdminEnterprise(data.enterprise.EnterpriseID)
+      showToast("Enterprise removed (soft delete)", "success", 3000)
+      setDeleteModalOpen(false)
+      router.push("/admin/enterprises/list")
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Delete failed", "error", 5000)
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const confirmSuspendEnterprise = async () => {
     if (!data || data.enterprise.account.Status !== "Active") return
     setSuspending(true)
     try {
       await lockAdminEnterpriseAccount(data.enterprise.account.AccountID)
       showToast("Enterprise suspended", "success", 3000)
+      setSuspendModalOpen(false)
       await load()
     } catch (e) {
       showToast(e instanceof Error ? e.message : "Suspend failed", "error", 5000)
@@ -229,28 +258,27 @@ export default function EnterpriseDetailAdminPage({
           >
             Cancel
           </button>
+          <button
+            type="button"
+            disabled={deleting || deleteModalOpen}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              window.setTimeout(() => setDeleteModalOpen(true), 0)
+            }}
+            className="h-9 rounded-lg border border-red-500 bg-rose-50/80 px-4 text-[12px] font-medium text-red-600 hover:bg-rose-100/80 disabled:opacity-50"
+          >
+            {deleting ? "Deleting…" : "Delete enterprise"}
+          </button>
           {isActive ? (
             <button
               type="button"
-              onClick={() => showToast("Delete enterprise is not available yet.", "error", 4000)}
-              className="h-9 rounded-lg border border-red-500 bg-rose-50/80 px-4 text-[12px] font-medium text-red-600 hover:bg-rose-100/80"
-            >
-              Delete enterprise
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => showToast("Delete enterprise is not available yet.", "error", 4000)}
-              className="h-9 rounded-lg border border-red-500 bg-slate-50 px-4 text-[12px] font-medium text-red-600 hover:bg-slate-100"
-            >
-              Delete enterprise
-            </button>
-          )}
-          {isActive ? (
-            <button
-              type="button"
-              disabled={suspending}
-              onClick={() => void onSuspend()}
+              disabled={suspending || suspendModalOpen}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                window.setTimeout(() => setSuspendModalOpen(true), 0)
+              }}
               className="h-9 rounded-lg border border-slate-300 bg-white px-4 text-[12px] font-medium text-black hover:bg-slate-50 disabled:opacity-50"
             >
               {suspending ? "Suspending…" : "Suspend enterprise"}
@@ -258,8 +286,12 @@ export default function EnterpriseDetailAdminPage({
           ) : uiPending ? (
             <button
               type="button"
-              disabled={approving}
-              onClick={() => void onApprove()}
+              disabled={approving || unlockModalKind !== null}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                window.setTimeout(() => setUnlockModalKind("approve"), 0)
+              }}
               className="h-9 rounded-lg border border-green-600 bg-slate-50 px-4 text-[12px] font-medium text-green-700 hover:bg-slate-100 disabled:opacity-50"
             >
               {approving ? "Approving…" : "Approve enterprise"}
@@ -267,24 +299,27 @@ export default function EnterpriseDetailAdminPage({
           ) : (
             <button
               type="button"
-              disabled={approving}
-              onClick={() => void onApprove()}
+              disabled={approving || unlockModalKind !== null}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                window.setTimeout(() => setUnlockModalKind("activate"), 0)
+              }}
               className="h-9 rounded-lg border border-blue-600 bg-slate-50 px-4 text-[12px] font-medium text-blue-600 hover:bg-slate-100 disabled:opacity-50"
             >
               {approving ? "Activating…" : "Activate enterprise"}
             </button>
           )}
-          <button
-            type="button"
-            onClick={() => showToast("Edit enterprise form is not available yet.", "error", 4000)}
-            className="h-9 rounded-lg bg-blue-600 px-4 text-[12px] font-medium text-white hover:bg-blue-700"
+          <Link
+            href={`/admin/enterprises/${encodeURIComponent(enterpriseId)}/edit`}
+            className="inline-flex h-9 items-center rounded-lg bg-blue-600 px-4 text-[12px] font-medium text-white hover:bg-blue-700"
           >
             Edit enterprise
-          </button>
+          </Link>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6">
         <InfoCard title="Enterprise information" icon={FileText}>
           <Field label="Enterprise name" value={enterprise.EnterpriseName} />
           <Field label="Enterprise ID" value={enterprise.EnterpriseID} />
@@ -315,12 +350,6 @@ export default function EnterpriseDetailAdminPage({
           <Field label="Username" value={enterprise.account.Username} />
           <Field label="Phone number" value={dash(enterprise.PhoneNumber)} />
           <Field label="Registered address" value={dash(enterprise.Address)} />
-        </InfoCard>
-
-        <InfoCard title="Business information" icon={Building2}>
-          <Field label="Legal business name" value={dash(business.legalBusinessName)} />
-          <Field label="Registration number" value={dash(business.registrationNumber)} />
-          <Field label="Tax ID / VAT" value={dash(business.taxId)} />
           <Field label="Bank account" value={business.bankAccountMasked} />
           <Field label="Payout method" value={business.payoutMethod} />
         </InfoCard>
@@ -445,6 +474,37 @@ export default function EnterpriseDetailAdminPage({
           </div>
         )}
       </div>
+
+      <SuspendEnterpriseConfirmModal
+        open={suspendModalOpen}
+        enterpriseName={enterprise.EnterpriseName}
+        onClose={() => setSuspendModalOpen(false)}
+        onConfirm={confirmSuspendEnterprise}
+        isSubmitting={suspending}
+      />
+
+      <DeleteEnterpriseConfirmModal
+        open={deleteModalOpen}
+        enterpriseName={enterprise.EnterpriseName}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={confirmDeleteEnterprise}
+        isSubmitting={deleting}
+      />
+
+      <ApproveEnterpriseConfirmModal
+        open={unlockModalKind === "approve"}
+        enterpriseName={enterprise.EnterpriseName}
+        onClose={() => setUnlockModalKind(null)}
+        onConfirm={confirmUnlockEnterprise}
+        isSubmitting={approving && unlockModalKind === "approve"}
+      />
+      <ActivateEnterpriseConfirmModal
+        open={unlockModalKind === "activate"}
+        enterpriseName={enterprise.EnterpriseName}
+        onClose={() => setUnlockModalKind(null)}
+        onConfirm={confirmUnlockEnterprise}
+        isSubmitting={approving && unlockModalKind === "activate"}
+      />
     </div>
   )
 }

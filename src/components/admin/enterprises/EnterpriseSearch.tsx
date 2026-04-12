@@ -1,47 +1,38 @@
 "use client"
 
-import { useState, useTransition } from 'react'
+import { useCallback, useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Search } from 'lucide-react'
+import { useAdminSearchInput } from '@/hooks/use-admin-search-input'
 
 export default function EnterpriseSearch({ currentTab, currentSearch }: { currentTab: string; currentSearch: string }) {
   const router = useRouter()
   const params = useSearchParams()
   const [isPending, startTransition] = useTransition()
-  const [searchValue, setSearchValue] = useState(currentSearch)
 
-  const handleSearch = () => {
-    const p = new URLSearchParams(params.toString())
-    p.set('status', currentTab)
-    if (searchValue.trim()) {
-      p.set('search', searchValue.trim())
-    } else {
-      p.delete('search')
-    }
-    startTransition(() => {
-      router.replace(`/admin/enterprises?${p.toString()}`, { scroll: false })
-    })
-  }
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setSearchValue(value)
-    
-    // Auto-clear search when input is empty
-    if (value.trim() === '') {
+  const applySearch = useCallback(
+    (q: string) => {
       const p = new URLSearchParams(params.toString())
       p.set('status', currentTab)
-      p.delete('search')
+      if (q) {
+        p.set('search', q)
+      } else {
+        p.delete('search')
+      }
       startTransition(() => {
         router.replace(`/admin/enterprises?${p.toString()}`, { scroll: false })
       })
-    }
-  }
+    },
+    [params, currentTab, router, startTransition],
+  )
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch()
-    }
+  const { value: searchValue, onChange: handleInputChange } = useAdminSearchInput(
+    currentSearch,
+    applySearch,
+  )
+
+  const handleSearch = () => {
+    applySearch(searchValue.trim())
   }
 
   return (
@@ -53,7 +44,6 @@ export default function EnterpriseSearch({ currentTab, currentSearch }: { curren
             type="text"
             value={searchValue}
             onChange={handleInputChange}
-            onKeyPress={handleKeyPress}
             placeholder="Search name, phone, email"
             className="pl-9 pr-3 w-full h-9 rounded-md border border-slate-200 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300"
             disabled={isPending}

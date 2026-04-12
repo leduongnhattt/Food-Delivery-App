@@ -54,7 +54,8 @@ function statusHeaderBadge(status: AdminEnterpriseInvitationStatus) {
 }
 
 function statusLabel(status: AdminEnterpriseInvitationStatus) {
-  if (status === "Accepted") return "Activated"
+  if (status === "Accepted") return "Actived"
+  if (status === "Pending") return "Pending"
   return status
 }
 
@@ -278,7 +279,7 @@ export default function EnterpriseInvitationDetailAdminPage({
             </h2>
             <div className="relative pl-4 border-l border-slate-200 space-y-6">
               {timeline.map((ev, i) => (
-                <div key={`${ev.title}-${i}`} className="relative">
+                <div key={`${ev.at}-${ev.title}-${i}`} className="relative">
                   <span className="absolute -left-[21px] top-1.5 h-2.5 w-2.5 rounded-full bg-blue-600 ring-4 ring-white" />
                   <div className="text-[13px] leading-4 font-semibold text-slate-900">{ev.title}</div>
                   <div className="mt-1 text-[12px] leading-4 text-slate-500">
@@ -306,6 +307,14 @@ export default function EnterpriseInvitationDetailAdminPage({
                 <span className="text-slate-500">Days since sent</span>
                 <span className="font-medium text-slate-900">{quickStats.daysSinceSent}</span>
               </div>
+              {quickStats.daysFromSentToFirstEmailOpen !== null ? (
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-slate-500">Days to first email open</span>
+                  <span className="font-medium text-slate-900">
+                    {quickStats.daysFromSentToFirstEmailOpen}
+                  </span>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>

@@ -1,47 +1,38 @@
 "use client"
 
-import { useState, useTransition } from 'react'
+import { useCallback, useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Search } from 'lucide-react'
+import { useAdminSearchInput } from '@/hooks/use-admin-search-input'
 
 export default function VoucherSearch({ currentStatus, currentSearch }: { currentStatus: string; currentSearch: string }) {
   const router = useRouter()
   const params = useSearchParams()
   const [isPending, startTransition] = useTransition()
-  const [searchValue, setSearchValue] = useState(currentSearch)
 
-  const handleSearch = () => {
-    const p = new URLSearchParams(params.toString())
-    p.set('status', currentStatus)
-    if (searchValue.trim()) {
-      p.set('q', searchValue.trim())
-    } else {
-      p.delete('q')
-    }
-    startTransition(() => {
-      router.replace(`/admin/discount?${p.toString()}`, { scroll: false })
-    })
-  }
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setSearchValue(value)
-    
-    // Auto-clear search when input is empty
-    if (value.trim() === '') {
+  const applySearch = useCallback(
+    (q: string) => {
       const p = new URLSearchParams(params.toString())
       p.set('status', currentStatus)
-      p.delete('q')
+      if (q) {
+        p.set('q', q)
+      } else {
+        p.delete('q')
+      }
       startTransition(() => {
         router.replace(`/admin/discount?${p.toString()}`, { scroll: false })
       })
-    }
-  }
+    },
+    [params, currentStatus, router, startTransition],
+  )
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch()
-    }
+  const { value: searchValue, onChange: handleInputChange } = useAdminSearchInput(
+    currentSearch,
+    applySearch,
+  )
+
+  const handleSearch = () => {
+    applySearch(searchValue.trim())
   }
 
   return (
@@ -53,7 +44,6 @@ export default function VoucherSearch({ currentStatus, currentSearch }: { curren
             type="text"
             value={searchValue}
             onChange={handleInputChange}
-            onKeyPress={handleKeyPress}
             placeholder="Search code or enterprise"
             className="pl-9 pr-3 w-full h-9 rounded-md border border-slate-200 text-[13px] leading-4 font-normal text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300"
             disabled={isPending}

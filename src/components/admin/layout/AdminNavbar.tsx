@@ -8,7 +8,13 @@ import {
   LogOut,
   ChevronDown,
 } from "lucide-react";
-import { Globe, Settings, User, ChevronRight } from "lucide-react";
+import {
+  Globe,
+  Settings,
+  User,
+  ChevronRight,
+  ChefHat,
+} from "lucide-react";
 import { getAuthToken, logoutUser } from "@/lib/auth-helpers";
 import { fetchAdminProfile } from "@/services/admin.service";
 
@@ -31,12 +37,20 @@ const NAV_SECTIONS: {
   >;
 }[] = [
   {
-    title: "OVERVIEW",
-    items: [{ href: "/admin/dashboard", label: "Dashboard" }],
+    title: "ORDER MANAGEMENT",
+    items: [
+      { href: "/admin/orders", label: "Order List" },
+      { href: "/admin/orders/returns-refunds", label: "Return & Refund" },
+      { href: "/admin/orders/bulk-update-tools", label: "Bulk Update Tools" },
+    ],
   },
   {
-    title: "USERS",
-    items: [{ href: "/admin/customers", label: "Customers" }],
+    title: "ACCESS CONTROL",
+    items: [
+      { href: "/admin/customers", label: "Users" },
+      { href: "/admin/access/roles", label: "Roles" },
+      { href: "/admin/access/permissions", label: "Permissions" },
+    ],
   },
   {
     title: "ENTERPRISES",
@@ -50,20 +64,40 @@ const NAV_SECTIONS: {
     title: "CATALOG",
     items: [
       { href: "/admin/categories", label: "Categories" },
+      { href: "/admin/discount", label: "Discount" },
       { href: "/admin/reviews", label: "Reviews" },
     ],
   },
   {
-    title: "PROMOTIONS",
-    items: [{ href: "/admin/discount", label: "Discount" }],
+    title: "FINANCE SETTINGS",
+    items: [
+      { href: "/admin/finance/commission-fees", label: "Commission Fees" },
+      { href: "/admin/finance/payment-channels", label: "Payment Channels" },
+      { href: "/admin/finance/transaction-fees", label: "Transaction Fees" },
+    ],
   },
   {
-    title: "SUPPORT",
-    items: [{ href: "/admin/support", label: "Support" }],
+    title: "PLATFORM",
+    items: [
+      { href: "/admin/support", label: "Support" },
+      { href: "/admin/platform/audit-logs", label: "Audit Logs" },
+    ],
   },
 ];
 
 type AdminBreadcrumbCrumb = { label: string; href?: string };
+
+function humanizePathRest(rest: string): string {
+  return rest
+    .split("/")
+    .map((part) =>
+      part
+        .split("-")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" "),
+    )
+    .join(" / ");
+}
 
 function flatNavLinks(): { href: string; label: string }[] {
   const out: { href: string; label: string }[] = [];
@@ -102,6 +136,18 @@ function adminBreadcrumbs(pathname: string): AdminBreadcrumbCrumb[] {
 
   const items = flatNavLinks();
 
+  const entEdit = path.match(/^\/admin\/enterprises\/([^/]+)\/edit$/);
+  if (entEdit) {
+    const seg = entEdit[1];
+    if (seg !== "list" && seg !== "invitations" && seg !== "template") {
+      return [
+        { label: "Home", href: "/admin/dashboard" },
+        { label: "Enterprise List", href: "/admin/enterprises/list" },
+        { label: "Edit Enterprise" },
+      ];
+    }
+  }
+
   const entOne = path.match(/^\/admin\/enterprises\/([^/]+)$/);
   if (entOne) {
     const seg = entOne[1];
@@ -128,6 +174,15 @@ function adminBreadcrumbs(pathname: string): AdminBreadcrumbCrumb[] {
   if (rest === "send") tail = "Send invitation";
   else if (base.href === "/admin/enterprises/invitations" && rest) tail = "Invitation details";
   else if (base.href === "/admin/support" && rest) tail = "Ticket details";
+  else if (
+    rest &&
+    (base.href.startsWith("/admin/finance/") ||
+      base.href.startsWith("/admin/orders/") ||
+      base.href.startsWith("/admin/access/") ||
+      base.href.startsWith("/admin/platform/"))
+  ) {
+    tail = humanizePathRest(rest);
+  }
 
   return [
     { label: "Home", href: "/admin/dashboard" },
@@ -241,13 +296,18 @@ export default function AdminNavbar() {
         <div className="flex items-center justify-between h-full px-6 gap-4">
           <div className="flex items-center gap-4 min-w-0 flex-1">
             <Link href="/admin/dashboard" className="flex items-center gap-3 shrink-0">
-              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-600 via-sky-600 to-emerald-500 shadow-sm" />
+              <div
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm"
+                aria-hidden
+              >
+                <ChefHat className="h-[18px] w-[18px]" strokeWidth={2} />
+              </div>
               <div className="leading-tight">
                 <div className="text-base font-extrabold tracking-tight text-slate-900">
                   HanalaFood
                 </div>
                 <div className="text-[11px] font-semibold text-slate-500">
-                  Admin Console
+                  Operations
                 </div>
               </div>
             </Link>

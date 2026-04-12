@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useAdminSearchInput } from "@/hooks/use-admin-search-input"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import {
@@ -17,11 +18,11 @@ type Tab = "all" | "pending" | "accepted" | "expired" | "revoked"
 
 export default function EnterprisesInvitationsAdminPage() {
   const router = useRouter()
-  const params = useSearchParams()
-  const tab = (params.get("status") || "all") as Tab
-  const search = params.get("search")?.trim() || ""
-  const page = Math.max(1, Number(params.get("page") || "1") || 1)
-  const limit = Math.min(50, Math.max(5, Number(params.get("limit") || "10") || 10))
+  const currentSearchParams = useSearchParams()
+  const tab = (currentSearchParams.get("status") || "all") as Tab
+  const search = currentSearchParams.get("search")?.trim() || ""
+  const page = Math.max(1, Number(currentSearchParams.get("page") || "1") || 1)
+  const limit = Math.min(50, Math.max(5, Number(currentSearchParams.get("limit") || "10") || 10))
   const { showToast } = useToast()
 
   const [items, setItems] = useState<AdminEnterpriseInvitationListItem[]>([])
@@ -90,23 +91,37 @@ export default function EnterprisesInvitationsAdminPage() {
     return () => document.removeEventListener("click", onDocClick)
   }, [openStatusMenu, openLimitMenu, actionMenu])
 
-  function setQuery(next: { status?: Tab; search?: string; page?: number; limit?: number }) {
-    const p = new URLSearchParams()
-    const s = next.status ?? tab
-    const q = (next.search ?? search).trim()
-    const nextPage = Math.max(1, Number(next.page ?? page) || 1)
-    const nextLimit = Math.min(50, Math.max(5, Number(next.limit ?? limit) || 10))
-    if (s && s !== "all") p.set("status", s)
-    if (q) p.set("search", q)
-    if (nextPage !== 1) p.set("page", String(nextPage))
-    if (nextLimit !== 10) p.set("limit", String(nextLimit))
-    const qs = p.toString()
-    router.push(qs ? `/admin/enterprises/invitations?${qs}` : "/admin/enterprises/invitations")
+  function navigateInvitationsList(overrides: {
+    status?: Tab
+    search?: string
+    page?: number
+    limit?: number
+  }) {
+    const nextQuery = new URLSearchParams()
+    const effectiveStatus = overrides.status ?? tab
+    const trimmedSearch = (overrides.search ?? search).trim()
+    const nextPage = Math.max(1, Number(overrides.page ?? page) || 1)
+    const nextLimit = Math.min(50, Math.max(5, Number(overrides.limit ?? limit) || 10))
+    if (effectiveStatus && effectiveStatus !== "all") nextQuery.set("status", effectiveStatus)
+    if (trimmedSearch) nextQuery.set("search", trimmedSearch)
+    if (nextPage !== 1) nextQuery.set("page", String(nextPage))
+    if (nextLimit !== 10) nextQuery.set("limit", String(nextLimit))
+    const queryString = nextQuery.toString()
+    router.push(
+      queryString
+        ? `/admin/enterprises/invitations?${queryString}`
+        : "/admin/enterprises/invitations",
+    )
   }
+
+  const { value: searchInput, onChange: onSearchChange } = useAdminSearchInput(
+    search,
+    (nextSearch) => navigateInvitationsList({ search: nextSearch, page: 1 }),
+  )
 
   const statusLabel = useMemo(() => {
     if (tab === "pending") return "Pending"
-    if (tab === "accepted") return "Accepted"
+    if (tab === "accepted") return "Actived"
     if (tab === "expired") return "Expired"
     if (tab === "revoked") return "Revoked"
     return "All Status"
@@ -124,7 +139,7 @@ export default function EnterprisesInvitationsAdminPage() {
     switch (s) {
       case "Accepted":
         return {
-          label: "Activated",
+          label: "Actived",
           className:
             "font-medium inline-flex items-center text-xs px-2 py-1 gap-1 rounded bg-emerald-50 text-emerald-700",
         }
@@ -217,15 +232,11 @@ export default function EnterprisesInvitationsAdminPage() {
               <div className="relative">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
-                  className="w-full border-0 appearance-none placeholder:text-slate-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-75 transition-colors rounded px-3 gap-2 text-slate-900 ring ring-inset focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-300 ps-10 text-[13px] py-2.5 ring-slate-200 bg-white"
+                  className="w-full h-8 min-h-8 py-0 border-0 appearance-none placeholder:text-slate-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-75 transition-colors rounded px-3 gap-2 text-slate-900 ring ring-inset focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-300 ps-10 text-[13px] leading-normal ring-slate-200 bg-white"
                   placeholder="Search by email or enterprise name"
-                  defaultValue={search}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      const v = (e.target as HTMLInputElement).value
-                      setQuery({ search: v })
-                    }
-                  }}
+                  value={searchInput}
+                  onChange={onSearchChange}
+                  aria-label="Search invitations"
                 />
               </div>
             </div>
@@ -239,7 +250,7 @@ export default function EnterprisesInvitationsAdminPage() {
                     ev.stopPropagation()
                     setOpenStatusMenu((v) => !v)
                   }}
-                  className="relative group inline-flex items-center focus:outline-none disabled:cursor-not-allowed disabled:opacity-75 transition-colors rounded gap-2 text-[13px] md:text-[13px] py-2.5 px-3 text-slate-900 bg-white ring ring-inset hover:bg-slate-50 disabled:bg-white focus:ring-2 focus:ring-inset focus:ring-sky-300 pe-10 ring-slate-200 w-full"
+                  className="relative group inline-flex h-8 min-h-8 items-center focus:outline-none disabled:cursor-not-allowed disabled:opacity-75 transition-colors rounded gap-2 text-[13px] md:text-[13px] px-3 py-0 text-slate-900 bg-white ring ring-inset hover:bg-slate-50 disabled:bg-white focus:ring-2 focus:ring-inset focus:ring-sky-300 pe-10 ring-slate-200 w-full"
                 >
                   <span className="truncate">{statusLabel}</span>
                   <ChevronDown
@@ -258,7 +269,7 @@ export default function EnterprisesInvitationsAdminPage() {
                       [
                         { id: "all", label: "All Status" },
                         { id: "pending", label: "Pending" },
-                        { id: "accepted", label: "Accepted" },
+                        { id: "accepted", label: "Actived" },
                         { id: "expired", label: "Expired" },
                         { id: "revoked", label: "Revoked" },
                       ] as const
@@ -268,7 +279,7 @@ export default function EnterprisesInvitationsAdminPage() {
                         type="button"
                         onClick={() => {
                           setOpenStatusMenu(false)
-                          setQuery({ status: opt.id })
+                          navigateInvitationsList({ status: opt.id })
                         }}
                         className="w-full flex items-center justify-between px-3 py-2 text-[13px] md:text-[13px] text-slate-900 hover:bg-slate-50"
                       >
@@ -295,7 +306,7 @@ export default function EnterprisesInvitationsAdminPage() {
             <p className="text-xl font-semibold text-gray-900">{stats.total}</p>
           </div>
           <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <p className="text-xs text-gray-500 font-medium">Activated</p>
+            <p className="text-xs text-gray-500 font-medium">Actived</p>
             <p className="text-xl font-semibold text-gray-900">{stats.activated}</p>
           </div>
           <div className="rounded-lg border border-slate-200 bg-white p-4">
@@ -437,7 +448,7 @@ export default function EnterprisesInvitationsAdminPage() {
                       <button
                         key={n}
                         type="button"
-                        onClick={() => setQuery({ page: n })}
+                        onClick={() => navigateInvitationsList({ page: n })}
                         className={`h-7 w-7 rounded border text-[13px] font-medium transition ${
                           active
                             ? "bg-blue-600 text-white border-blue-600"
@@ -453,7 +464,7 @@ export default function EnterprisesInvitationsAdminPage() {
                       <span className="px-1 text-[13px] text-slate-500">…</span>
                       <button
                         type="button"
-                        onClick={() => setQuery({ page: totalPages })}
+                        onClick={() => navigateInvitationsList({ page: totalPages })}
                         className={`h-7 w-7 rounded border text-[13px] font-medium transition ${
                           totalPages === safePage
                             ? "bg-blue-600 text-white border-blue-600"
@@ -467,7 +478,7 @@ export default function EnterprisesInvitationsAdminPage() {
                   <button
                     type="button"
                     disabled={safePage >= totalPages}
-                    onClick={() => setQuery({ page: Math.min(totalPages, safePage + 1) })}
+                    onClick={() => navigateInvitationsList({ page: Math.min(totalPages, safePage + 1) })}
                     className="h-7 w-7 rounded border text-[13px] font-medium bg-white text-slate-700 border-slate-200 hover:bg-slate-50 disabled:opacity-50"
                     aria-label="Next page"
                   >
@@ -504,7 +515,7 @@ export default function EnterprisesInvitationsAdminPage() {
                             type="button"
                             onClick={() => {
                               setOpenLimitMenu(false)
-                              setQuery({ limit: n, page: 1 })
+                              navigateInvitationsList({ limit: n, page: 1 })
                             }}
                             className={`w-full px-2 py-1.5 text-left text-[11px] leading-4 rounded-md transition ${
                               active

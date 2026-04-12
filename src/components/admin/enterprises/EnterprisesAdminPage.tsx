@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { formatDate } from "@/lib/utils"
-import TabsEnterprises from "@/components/admin/TabsEnterprises"
-import EnterpriseSearch from "@/components/admin/EnterpriseSearch"
+import TabsEnterprises from "./TabsEnterprises"
+import EnterpriseSearch from "./EnterpriseSearch"
 import { Lock, Unlock, MapPin, Clock } from "lucide-react"
-import AddEnterpriseModal from "@/components/admin/AddEnterpriseModal"
+import AddEnterpriseModal from "./AddEnterpriseModal"
 import {
   listAdminEnterprises,
   lockAdminEnterpriseAccount,

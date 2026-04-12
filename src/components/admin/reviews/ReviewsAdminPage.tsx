@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import ReviewSearch from "@/components/admin/ReviewSearch"
-import TabsReviews from "@/components/admin/TabsReviews"
-import EnterpriseFilter from "@/components/admin/EnterpriseFilter"
+import ReviewSearch from "./ReviewSearch"
+import TabsReviews from "./TabsReviews"
+import EnterpriseFilter from "../enterprises/EnterpriseFilter"
 import AdminReviewRow from "@/app/admin/reviews/AdminReviewRow"
 import { getAdminReviews } from "@/services/review.service"
 import { listAdminEnterprises } from "@/services/admin.service"

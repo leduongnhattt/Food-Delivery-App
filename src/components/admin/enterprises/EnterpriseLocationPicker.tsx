@@ -47,6 +47,7 @@ export default function EnterpriseLocationPicker({
   const markerRef = useRef<Leaflet.CircleMarker | null>(null)
   const leafletRef = useRef<typeof Leaflet | null>(null)
   const onLocationChangeRef = useRef(onLocationChange)
+  const onAddressChangeRef = useRef(onAddressChange)
   const applyLocationRef = useRef<((nextLatitude: number, nextLongitude: number, zoom?: number) => void) | null>(null)
   const updateMarkerRef = useRef<((nextLatitude: number, nextLongitude: number) => void) | null>(null)
   const initialCoordinatesRef = useRef<Coordinates>({
@@ -62,6 +63,10 @@ export default function EnterpriseLocationPicker({
   useEffect(() => {
     onLocationChangeRef.current = onLocationChange
   }, [onLocationChange])
+
+  useEffect(() => {
+    onAddressChangeRef.current = onAddressChange
+  }, [onAddressChange])
 
   const updateMarker = useCallback((nextLatitude: number, nextLongitude: number) => {
     const map = mapRef.current
@@ -132,8 +137,24 @@ export default function EnterpriseLocationPicker({
       }).addTo(map)
 
       map.on('click', (event: Leaflet.LeafletMouseEvent) => {
-        applyLocationRef.current?.(event.latlng.lat, event.latlng.lng, MAP_ZOOM_FOCUSED)
+        const lat = event.latlng.lat
+        const lon = event.latlng.lng
+        applyLocationRef.current?.(lat, lon, MAP_ZOOM_FOCUSED)
         setSearchMessage(null)
+
+        void (async () => {
+          try {
+            const endpoint = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${encodeURIComponent(String(lat))}&lon=${encodeURIComponent(String(lon))}`
+            const response = await fetch(endpoint, { headers: { Accept: 'application/json' } })
+            if (!response.ok) return
+            const payload = (await response.json()) as { display_name?: string }
+            if (payload.display_name) {
+              onAddressChangeRef.current(payload.display_name)
+            }
+          } catch {
+            // Keep coordinates; address can be filled manually if reverse fails.
+          }
+        })()
       })
 
       mapRef.current = map

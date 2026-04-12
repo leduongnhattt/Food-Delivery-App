@@ -7,7 +7,7 @@ import { validateEnterpriseForm, canProceedStep0 as canStep0, canProceedStep1 as
 import { useToast } from '@/contexts/toast-context'
 import { useTimeHhmm } from '@/hooks/use-time-hhmm'
 import { createEnterprise as createEnterpriseApi } from '@/services/admin.service'
-import EnterpriseLocationPicker from '@/components/admin/EnterpriseLocationPicker'
+import EnterpriseLocationPicker from './EnterpriseLocationPicker'
 
 export default function AddEnterpriseModal({
   triggerClassName = '',
@@ -71,7 +71,6 @@ export default function AddEnterpriseModal({
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSubmitAttempted(true)
-    // sync form fields from buffers to ensure submit sends the latest HH:mm
     onChange('openHours', openTime.value)
     onChange('closeHours', closeTime.value)
     if (!canProceedStep0() || !canProceedStep1()) return
