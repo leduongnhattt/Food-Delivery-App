@@ -22,6 +22,7 @@ import {
   SupportStatusBadge,
 } from "@/components/support/support-ui"
 import { useToast } from "@/contexts/toast-context"
+import { EnterprisePageHeader } from "@/components/enterprise/EnterprisePageHeader"
 
 const STATUS_FILTER = [
   { value: "", label: "All statuses" },
@@ -35,10 +36,13 @@ export default function UserSupportList({
   basePath,
   title = "Support",
   subtitle = "Create a ticket for help with orders, your account, or your shop. We reply by email when staff responds.",
+  headerVariant = "default",
 }: {
   basePath: string
   title?: string
   subtitle?: string
+  /** `"admin"` uses compact title/subtitle like admin CMS pages. */
+  headerVariant?: "default" | "admin"
 }) {
   const router = useRouter()
   const { showToast } = useToast()
@@ -117,48 +121,76 @@ export default function UserSupportList({
 
   const base = basePath.replace(/\/$/, "")
 
+  const headerActions = (
+    <>
+      <button
+        type="button"
+        onClick={() => void load()}
+        disabled={loading}
+        className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-[13px] font-medium text-slate-900 shadow-sm transition hover:bg-slate-50 disabled:opacity-60"
+      >
+        {loading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <RefreshCw className="h-4 w-4" />
+        )}
+        Refresh
+      </button>
+      <button
+        type="button"
+        onClick={() => setModalOpen(true)}
+        className="inline-flex h-9 items-center gap-2 rounded-lg bg-sky-600 px-4 text-[13px] font-medium text-white shadow-sm transition hover:bg-sky-700"
+      >
+        <MessageSquarePlus className="h-4 w-4" />
+        New ticket
+      </button>
+    </>
+  )
+
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-br from-slate-900 via-indigo-950 to-violet-900 p-6 md:p-8 text-white shadow-lg">
-        <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-violet-500/25 blur-3xl" />
-        <div className="absolute bottom-0 left-1/4 h-32 w-32 rounded-full bg-cyan-400/10 blur-2xl" />
-        <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 backdrop-blur">
-              <Headphones className="h-6 w-6 text-cyan-300" />
+      {headerVariant === "admin" ? (
+        <EnterprisePageHeader title={title} description={subtitle} actions={headerActions} />
+      ) : (
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-br from-slate-900 via-indigo-950 to-violet-900 p-6 md:p-8 text-white shadow-lg">
+          <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-violet-500/25 blur-3xl" />
+          <div className="absolute bottom-0 left-1/4 h-32 w-32 rounded-full bg-cyan-400/10 blur-2xl" />
+          <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 backdrop-blur">
+                <Headphones className="h-6 w-6 text-cyan-300" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{title}</h1>
+                <p className="mt-1 max-w-xl text-sm text-slate-300">{subtitle}</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-                {title}
-              </h1>
-              <p className="mt-1 text-sm text-slate-300 max-w-xl">{subtitle}</p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => void load()}
+                disabled={loading}
+                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold backdrop-blur transition hover:bg-white/20 disabled:opacity-60"
+              >
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                Refresh
+              </button>
+              <button
+                type="button"
+                onClick={() => setModalOpen(true)}
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-indigo-900 shadow-md transition hover:bg-slate-100"
+              >
+                <MessageSquarePlus className="h-4 w-4" />
+                New ticket
+              </button>
             </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => void load()}
-              disabled={loading}
-              className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold backdrop-blur transition hover:bg-white/20 disabled:opacity-60"
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-              Refresh
-            </button>
-            <button
-              type="button"
-              onClick={() => setModalOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-indigo-900 shadow-md transition hover:bg-slate-100"
-            >
-              <MessageSquarePlus className="h-4 w-4" />
-              New ticket
-            </button>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="max-w-md">
         <label className="sr-only" htmlFor="support-status-filter">

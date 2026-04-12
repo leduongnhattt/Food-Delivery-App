@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Tag, Search, Filter, ArrowUpDown, Check, ChevronDown } from 'lucide-react'
-import AddCategoryModal from '@/components/admin/AddCategoryModal'
-import DeleteCategoryModal from '@/components/admin/DeleteCategoryModal'
-import EditCategoryModal from '@/components/admin/EditCategoryModal'
+import AddCategoryModal from '@/components/admin/categories/AddCategoryModal'
+import DeleteCategoryModal from '@/components/admin/categories/DeleteCategoryModal'
+import EditCategoryModal from '@/components/admin/categories/EditCategoryModal'
 import { getAllCategories } from '@/services/admin.service'
 import { useToast } from '@/contexts/toast-context'
 
@@ -260,7 +260,7 @@ export default function CategoriesPage() {
                 placeholder="Search categories by name or description..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full border-0 appearance-none placeholder:text-slate-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-75 transition-colors rounded px-3 gap-2 text-slate-900 ring ring-inset focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-300 ps-10 text-[13px] py-2.5 ring-slate-200 bg-white"
+                className="w-full h-8 min-h-8 py-0 border-0 appearance-none placeholder:text-slate-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-75 transition-colors rounded px-3 gap-2 text-slate-900 ring ring-inset focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-300 ps-10 text-[13px] leading-normal ring-slate-200 bg-white"
               />
             </div>
           </div>
@@ -271,7 +271,7 @@ export default function CategoriesPage() {
               <button
                 type="button"
                 onClick={() => setOpenSortByMenu((v) => !v)}
-                className="relative group inline-flex items-center focus:outline-none disabled:cursor-not-allowed disabled:opacity-75 transition-colors rounded gap-2 text-[13px] py-2.5 px-3 text-slate-900 bg-white ring ring-inset hover:bg-slate-50 disabled:bg-white focus:ring-2 focus:ring-inset focus:ring-sky-300 pe-10 ring-slate-200 w-full shrink-0 sm:w-56"
+                className="relative group inline-flex h-8 min-h-8 items-center focus:outline-none disabled:cursor-not-allowed disabled:opacity-75 transition-colors rounded gap-2 text-[13px] md:text-[13px] px-3 py-0 text-slate-900 bg-white ring ring-inset hover:bg-slate-50 disabled:bg-white focus:ring-2 focus:ring-inset focus:ring-sky-300 pe-10 ring-slate-200 w-full shrink-0 sm:w-56"
                 aria-haspopup="menu"
                 aria-expanded={openSortByMenu}
               >
@@ -304,7 +304,7 @@ export default function CategoriesPage() {
             </div>
             <button
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              className="h-10 px-3 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-[13px] leading-4 font-medium text-[oklch(0.208_0.042_265.755)]"
+              className="h-8 min-h-8 inline-flex items-center justify-center px-3 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-[13px] leading-4 font-medium text-[oklch(0.208_0.042_265.755)]"
               title={`Sort ${sortOrder === 'asc' ? 'Descending' : 'Ascending'}`}
             >
               {sortOrder === 'asc' ? '↑' : '↓'}

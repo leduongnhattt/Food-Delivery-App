@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import EnterprisesListAdminPage from "@/components/admin/EnterprisesListAdminPage"
+import EnterprisesListAdminPage from "@/components/admin/enterprises/EnterprisesListAdminPage"
 
 export default function AdminEnterprisesListPage() {
   return (

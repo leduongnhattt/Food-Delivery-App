@@ -10,6 +10,7 @@ export default function EnterpriseSupportPage() {
       <SupportRoleGuard variant="enterprise">
         <UserSupportList
           basePath="/enterprise/support"
+          headerVariant="admin"
           title="Support"
           subtitle="Reach the platform team for help with your shop, menu, orders, or payouts. We notify you by email when we reply."
         />

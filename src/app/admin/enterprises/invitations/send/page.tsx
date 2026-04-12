@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import SendEnterpriseInvitationAdminPage from "@/components/admin/SendEnterpriseInvitationAdminPage"
+import SendEnterpriseInvitationAdminPage from "@/components/admin/enterprises/SendEnterpriseInvitationAdminPage"
 
 export default function AdminEnterprisesInvitationsSendPage() {
   return (

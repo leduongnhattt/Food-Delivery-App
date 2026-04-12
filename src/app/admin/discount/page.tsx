@@ -1,8 +1,8 @@
 "use client";
 
 import AdminCreateVoucherForm from './AdminCreateVoucherForm'
-import VoucherSearch from '@/components/admin/VoucherSearch'
-import TabsVouchers from '@/components/admin/TabsVouchers'
+import VoucherSearch from '@/components/admin/vouchers/VoucherSearch'
+import TabsVouchers from '@/components/admin/vouchers/TabsVouchers'
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import type { AdminVoucherListItem } from '@/types/admin-api.types'

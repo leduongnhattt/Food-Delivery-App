@@ -31,6 +31,23 @@
   }
 }
 
+@layer utilities {
+  .enterprise-nav-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(203 213 225) transparent;
+  }
+  .enterprise-nav-scroll::-webkit-scrollbar {
+    width: 5px;
+  }
+  .enterprise-nav-scroll::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background-color: rgb(203 213 225);
+  }
+  .enterprise-nav-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
 @layer components {
   .container {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;

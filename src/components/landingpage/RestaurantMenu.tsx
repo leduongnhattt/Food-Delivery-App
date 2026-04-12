@@ -1,6 +1,7 @@
 import React from "react";
 import RestaurantCard from "./RestaurantCard";
 import { useRestaurantList } from '@/hooks/use-restaurant-list';
+import { CATALOG_REFETCH_INTERVAL_MS } from '@/hooks/catalog-refetch';
 import { Loading } from '@/components/ui/loading';
 import { ErrorDisplay } from '@/components/ui/error-display';
 import { Restaurant as ApiRestaurant, RestaurantCardData } from '@/types/models';
@@ -38,11 +39,16 @@ const RestaurantMenu: React.FC<Props> = ({
     loading, 
     error, 
     refetch 
-  } = useRestaurantList({
-    limit: Math.min(displayLimit, 100),
-    isOpen: true, // Only show open restaurants
-    // minRating: 3.0 // Removed this filter since all restaurants have rating 0
-  });
+  } = useRestaurantList(
+    {
+      limit: Math.min(displayLimit, 100),
+      isOpen: true,
+    },
+    {
+      refetchIntervalMs: CATALOG_REFETCH_INTERVAL_MS,
+      refetchOnVisibility: true,
+    },
+  );
 
 
   const handleViewAll = () => {

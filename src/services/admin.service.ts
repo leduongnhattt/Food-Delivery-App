@@ -73,6 +73,7 @@ export type AdminEnterpriseInvitationListItem = {
   Status: 'Pending' | 'Accepted' | 'Expired' | 'Revoked'
   AcceptedAt: string | null
   CreatedAt: string
+  hasActivationLinkClick?: boolean
 }
 
 export type AdminEnterpriseInvitationsListResponse = {
@@ -191,6 +192,25 @@ export async function getAdminEnterpriseDetail(
   )
 }
 
+/** PATCH `/admin/enterprises/:enterpriseId` — basic profile fields admin may edit. */
+export type UpdateAdminEnterprisePayload = {
+  enterpriseName: string
+  phoneNumber: string
+  address: string
+  contactEmail: string
+  accountStatus: 'Active' | 'Inactive'
+}
+
+export async function updateAdminEnterprise(
+  enterpriseId: string,
+  payload: UpdateAdminEnterprisePayload,
+): Promise<{ success: boolean }> {
+  return requestJson<{ success: boolean }>(
+    `${urlAdminEnterprises()}/${encodeURIComponent(enterpriseId)}`,
+    { method: 'PATCH', body: JSON.stringify(payload) },
+  )
+}
+
 export async function createEnterprise(
   payload: CreateEnterprisePayload,
 ): Promise<CreateEnterpriseApiResponse> {
@@ -221,6 +241,16 @@ export async function unlockAdminEnterpriseAccount(
   return requestJson<LockSuccessResponse>(
     `${urlAdminEnterprises()}/${encodeURIComponent(accountId)}/unlock`,
     { method: 'POST' },
+  )
+}
+
+/** DELETE `/admin/enterprises/:enterpriseId` — soft delete (`DeletedAt`, deactivate account). */
+export async function softDeleteAdminEnterprise(
+  enterpriseId: string,
+): Promise<{ success: boolean }> {
+  return requestJson<{ success: boolean }>(
+    `${urlAdminEnterprises()}/${encodeURIComponent(enterpriseId)}`,
+    { method: 'DELETE' },
   )
 }
 

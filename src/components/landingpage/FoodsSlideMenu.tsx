@@ -2,6 +2,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import FoodCard from './FoodCard';
 import { usePopularFoods } from '@/hooks/use-popular-foods';
+import { CATALOG_REFETCH_INTERVAL_MS } from '@/hooks/catalog-refetch';
 import { SAMPLE_FOODS } from '@/data/sample-foods';
 import { Food, RestaurantModalInfo, ApiRestaurantPayload, FoodsSlideMenuProps } from '@/types/models';
 import { OrderModal } from '@/components/ui/order-modal';
@@ -32,11 +33,14 @@ const FoodsSlideMenu: React.FC<FoodsSlideMenuProps> = ({
     foods: databaseFoods, 
     loading, 
     error 
-  } = usePopularFoods({
-    restaurantId,
-    category,
-    limit
-  });
+  } = usePopularFoods(
+    { restaurantId, category, limit },
+    {
+      enabled: useDatabase,
+      refetchIntervalMs: useDatabase ? CATALOG_REFETCH_INTERVAL_MS : 0,
+      refetchOnVisibility: useDatabase,
+    },
+  );
   
   // Resolve restaurant info for the OrderModal from multiple possible sources
   const resolveRestaurantInfo = (food: Food): RestaurantModalInfo => {

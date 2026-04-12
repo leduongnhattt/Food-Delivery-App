@@ -1,7 +1,7 @@
 "use client"
 
 import { useParams } from "next/navigation"
-import EnterpriseDetailAdminPage from "@/components/admin/EnterpriseDetailAdminPage"
+import EnterpriseDetailAdminPage from "@/components/admin/enterprises/EnterpriseDetailAdminPage"
 
 export default function AdminEnterpriseDetailRoutePage() {
   const params = useParams()

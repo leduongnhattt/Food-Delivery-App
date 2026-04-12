@@ -27,6 +27,8 @@ export type AdminEnterpriseListItem = {
   OpenHours: string
   CloseHours: string
   CreatedAt: string
+  /** True when account is inactive and a pending invitation exists (onboarding). */
+  hasPendingInvitation: boolean
   account: {
     AccountID: string
     Email: string
@@ -68,9 +70,6 @@ export type AdminEnterpriseDetailResponse = {
     }
   }
   business: {
-    legalBusinessName: string | null
-    registrationNumber: string | null
-    taxId: string | null
     bankAccountMasked: string
     payoutMethod: string
   }
@@ -85,7 +84,7 @@ export type AdminEnterpriseDetailResponse = {
   }
   linkedProducts: AdminEnterpriseDetailLinkedProduct[]
   primaryCategoryName: string | null
-  /** True when a pending enterprise invitation still exists for this account (admin “pending” UX). */
+  /** True when a pending enterprise invitation still exists for this account. */
   hasPendingInvitation: boolean
 }
 
@@ -122,6 +121,8 @@ export type AdminEnterpriseInvitationDetailResponse = {
     emailOpens: number
     linkClicks: number
     daysSinceSent: number
+    /** Calendar days from invitation sent time to first email-open pixel (null if never opened). */
+    daysFromSentToFirstEmailOpen: number | null
   }
 }
 

@@ -2,12 +2,21 @@
 
 import EnterpriseNavBar from "@/components/enterprise/EnterpriseNavbar";
 import React from "react";
+import { usePathname } from "next/navigation";
 
 export default function AdminLayoutClient({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const isActivation = pathname === "/enterprise/activate";
+
+  // Activation is a public, standalone flow (no enterprise nav/sidebar).
+  if (isActivation) {
+    return <>{children}</>;
+  }
+
   return (
     <>
       <EnterpriseNavBar />
